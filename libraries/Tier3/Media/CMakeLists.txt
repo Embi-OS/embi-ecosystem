@@ -1,5 +1,3 @@
-# CMakeLists.txt for Media Library
-
 include(Common)
 
 project(Media)
