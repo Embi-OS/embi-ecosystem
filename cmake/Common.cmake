@@ -350,19 +350,15 @@ function(embi_add_executable NAME)
     target_include_directories(${NAME} PRIVATE ${arg_DIRECTORIES})
     target_include_directories(${NAME} PRIVATE ${arg_PRIVATE_DIRECTORIES})
 
-    if(BOOT2QT)
-        set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}")
-    else()
-        set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}/${NAME}")
-    endif()
+    set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}")
 
     set_target_properties(${NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}"
     )
 
-    if (${NAME} IN_LIST DEPLOYABLE_APPS)
-        message(NOTICE "[DEPLOYABLE_APPS] Installing ${APP_NAME} in ${QT_DEPLOY_PREFIX}/${NAME}")
-        set(INSTALL_DIR "${QT_DEPLOY_PREFIX}/${NAME}")
+    if (BOOT2QT AND ${NAME} IN_LIST DEPLOYABLE_APPS)
+        message(NOTICE "[DEPLOYABLE_APPS] Installing ${APP_NAME} in ${QT_DEPLOY_PREFIX}")
+        set(INSTALL_DIR "${QT_DEPLOY_PREFIX}")
         install(TARGETS ${NAME}
             RUNTIME DESTINATION "${INSTALL_DIR}"
             BUNDLE DESTINATION "${INSTALL_DIR}"
@@ -449,11 +445,7 @@ function(embi_add_application NAME)
         target_link_libraries(${APP_NAME} PRIVATE ${LIB_NAME}plugin)
     endif()
 
-    if(BOOT2QT)
-        set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}")
-    else()
-        set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}/${NAME}")
-    endif()
+    set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}")
 
     set_target_properties(${APP_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}"
@@ -463,9 +455,9 @@ function(embi_add_application NAME)
         target_compile_definitions(${APP_NAME} PRIVATE QT_QML_DEBUG)
     endif()
 
-    if (${NAME} IN_LIST DEPLOYABLE_APPS)
-        message(NOTICE "[DEPLOYABLE_APPS] Installing ${APP_NAME} in ${QT_DEPLOY_PREFIX}/${NAME}")
-        set(INSTALL_DIR "${QT_DEPLOY_PREFIX}/${NAME}")
+    if (BOOT2QT AND ${NAME} IN_LIST DEPLOYABLE_APPS)
+        message(NOTICE "[DEPLOYABLE_APPS] Installing ${APP_NAME} in ${QT_DEPLOY_PREFIX}")
+        set(INSTALL_DIR "${QT_DEPLOY_PREFIX}")
         install(TARGETS ${APP_NAME}
             RUNTIME DESTINATION "${INSTALL_DIR}"
             BUNDLE DESTINATION "${INSTALL_DIR}"

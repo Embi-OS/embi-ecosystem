@@ -2,15 +2,21 @@
 #include "axion_log.h"
 
 #include <QUtils>
+#include <QStorageInfo>
 
 static QDir writableLocation(const QString& folder)
 {
+    const QString applicationDirPath = QCoreApplication::applicationDirPath();
+    QString baseLocation = applicationDirPath;
 #ifdef Q_OS_BOOT2QT
-    const QString baseLocation = QDir::homePath() + "/" +
-                                 QCoreApplication::organizationName() + "/" +
-                                 QCoreApplication::applicationName();
-#else
-    const QString baseLocation = QCoreApplication::applicationDirPath();
+    const QStorageInfo storageInfo = QStorageInfo(applicationDirPath);
+    qTrace()<<storageInfo<<storageInfo.isRoot();
+    if(storageInfo.isRoot())
+    {
+        baseLocation = QDir::homePath() + "/" +
+                       QCoreApplication::organizationName() + "/" +
+                       QCoreApplication::applicationName();
+    }
 #endif
 
     QDir d(baseLocation+"/"+folder);
