@@ -39,8 +39,8 @@ ApplicationController::ApplicationController(QObject *parent) :
 
 void ApplicationController::init(bool makeDefault)
 {
-    const QString newVersionLocalFile = Paths::local(Paths::applicationName()+"_new");
-    const QString oldVersionLocalFile = Paths::local(Paths::applicationName()+"_old");
+    const QString newVersionLocalFile = Paths::applicationFilePath()+"_new";
+    const QString oldVersionLocalFile = Paths::applicationFilePath()+"_old";
     if(QFile::exists(newVersionLocalFile))
     {
         QUtils::Filesystem::remove(newVersionLocalFile);
@@ -52,7 +52,7 @@ void ApplicationController::init(bool makeDefault)
 
 #ifdef Q_OS_BOOT2QT
     if(makeDefault) {
-        QString localFile = Paths::local(Paths::applicationName());
+        QString localFile = Paths::applicationFilePath();
         SOLIDLOG_INFO()<<"Making default"<<localFile;
         QProcess::startDetached(APPCONTROLLER_CMD, {"--make-default", localFile});
     }
@@ -100,8 +100,8 @@ void ApplicationController::update(const QString& path)
         return;
     }
 
-    QString localFile = Paths::local(Paths::applicationName());
-    QString newVersionLocalFile = Paths::local(Paths::applicationName()+"_new");
+    QString localFile = Paths::applicationFilePath();
+    QString newVersionLocalFile = Paths::applicationFilePath()+"_new";
 
     auto importStep = [path, newVersionLocalFile]() {
         DialogObject* dialog = DialogManager::Get()->showBusy(tr("Chargement de la mise à jour!"));

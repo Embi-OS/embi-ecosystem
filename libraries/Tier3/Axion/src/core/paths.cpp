@@ -50,6 +50,11 @@ QString Paths::specificLocation(const QString& folder, const QString& file)
     return d.filePath(file);
 }
 
+QString Paths::applicationFilePath()
+{
+    return QCoreApplication::applicationFilePath();
+}
+
 QString Paths::applicationName()
 {
     return QFileInfo(QCoreApplication::applicationFilePath()).fileName();

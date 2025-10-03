@@ -16,6 +16,7 @@ protected:
     explicit Paths(QObject *parent = nullptr);
 
 public:
+    Q_INVOKABLE static QString applicationFilePath();
     Q_INVOKABLE static QString applicationName();
     Q_INVOKABLE static QString local(const QString& file = QString());
     Q_INVOKABLE static QString log(const QString& file = QString());
