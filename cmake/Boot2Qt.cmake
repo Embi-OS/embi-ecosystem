@@ -1,0 +1,32 @@
+
+string( TOLOWER "${CMAKE_TOOLCHAIN_FILE}" CMAKE_TOOLCHAIN_FILE_lower )
+
+if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "raspberrypi")
+    set(RASPBERRY_PI ON)
+    set(BOOT2QT ON)
+endif()
+
+if(NOT RASPBERRY_PI)
+    set(RASPBERRY_PI OFF)
+endif()
+
+if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "apalis-imx8")
+    set(APALIS_IMX8 ON)
+    set(BOOT2QT ON)
+endif()
+
+if(NOT APALIS_IMX8)
+    set(APALIS_IMX8 OFF)
+endif()
+
+if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "boot2qt")
+    set(BOOT2QT ON)
+endif()
+
+if(NOT BOOT2QT)
+    set(BOOT2QT OFF)
+endif()
+
+set(RASPBERRY_PI ${RASPBERRY_PI} CACHE STRING "")
+set(APALIS_IMX8 ${APALIS_IMX8} CACHE STRING "")
+set(BOOT2QT ${BOOT2QT} CACHE STRING "")

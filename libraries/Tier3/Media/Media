@@ -1,0 +1,2 @@
+#include "mediaitemmodel.h"
+#include "mediametadatamodel.h"

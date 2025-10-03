@@ -1,0 +1,6 @@
+#include "qproxymodel.h"
+#include "qqmlsortfilterproxymodel.h"
+#include "filters/filtersqmltypes.h"
+#include "sorters/sortersqmltypes.h"
+#include "proxyroles/proxyrolesqmltypes.h"
+

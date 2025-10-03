@@ -1,0 +1,8 @@
+#include "RestCore/restclient.h"
+#include "RestCore/restclass.h"
+#include "RestCore/restreply.h"
+
+#include "RestModel/restsocket.h"
+#include "RestModel/restsocketattached.h"
+#include "RestModel/restmodel.h"
+#include "RestModel/restmapper.h"

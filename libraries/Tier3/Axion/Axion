@@ -1,0 +1,25 @@
+#include "axion_helpertypes.h"
+
+#include "core/application.h"
+#include "core/abstractmanagercontainer.h"
+#include "core/log.h"
+#include "core/paths.h"
+#include "core/version.h"
+
+#include "dialogs/dialogmanager.h"
+#include "dialogs/snackbarmanager.h"
+
+#include "forms/formobject.h"
+#include "forms/formobjectmodel.h"
+
+#include "graphs/graphobject.h"
+#include "graphs/graphseriesobject.h"
+#include "graphs/graphaxisobject.h"
+#include "graphs/graphseriesmodel.h"
+
+#include "models/foldertreemodel.h"
+
+#include "tables/tableviewcolumnmodel.h"
+#include "tables/tableviewmodel.h"
+
+#include "helpers/alarmobject.h"
