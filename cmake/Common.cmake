@@ -350,7 +350,11 @@ function(embi_add_executable NAME)
     target_include_directories(${NAME} PRIVATE ${arg_DIRECTORIES})
     target_include_directories(${NAME} PRIVATE ${arg_PRIVATE_DIRECTORIES})
 
-    set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}")
+    if(BOOT2QT)
+        set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}")
+    else()
+        set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}/${NAME}")
+    endif()
 
     set_target_properties(${NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}"
@@ -445,7 +449,11 @@ function(embi_add_application NAME)
         target_link_libraries(${APP_NAME} PRIVATE ${LIB_NAME}plugin)
     endif()
 
-    set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}")
+    if(BOOT2QT)
+        set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}")
+    else()
+        set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${arg_OUTPUT_DIRECTORY_PREFIX}/${NAME}")
+    endif()
 
     set_target_properties(${APP_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}"
