@@ -4,6 +4,7 @@
 #include <QExplicitlySharedDataPointer>
 #include <QList>
 #include <QTimer>
+#include <QElapsedTimer>
 #include <functional>
 #include <QDebug>
 
