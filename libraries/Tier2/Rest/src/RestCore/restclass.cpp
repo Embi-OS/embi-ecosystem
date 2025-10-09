@@ -61,7 +61,6 @@ RestReply* RestClass::call(QNetworkReply* networkReply, QObject* parent)
         setLoading(false);
         RESTLOG_DEBUG()<<"REST request"<<reply->getNetworkRequest()<<"took"<<timer->nsecsElapsed()/1000000.0<<"ms for"<<bytes(reply->getContentLength());
         // qNotice()<<this<<"REST request"<<reply->getNetworkRequest()<<"took"<<timer->nsecsElapsed()/1000000.0<<"ms for"<<bytes(reply->getContentLength());
-        // qNotice().noquote()<<QUtils::Log::variantToLog(reply->getData());
         delete timer;
     }, Qt::QueuedConnection);
     reply->onSucceeded([this](int httpStatus, const QVariant& reply){

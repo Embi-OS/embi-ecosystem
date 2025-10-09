@@ -7,6 +7,7 @@ Version::Version(QObject *parent) :
     m_versionSuffix(PROJECT_DESCRIPTION),
     m_company(PROJECT_COMPANY),
     m_website(PROJECT_WEBSITE),
+    m_maintainer(PROJECT_MAINTAINER),
     m_copyright(PROJECT_COPYRIGHT),
     m_version(m_versionSuffix.isEmpty() ? QString("%1").arg(m_globalVersion.toString()) : QString("%1 [%2]").arg(m_globalVersion.toString(),m_versionSuffix)),
     m_productName(PROJECT_NAME)
@@ -22,6 +23,7 @@ void Version::dumpInfos() const
     infos += m_version.isEmpty() ? "" : QString("\t Version: %1\n").arg(m_version);
     infos += m_company.isEmpty() ? "" : QString("\t Company: %1\n").arg(m_company);
     infos += m_website.isEmpty() ? "" : QString("\t Website: %1\n").arg(m_website);
+    infos += m_maintainer.isEmpty() ? "" : QString("\t Maintainer: %1\n").arg(m_maintainer);
     infos += m_copyright.isEmpty() ? "" : QString("\t %1\n").arg(m_copyright);
     AXIONLOG_INFO().noquote()<<infos;
 }
@@ -38,6 +40,8 @@ QString Version::about() const
         about += tr("Entreprise: %1").arg(m_company);
     if(!m_website.isEmpty())
         about += tr("Site web: %1").arg(m_website);
+    if(!m_maintainer.isEmpty())
+        about += tr("Maintainer: %1").arg(m_maintainer);
     if(!m_copyright.isEmpty())
         about += tr("Copyright: %1").arg(m_copyright);
     return about.join("\n");

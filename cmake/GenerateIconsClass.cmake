@@ -4,23 +4,6 @@ include(FileRecurseRelative)
 
 cmake_minimum_required(VERSION 3.16)
 
-# Generate a QObject with property string containing full qrc path to file.
-#
-# Example:
-# generateIconsClass(CLASS_NAME
-#   SOURCE_DIR path/to/icon/folder
-#   OUTPUT_DIR path/to/folder/CLASS_NAME.h .cpp
-#   PREFIX "My/Qrc/Prefix")
-#
-# Usage:
-# generateIconsClass(<var> [options...])
-#
-# CLASS_NAME: final class name
-# SRC: Absolute path to the generated cpp file
-# - SOURCE_DIR: folder containing icons to pack in the generated class
-# - OUTPUT_DIR: folder where to generate the class
-# - PREFIX: Prefix prepend inside each property value
-#
 function(generateIconsClass CLASS_NAME ICON_FILES)
 
     set(args_option "")
@@ -37,7 +20,6 @@ function(generateIconsClass CLASS_NAME ICON_FILES)
     # Create correct names
     string(TOUPPER ${CLASS_NAME} CLASS_NAME_UPPER)
     string(TOLOWER ${CLASS_NAME} CLASS_NAME_LOWER)
-    get_filename_component(OUT_FILENAME_ABS ${arg_OUTPUT_DIR}/${CLASS_NAME_LOWER} ABSOLUTE)
 
     unset(ICON_FILES_IN)
     allFileRecurseRelative(ICON_FILES_IN ${arg_SOURCE_DIR})
@@ -100,7 +82,7 @@ function(generateIconsClass CLASS_NAME ICON_FILES)
 
         set(FORBIDDEN_PROPERTY_WORDS id index model modelData console do if in for let new try var case else enum eval null this true void with await break catch class const false super throw while yield delete export import public return static switch typeof default extends finally package private continue debugger function arguments interface protected implements instanceof linux)
 
-        if (${PROPERTY_NAME} IN_LIST FORBIDDEN_PROPERTY_WORDS)
+        if (PROPERTY_NAME IN_LIST FORBIDDEN_PROPERTY_WORDS)
             set(PROPERTY_NAME ${PROPERTY_NAME}_)
         endif()
 

@@ -33,4 +33,3 @@ embi_add_application(${PROJECT_NAME}
     DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-

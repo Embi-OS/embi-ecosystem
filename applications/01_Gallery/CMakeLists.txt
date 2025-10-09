@@ -1,4 +1,5 @@
 include(Common)
+include(CreateDebPackage)
 
 project(01_Gallery)
 
@@ -24,3 +25,5 @@ embi_add_application(${PROJECT_NAME}
     DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+create_deb_package(${APP_NAME})

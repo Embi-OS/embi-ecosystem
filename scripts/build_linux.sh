@@ -1,0 +1,29 @@
+#!/bin/sh
+set -e
+
+# Load common config and helpers
+. "$(dirname "$0")/common.sh"
+
+start_timer
+
+QT_LINUX_KIT="gcc_64"
+LINUX_PREFIX_PATH="$QT_ROOT/$QT_VERSION/$QT_LINUX_KIT"
+LINUX_MAKE_PROGRAM="$QT_ROOT/Tools/Ninja/ninja"
+LINUX_CMAKE_BIN="$QT_ROOT/Tools/CMake/bin/cmake"
+LINUX_TOOLCHAIN_PATH="$LINUX_PREFIX_PATH/lib/cmake/Qt6/qt.toolchain.cmake"
+LINUX_CXX_COMPILER_PATH="/bin/g++"
+LINUX_C_COMPILER_PATH="/bin/gcc"
+LINUX_BUILD_DIR="$BUILD_DIR/build-linux-Qt-$QT_VERSION"
+
+ensure_dir "$LINUX_BUILD_DIR"
+
+run_cmd "$LINUX_CMAKE_BIN" --log-level=NOTICE -G "$GENERATOR" -S "$PROJECT_ROOT" -B "$LINUX_BUILD_DIR" \
+    -DCMAKE_MAKE_PROGRAM:FILEPATH="$LINUX_MAKE_PROGRAM" \
+    -DCMAKE_TOOLCHAIN_FILE:FILEPATH="$LINUX_TOOLCHAIN_PATH" \
+    -DCMAKE_CXX_COMPILER:FILEPATH="$LINUX_CXX_COMPILER_PATH" \
+    -DCMAKE_C_COMPILER:FILEPATH="$LINUX_C_COMPILER_PATH" \
+    $EXTRA_CMAKE_VARIABLES
+
+run_cmd "$LINUX_CMAKE_BIN" --build "$LINUX_BUILD_DIR" --target all
+
+end_timer

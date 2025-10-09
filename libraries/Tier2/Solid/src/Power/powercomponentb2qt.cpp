@@ -59,6 +59,8 @@ void PowerComponentB2qt::launch(const QString& path)
 {
     QMetaObject::invokeMethod(qApp, [path](){
         qApp->quit();
-        QProcess::startDetached("systemd-run", {APPCONTROLLER_CMD, path});
+        QString uid = QString::number(getuid());
+        QString gid = QString::number(getgid());
+        QProcess::startDetached("systemd-run", {"--system", "--uid="+uid, "--gid="+gid, APPCONTROLLER_CMD, path});
     }, Qt::QueuedConnection);
 }

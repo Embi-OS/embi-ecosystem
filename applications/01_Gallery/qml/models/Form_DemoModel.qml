@@ -45,6 +45,7 @@ FormObjectModel {
         targetProperty: "socketPort"
         label: "Socket Port"
         validator: SocketPortValidator{}
+        valueType: FormValueTypes.Integer
     }
     FormNestDelegate {
         text: "Sous-titre"

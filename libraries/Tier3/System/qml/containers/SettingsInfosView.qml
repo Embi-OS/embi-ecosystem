@@ -45,6 +45,7 @@ PaneTreeView {
         InfoTreeDelegate {visible: info!==""; text: qsTr("Version");info: Version.version}
         InfoTreeDelegate {visible: info!==""; text: qsTr("Entreprise");info: Version.company}
         InfoTreeDelegate {visible: info!==""; text: qsTr("Site web");info: Version.website}
+        InfoTreeDelegate {visible: info!==""; text: qsTr("Maintainer");info: Version.maintainer}
         InfoTreeDelegate {visible: info!==""; text: qsTr("Copyright");info: Version.copyright}
         SeparatorTreeDelegate {}
         InfoTreeDelegate {text: qsTr("Qt Version");info: DeviceInfo.qtVersion}

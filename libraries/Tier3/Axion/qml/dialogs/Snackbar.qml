@@ -89,11 +89,11 @@ T.Control {
 
             RowLayout {
                 spacing: root.spacing
+                visible: root.title!=="" || root.button!=="" || root.closable
 
                 BasicLabel {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
-                    visible: text!=="" || root.button!=="" || root.closable
                     color: root.foregroundColor
                     text: root.title
                     font: Style.textTheme.subtitle1
@@ -121,7 +121,7 @@ T.Control {
 
             BasicLabel {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.alignment: Qt.AlignVCenter
                 visible: !(text === "")
                 color: root.foregroundColor
                 text: root.caption

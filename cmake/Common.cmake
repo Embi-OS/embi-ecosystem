@@ -360,8 +360,12 @@ function(embi_add_executable NAME)
         RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}"
     )
 
-    if (BOOT2QT AND ${NAME} IN_LIST DEPLOYABLE_APPS)
-        message(NOTICE "[DEPLOYABLE_APPS] Installing ${APP_NAME} in ${QT_DEPLOY_PREFIX}")
+    if (NOT ${NAME} IN_LIST DEPLOYABLE_APPS)
+        return()
+    endif()
+
+    if (BOOT2QT)
+        message(STATUS "Installing ${APP_NAME} in ${QT_DEPLOY_PREFIX}")
         set(INSTALL_DIR "${QT_DEPLOY_PREFIX}")
         install(TARGETS ${NAME}
             RUNTIME DESTINATION "${INSTALL_DIR}"
@@ -463,8 +467,12 @@ function(embi_add_application NAME)
         target_compile_definitions(${APP_NAME} PRIVATE QT_QML_DEBUG)
     endif()
 
-    if (BOOT2QT AND ${NAME} IN_LIST DEPLOYABLE_APPS)
-        message(NOTICE "[DEPLOYABLE_APPS] Installing ${APP_NAME} in ${QT_DEPLOY_PREFIX}")
+    if (NOT ${NAME} IN_LIST DEPLOYABLE_APPS)
+        return()
+    endif()
+
+    if (BOOT2QT)
+        message(STATUS "Installing ${APP_NAME} in ${QT_DEPLOY_PREFIX}")
         set(INSTALL_DIR "${QT_DEPLOY_PREFIX}")
         install(TARGETS ${APP_NAME}
             RUNTIME DESTINATION "${INSTALL_DIR}"

@@ -1,13 +1,13 @@
+string(TOLOWER "${CMAKE_TOOLCHAIN_FILE}" CMAKE_TOOLCHAIN_FILE_lower)
 
-string( TOLOWER "${CMAKE_TOOLCHAIN_FILE}" CMAKE_TOOLCHAIN_FILE_lower )
+# Initialize variables to OFF before conditional checks
+set(RASPBERRY_PI OFF)
+set(APALIS_IMX8 OFF)
+set(BOOT2QT OFF)
 
 if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "raspberrypi")
     set(RASPBERRY_PI ON)
     set(BOOT2QT ON)
-endif()
-
-if(NOT RASPBERRY_PI)
-    set(RASPBERRY_PI OFF)
 endif()
 
 if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "apalis-imx8")
@@ -15,18 +15,10 @@ if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "apalis-imx8")
     set(BOOT2QT ON)
 endif()
 
-if(NOT APALIS_IMX8)
-    set(APALIS_IMX8 OFF)
-endif()
-
 if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "boot2qt")
     set(BOOT2QT ON)
 endif()
 
-if(NOT BOOT2QT)
-    set(BOOT2QT OFF)
-endif()
-
-set(RASPBERRY_PI ${RASPBERRY_PI} CACHE STRING "")
-set(APALIS_IMX8 ${APALIS_IMX8} CACHE STRING "")
-set(BOOT2QT ${BOOT2QT} CACHE STRING "")
+set(RASPBERRY_PI ${RASPBERRY_PI} CACHE BOOL "")
+set(APALIS_IMX8 ${APALIS_IMX8} CACHE BOOL "")
+set(BOOT2QT ${BOOT2QT} CACHE BOOL "")

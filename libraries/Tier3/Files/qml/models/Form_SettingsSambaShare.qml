@@ -18,6 +18,7 @@ FormObjectModel {
     FormTextFieldDelegate {
         label: qsTr("Port")
         validator: SocketPortValidator{}
+        valueType: FormValueTypes.Integer
         targetProperty: "port"
     }
     FormTextFieldPathDelegate {

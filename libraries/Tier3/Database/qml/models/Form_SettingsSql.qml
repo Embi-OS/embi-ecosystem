@@ -52,6 +52,7 @@ FormObjectModel {
         visible: dbType.currentValue===SqlDatabaseTypes.MySQL
         label: qsTr("Port")
         validator: SocketPortValidator{}
+        valueType: FormValueTypes.Integer
         targetProperty: "dbPort"
     }
 }

@@ -8,9 +8,8 @@ static QDir writableLocation(const QString& folder)
 {
     const QString applicationDirPath = QCoreApplication::applicationDirPath();
     QString baseLocation = applicationDirPath;
-#ifdef Q_OS_BOOT2QT
+#if defined(Q_OS_BOOT2QT) || !defined(QT_CREATOR_RUN)
     const QStorageInfo storageInfo = QStorageInfo(applicationDirPath);
-    qTrace()<<storageInfo<<storageInfo.isRoot();
     if(storageInfo.isRoot())
     {
         baseLocation = QDir::homePath() + "/" +

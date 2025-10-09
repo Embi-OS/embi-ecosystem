@@ -1,4 +1,3 @@
-
 function(srcFileRecurseRelative FILES)
 
     set(args_option "")
@@ -15,12 +14,12 @@ function(srcFileRecurseRelative FILES)
     unset(FILES_IN)
 
     if(DEFINED arg_PATH)
-        set(PATH "${arg_PATH}/*.h;*.hpp;*.cpp;*.ui")
+        set(SEARCH_PATH "${arg_PATH}/*.h;${arg_PATH}/*.hpp;${arg_PATH}/*.cpp;${arg_PATH}/*.ui")
     else()
-        set(PATH "*.h;*.hpp;*.cpp;*.ui")
+        set(SEARCH_PATH "*.h;*.hpp;*.cpp;*.ui")
     endif()
 
-    file(GLOB_RECURSE FILES_IN LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${PATH})
+    file(GLOB_RECURSE FILES_IN LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${SEARCH_PATH})
 
     set(${FILES} ${FILES_IN} PARENT_SCOPE)
 
@@ -42,12 +41,12 @@ function(qmlFileRecurseRelative FILES)
     unset(FILES_IN)
 
     if(DEFINED arg_PATH)
-        set(PATH "${arg_PATH}/*.qml;*.js;*.mjs")
+        set(SEARCH_PATH "${arg_PATH}/*.qml;${arg_PATH}/*.js;${arg_PATH}/*.mjs")
     else()
-        set(PATH "*.qml;*.js;*.mjs")
+        set(SEARCH_PATH "*.qml;*.js;*.mjs")
     endif()
 
-    file(GLOB_RECURSE FILES_IN LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${PATH})
+    file(GLOB_RECURSE FILES_IN LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${SEARCH_PATH})
 
     set(${FILES} ${FILES_IN} PARENT_SCOPE)
 

@@ -53,7 +53,7 @@ PaneTreeView {
     StandardObjectModel {
         id: treeModel
         FormButtonDelegate {
-            enabled: root.editable
+            enabled: root.editable && Swupdate.isReady
             highlighted: true
             label: qsTr("Mettre à jour")
             icon: MaterialIcons.update
@@ -62,7 +62,7 @@ PaneTreeView {
 
         SeparatorTreeDelegate {}
         FormButtonDelegate {
-            enabled: root.editable
+            enabled: root.editable && Swupdate.isReady
             label: qsTr("Relancer SWUpdate")
             icon: MaterialIcons.restart
             onClicked: root.restartButtonClicked()

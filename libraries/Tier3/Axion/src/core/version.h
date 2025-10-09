@@ -15,6 +15,7 @@ class Version : public QObject,
     Q_CONSTANT_REF_PROPERTY(QString, versionSuffix, VersionSuffix, "Unreleased")
     Q_CONSTANT_REF_PROPERTY(QString, company, Company, "N/A")
     Q_CONSTANT_REF_PROPERTY(QString, website, Website, "N/A")
+    Q_CONSTANT_REF_PROPERTY(QString, maintainer, Maintainer, "N/A")
     Q_CONSTANT_REF_PROPERTY(QString, copyright, Copyright, "N/A")
     Q_CONSTANT_REF_PROPERTY(QString, version, Version, {})
 

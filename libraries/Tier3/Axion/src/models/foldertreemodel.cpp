@@ -7,31 +7,6 @@
 #endif
 #include <QUtils>
 
-static QString getDriveDisplayType(const QStorageInfo& storage) {
-    const QMultiMap<QString, QString> typeMap = {
-        {"root", FolderTreeObject::tr("Système")},
-        {"boot", FolderTreeObject::tr("Système")},
-        {"overlay", FolderTreeObject::tr("Système")},
-        {"ext", FolderTreeObject::tr("Standard")},
-        {"ext2", FolderTreeObject::tr("Standard")},
-        {"ext3", FolderTreeObject::tr("Standard")},
-        {"ext4", FolderTreeObject::tr("Standard")},
-        {"fuseblk", FolderTreeObject::tr("Standard")},
-        {"exfat", FolderTreeObject::tr("USB")},
-        {"vfat", FolderTreeObject::tr("USB")},
-        {"ntfs", FolderTreeObject::tr("USB")},
-        {"ntfs-3g", FolderTreeObject::tr("USB")},
-        {"nfs", FolderTreeObject::tr("Réseau")},
-        {"smb", FolderTreeObject::tr("Réseau")},
-        {"cifs", FolderTreeObject::tr("Réseau")}
-    };
-    const QString tmp = storage.isRoot() ? "root" :
-                            (storage.rootPath().startsWith("/boot") || storage.name().toLower().contains("boot")) ? "boot" :
-                            storage.fileSystemType();
-
-    return typeMap.value(tmp, "");
-}
-
 FolderTreeObject::FolderTreeObject(const QString& path, const QFileInfo& info, bool fileIsStandardPath, QObject* parent):
     QTreeObject(parent),
     m_path(path),

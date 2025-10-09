@@ -43,4 +43,8 @@
 #define PROJECT_COPYRIGHT ""
 #endif
 
+#ifndef PROJECT_MAINTAINER
+#define PROJECT_MAINTAINER ""
+#endif
+
 #endif // QPROJECTDEFS_H
