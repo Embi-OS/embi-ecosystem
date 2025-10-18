@@ -1,4 +1,5 @@
 #include "qjsonmapper.h"
+#include "qjsonutils.h"
 #include "qutils_log.h"
 
 QJsonMapper::QJsonMapper(QObject *parent) :
@@ -17,7 +18,7 @@ QJsonMapper::QJsonMapper(const QString& jsonPath, const QString& baseName, QObje
     QVariantMapper(baseName, parent, &QJsonMapper::staticMetaObject),
     m_jsonPath(jsonPath),
     m_jsonFormat(QJsonMapper::Indented),
-    m_json(QString())
+    m_json(QByteArray())
 {
     connect(this, &QJsonMapper::jsonPathChanged, this, &QVariantMapper::queueSelect);
     connect(this, &QJsonMapper::jsonFormatChanged, this, &QVariantMapper::queueSubmit);
@@ -97,7 +98,7 @@ QVariantMap QJsonMapper::fromFile(bool* result)
 
     if (!file.open(QIODevice::ReadOnly))
     {
-        QUTILSLOG_WARNING()<<"Error opening file:"<<file.errorString();
+        QUTILSLOG_DEBUG()<<"Error opening file:"<<file.errorString();
         if(result)
             *result=false;
         return QVariantMap();
@@ -109,7 +110,7 @@ QVariantMap QJsonMapper::fromFile(bool* result)
     return fromJson(json, result);
 }
 
-QVariantMap QJsonMapper::fromJson(const QString& json, bool* result)
+QVariantMap QJsonMapper::fromJson(const QByteArray& json, bool* result)
 {
     if(json.isEmpty())
     {
@@ -119,27 +120,11 @@ QVariantMap QJsonMapper::fromJson(const QString& json, bool* result)
     }
 
     QJsonParseError parseError;
-    const QJsonDocument& jdoc = QJsonDocument::fromJson(json.toUtf8(), &parseError);
+    const QVariantMap map = QUtils::Json::jsonToVariant(json, &parseError).toMap();
 
-    if (parseError.error != QJsonParseError::NoError)
+    if (parseError.error!=QJsonParseError::NoError)
     {
         QUTILSLOG_WARNING()<<"Error loading json:"<<parseError.errorString();
-        if(result)
-            *result=false;
-        return QVariantMap();
-    }
-
-    if (jdoc.isNull())
-    {
-        QUTILSLOG_WARNING()<<"cannot load json";
-        if(result)
-            *result=false;
-        return QVariantMap();
-    }
-
-    if(!jdoc.isObject())
-    {
-        QUTILSLOG_WARNING()<<"cannot load non object json";
         if(result)
             *result=false;
         return QVariantMap();
@@ -154,14 +139,14 @@ QVariantMap QJsonMapper::fromJson(const QString& json, bool* result)
     if(result)
         *result=true;
 
-    return jdoc.object().toVariantMap();
+    return map;
 }
 
 bool QJsonMapper::submitJson(const QStringList& dirtyKeys)
 {
     Q_UNUSED(dirtyKeys)
 
-    m_json = QJsonDocument::fromVariant(getStorage()).toJson(QJsonDocument::JsonFormat(m_jsonFormat));
+    m_json = QUtils::Json::variantToJson(getStorage(), m_jsonFormat==QJsonMapper::Compact);
     emit this->jsonChanged(m_json);
 
     if(m_jsonPath.isEmpty() || m_baseName.isEmpty())
@@ -170,7 +155,7 @@ bool QJsonMapper::submitJson(const QStringList& dirtyKeys)
     return toFile(m_json.toUtf8());
 }
 
-bool QJsonMapper::toFile(const QString& json)
+bool QJsonMapper::toFile(const QByteArray& json)
 {
     if(!QFileInfo::exists(m_jsonPath))
     {
@@ -187,8 +172,11 @@ bool QJsonMapper::toFile(const QString& json)
         return false;
     }
 
-    bool ret = file.write(json.toUtf8());
+    const qint64 bytesWritten = file.write(json);
     file.close();
 
-    return ret;
+    if (bytesWritten < 0)
+        return false;
+
+    return true;
 }

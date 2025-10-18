@@ -16,6 +16,10 @@ public:
 
     int run(QAnyStringView uri, QAnyStringView typeName);
 
+    static void putEnvironmentVariable(const char *varName, QByteArrayView value);
+    static void unsetEnvironmentVariable(const char *varName);
+    static const QMap<QString, QByteArray>& environmentVariable();
+
 private:
     void installTranslators();
 

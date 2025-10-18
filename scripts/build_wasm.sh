@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 # Load common config and helpers
@@ -6,7 +6,9 @@ set -e
 
 start_timer
 
-EMSCRIPTEN_PATH="/home/romain-dev/A_VOH/emsdk"
+EMSCRIPTEN_PATH="/opt/emsdk"
+source "$EMSCRIPTEN_PATH/emsdk_env.sh"
+
 QT_WASM_KIT="wasm_singlethread"
 WASM_PREFIX_PATH="$QT_ROOT/$QT_VERSION/$QT_WASM_KIT"
 WASM_MAKE_PROGRAM="$QT_ROOT/Tools/Ninja/ninja"

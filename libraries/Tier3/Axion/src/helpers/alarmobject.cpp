@@ -21,21 +21,23 @@ AlarmModel::AlarmModel(QObject* parent) :
 
 void AlarmModel::invalidateRemainingTimeChange()
 {
+    int msToNextRingTime=-1;
     QDateTime nextRingDateTime;
     for(AlarmObject* alarmObject: this->modelIterator<AlarmObject>())
     {
-        if(alarmObject->getEnabled() && (nextRingDateTime.isNull() || alarmObject->getNextRingDateTime()<nextRingDateTime))
+        if(alarmObject->getEnabled() && (msToNextRingTime<0 || alarmObject->getMsToNextRingTime()<msToNextRingTime))
+        {
+            msToNextRingTime = alarmObject->getMsToNextRingTime();
             nextRingDateTime = alarmObject->getNextRingDateTime();
+        }
     }
 
-    const QDateTime now = QDateTime::currentDateTime();
-
     setNextRingDateTime(nextRingDateTime);
-    setMsToNextRingTime(now.msecsTo(m_nextRingDateTime));
+    setMsToNextRingTime(msToNextRingTime);
     if(m_msToNextRingTime<0)
         setNextTimeRing(tr("Toutes les alarmes sont désactivées"));
     else
-        setNextTimeRing(tr("Alarme dans %1 - %2").arg(AlarmObject::nextTimeRing(m_msToNextRingTime/1000, QLocale::NarrowFormat), QLocale().toString(m_nextRingDateTime, QLocale::NarrowFormat)));
+        setNextTimeRing(tr("Alarme dans %1 - %2").arg(AlarmObject::nextTimeRing(m_msToNextRingTime/1000), QLocale().toString(m_nextRingDateTime, QLocale::NarrowFormat)));
 }
 
 void AlarmModel::create(const QVariantMap& alarmMap)
@@ -63,7 +65,7 @@ AlarmObject::AlarmObject(QObject *parent):
     m_remainingTimeChangeCaller->setSingleShot(false);
     m_remainingTimeChangeCaller->setInterval(1000);
     connect(m_remainingTimeChangeCaller, &QTimer::timeout, this, &AlarmObject::invalidateRemainingTimeChange);
-    m_remainingTimeChangeCaller->start();
+    invalidateRemainingTimeChange();
 }
 
 QVariantMap AlarmObject::toMap() const
@@ -104,23 +106,23 @@ void AlarmObject::fromMap(const QVariantMap& alarmMap)
 
 void AlarmObject::ring()
 {
+    m_remainingTimeChangeCaller->stop();
     m_timer->stop();
 
     if(!m_enabled)
         return;
-    setEnabled(m_repeat);
 
     AXIONLOG_INFO()<<"Ringing alarm"<<m_name;
 
     emit this->ringing();
 
-    QTimer::singleShot(1000, this, [this](){
-        invalidate();
-    });
+    setEnabled(m_repeat);
+    queueInvalidate();
 }
 
 void AlarmObject::cancel()
 {
+    m_remainingTimeChangeCaller->stop();
     m_timer->stop();
 
     if(!m_enabled)
@@ -135,7 +137,13 @@ void AlarmObject::queueInvalidate()
     if(m_invalidateQueued)
         return;
     m_invalidateQueued = true;
-    QMetaObject::invokeMethod(this, &AlarmObject::invalidate, Qt::QueuedConnection);
+
+    m_remainingTimeChangeCaller->stop();
+    m_timer->stop();
+
+    QTimer::singleShot(1000, this, [this](){
+        invalidate();
+    });
 }
 
 void AlarmObject::invalidate()
@@ -154,7 +162,7 @@ void AlarmObject::invalidate()
     emit this->invalidated();
     m_invalidateQueued = false;
 
-    if(delay>1000)
+    if(m_timer->isActive() && m_timer->remainingTime()>1000)
         m_remainingTimeChangeCaller->start();
 }
 
@@ -198,13 +206,16 @@ QString AlarmObject::nextTimeRing(int secToNextRingTime, QLocale::FormatType for
 
 void AlarmObject::invalidateRemainingTimeChange()
 {
+    if(m_timer->isActive() && m_timer->remainingTime()<1000)
+        return;
+
     const QDateTime now = QDateTime::currentDateTime();
 
     setNextRingDateTime(calculateNextRingDateTime());
     setMsToNextRingTime(now.msecsTo(m_nextRingDateTime));
     setNextTimeRing(nextTimeRing(m_msToNextRingTime/1000));
 
-    if(m_timer->isActive() && qAbs(m_timer->remainingTime()-m_msToNextRingTime)>1000)
+    if(m_timer->isActive() && (m_timer->remainingTime()-m_msToNextRingTime)>1000)
     {
         AXIONLOG_WARNING()<<"AlarmObject.remainingTime differs from msToNextRingTime:"<<qAbs(m_timer->remainingTime()-m_msToNextRingTime)/1000.0<<"sec";
         m_timer->start(m_msToNextRingTime);

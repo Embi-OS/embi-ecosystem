@@ -183,7 +183,7 @@ void SqlManager::exportDatabase(const QString& path)
     DialogObject* dialog = DialogManager::Get()->showBusy(tr("Export en cours!"));
 
     auto future = QtConcurrent::run([path, dbPath]() {
-        QString dst=path+"/"+Paths::applicationName()+"_dbBackup/";
+        QString dst=path+"/"+Paths::applicationFileName()+"_dbBackup/";
         return QUtils::Filesystem::copy(dbPath, dst, true);
     });
 
@@ -199,7 +199,7 @@ void SqlManager::exportDatabase(const QString& path)
 void SqlManager::importDatabase(const QString& path)
 {
     QFileInfo fileInfo = QFileInfo(path);
-    if(fileInfo.baseName()!=Paths::applicationName()+"_dbBackup")
+    if(fileInfo.baseName()!=Paths::applicationFileName()+"_dbBackup")
     {
         DialogManager::Get()->showError(tr("Le chemin n'est pas compatible").arg(path));
         return;

@@ -77,6 +77,8 @@ public:
 
     Q_INVOKABLE QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
     Q_INVOKABLE bool setValue(const QString &key, const QVariant &value);
+    Q_INVOKABLE bool reset();
+    Q_INVOKABLE bool clear();
     Q_INVOKABLE QVariantMap values(QStringList keys = QStringList()) const;
     Q_INVOKABLE void remove(const QString &key);
     Q_INVOKABLE bool contains(const QString &key);

@@ -6,22 +6,26 @@
 
 static QDir writableLocation(const QString& folder)
 {
-    const QString applicationDirPath = QCoreApplication::applicationDirPath();
-    QString baseLocation = applicationDirPath;
-#if defined(Q_OS_BOOT2QT) || !defined(QT_CREATOR_RUN)
-    const QStorageInfo storageInfo = QStorageInfo(applicationDirPath);
-    if(storageInfo.isRoot())
-    {
-        baseLocation = QDir::homePath() + "/" +
-                       QCoreApplication::organizationName() + "/" +
-                       QCoreApplication::applicationName();
-    }
-#endif
+    static QString baseLocation;
+    static bool initialized = false;
 
-    QDir d(baseLocation+"/"+folder);
-    if (!d.mkpath(d.absolutePath()))
-    {
-        AXIONLOG_WARNING()<<"Failed to create directory:"<<d.absolutePath();
+    if (!initialized) {
+        const QString applicationDirPath = QCoreApplication::applicationDirPath();
+        baseLocation = applicationDirPath;
+#if defined(Q_OS_BOOT2QT) || !defined(QT_CREATOR_RUN)
+        const QStorageInfo storageInfo(applicationDirPath);
+        if (!baseLocation.endsWith(QCoreApplication::applicationName()) && storageInfo.isRoot()) {
+            baseLocation = QDir::homePath() + "/" +
+                           QCoreApplication::organizationName() + "/" +
+                           QCoreApplication::applicationName();
+        }
+#endif
+        initialized = true;
+    }
+
+    QDir d(baseLocation + "/" + folder);
+    if (!d.mkpath(d.absolutePath())) {
+        AXIONLOG_WARNING() << "Failed to create directory:" << d.absolutePath();
         return QDir();
     }
 
@@ -60,9 +64,14 @@ QString Paths::applicationFilePath()
     return QCoreApplication::applicationFilePath();
 }
 
-QString Paths::applicationName()
+QString Paths::applicationFileName()
 {
     return QFileInfo(QCoreApplication::applicationFilePath()).fileName();
+}
+
+QString Paths::applicationName()
+{
+    return QCoreApplication::applicationName();
 }
 
 QString Paths::local(const QString& file)
@@ -92,5 +101,11 @@ QString Paths::setting(const QString& file)
 QString Paths::database(const QString& file)
 {
     QString folder = "databases";
+    return specificLocation(folder, file);
+}
+
+QString Paths::cache(const QString& file)
+{
+    QString folder = "cache";
     return specificLocation(folder, file);
 }

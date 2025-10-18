@@ -4,8 +4,6 @@
 #include "qvariantmapper.h"
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonValue>
 #include <QFile>
 #include <QDir>
 
@@ -47,10 +45,10 @@ protected:
 
     QVariantMap selectJson(bool* result=nullptr);
     QVariantMap fromFile(bool* result=nullptr);
-    QVariantMap fromJson(const QString& json, bool* result=nullptr);
+    QVariantMap fromJson(const QByteArray& json, bool* result=nullptr);
 
     bool submitJson(const QStringList& dirtyKeys);
-    bool toFile(const QString& json);
+    bool toFile(const QByteArray& json);
 
     QString m_json;
 };

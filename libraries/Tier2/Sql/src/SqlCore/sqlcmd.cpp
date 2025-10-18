@@ -278,6 +278,7 @@ QString Sql::formatValue(QVariant value, const QSqlDriver *driver, bool trimStri
     if(driver->dbmsType()==QSqlDriver::MySqlServer && value.typeId()==QMetaType::QDateTime)
     {
         if (QDateTime dt = value.toDateTime().toUTC(); dt.isValid()) {
+            // TODO: QTBUG-135135
             // MySQL format doesn't like the "Z" at the end, but does allow
             // "+00:00" starting in version 8.0.19. However, if we got here,
             // it's because the MySQL server is too old for prepared queries
@@ -302,6 +303,10 @@ QString Sql::formatValue(QVariant value, const QSqlDriver *driver, bool trimStri
             return whereVal.at(0);
         else
             return QString("(%1)").arg(whereVal.join(','));
+    }
+    else if(value.typeId()==QMetaType::QVariantMap || value.typeId()==QMetaType::QVariantHash)
+    {
+        value = QString::fromUtf8(QUtils::Json::variantToJson(value));
     }
 
     QSqlField field;

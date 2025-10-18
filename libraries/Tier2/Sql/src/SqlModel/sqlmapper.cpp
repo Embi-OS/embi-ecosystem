@@ -198,6 +198,7 @@ QSWorker* SqlMapper::createSelectWorker()
     QVariantMap filters;
     filters.insert(m_methodField, m_methodValue);
 
+    worker->setAsynchronous(m_asynchronous);
     worker->setConnection(m_connection);
     worker->setTableName(m_baseName);
     worker->setFilters(filters);
@@ -215,6 +216,7 @@ QSWorker* SqlMapper::createSubmitWorker()
 {
     SqlSubmitWorker* worker = new SqlSubmitWorker(this);
 
+    worker->setAsynchronous(m_asynchronous);
     worker->setConnection(m_connection);
     worker->setTableName(m_baseName);
     worker->setPrimaryField(m_primaryField);

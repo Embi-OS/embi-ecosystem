@@ -30,6 +30,8 @@ LauncherInfosBar {
     }
 
     TapHandler {
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        grabPermissions: PointerHandler.TakeOverForbidden
         parent: root.rightLayout
         target: root.rightLayout
         cursorShape: Qt.PointingHandCursor

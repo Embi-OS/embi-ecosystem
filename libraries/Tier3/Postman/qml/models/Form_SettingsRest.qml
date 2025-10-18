@@ -19,6 +19,7 @@ FormObjectModel {
     FormTextFieldDelegate {
         label: qsTr("URL")
         targetProperty: "apiBaseUrl"
+        validator: UrlValidator{}
     }
     FormTextFieldDelegate {
         label: qsTr("Port")

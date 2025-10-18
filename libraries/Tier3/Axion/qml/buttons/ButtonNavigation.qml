@@ -68,6 +68,7 @@ Rectangle {
 
     TapHandler {
         id: mouseArea
+        grabPermissions: PointerHandler.TakeOverForbidden
         gesturePolicy: TapHandler.ReleaseWithinBounds
         onTapped: {
             if(!root.navigationLocked)

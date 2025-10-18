@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 # Load common config and helpers
@@ -16,6 +16,9 @@ LINUX_C_COMPILER_PATH="/bin/gcc"
 LINUX_BUILD_DIR="$BUILD_DIR/build-linux-Qt-$QT_VERSION"
 
 ensure_dir "$LINUX_BUILD_DIR"
+
+EXTRA_CMAKE_VARIABLES="${EXTRA_CMAKE_VARIABLES} \
+-DEXEC_CPACK:BOOL=ON"
 
 run_cmd "$LINUX_CMAKE_BIN" --log-level=NOTICE -G "$GENERATOR" -S "$PROJECT_ROOT" -B "$LINUX_BUILD_DIR" \
     -DCMAKE_MAKE_PROGRAM:FILEPATH="$LINUX_MAKE_PROGRAM" \

@@ -65,8 +65,8 @@ PaneTreeView {
         InfoTreeDelegate {text: "API url"; info: RestManager.apiBaseUrl }
         InfoTreeDelegate {text: "API port"; info: RestManager.apiPort }
         InfoTreeDelegate {text: "API trailing slash"; info: RestManager.apiTrailingSlash }
-        FormInfoDelegate {label: "API global headers"; value: RestManager.client.globalHeaders; valueType: FormValueTypes.Map; visible: root.editable }
-        FormInfoDelegate {label: "API global parameters"; value: RestManager.client.globalParameters; valueType: FormValueTypes.Map; visible: root.editable }
+        FormLabelDelegate {label: "API global headers"; value: RestManager.client.globalHeaders; valueType: FormValueTypes.Map; visible: root.editable }
+        FormLabelDelegate {label: "API global parameters"; value: RestManager.client.globalParameters; valueType: FormValueTypes.Map; visible: root.editable }
         FormButtonDelegate {
             visible: root.editable
             label: qsTr("Editer")

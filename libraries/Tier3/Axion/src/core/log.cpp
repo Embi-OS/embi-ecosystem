@@ -47,7 +47,7 @@ bool Log::copy(const QString& path)
 {
     AXIONLOG_INFO()<<"Exporting logs !!!";
 
-    QString dst=path+"/"+Paths::applicationName()+"_logs/";
+    QString dst=path+"/"+Paths::applicationFileName()+"_logs/";
     return QUtils::Filesystem::copy(Paths::log(), dst, true);
 }
 

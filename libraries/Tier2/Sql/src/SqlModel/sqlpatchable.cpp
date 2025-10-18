@@ -92,6 +92,9 @@ bool SqlPatchable::insert(int index, const QVariant& variant)
         if(!m_lastError.isValid())
         {
             QSqlQuery query = SqlBuilder::select(m_columns).from(m_tableName).join(m_joins).where(m_primaryField, reply.lastInsertId()).limit(1).connection(m_connection).exec();
+            if(!query.seek(0))
+                return false;
+
             QVariantMap data;
             const QSqlRecord rec = query.record();
             for(int i = 0; i < rec.count(); ++i)
@@ -124,6 +127,9 @@ bool SqlPatchable::set(int index, const QVariant& variant)
     if(!m_lastError.isValid())
     {
         QSqlQuery query = SqlBuilder::select(m_columns).from(m_tableName).join(m_joins).where(m_primaryField, primaryValue).limit(1).connection(m_connection).exec();
+        if(!query.seek(0))
+            return false;
+
         QVariantMap data;
         const QSqlRecord rec = query.record();
         for(int i = 0; i < rec.count(); ++i)

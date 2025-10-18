@@ -91,6 +91,7 @@ void SystemHelper::clearCache()
         auto future = QtConcurrent::run([](){
             bool result = true;
             result &= QUtils::Filesystem::clear(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
+            result &= QUtils::Filesystem::clear(Paths::cache());
             return result;
         });
 
@@ -154,6 +155,7 @@ void SystemHelper::clearAll()
             result &= QUtils::Filesystem::clear(Paths::setting());
             result &= QUtils::Filesystem::clear(Paths::database());
             result &= QUtils::Filesystem::clear(Paths::log());
+            result &= QUtils::Filesystem::clear(Paths::cache());
             return result;
         });
 

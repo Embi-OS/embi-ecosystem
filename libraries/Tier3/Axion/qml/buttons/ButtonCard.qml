@@ -80,6 +80,7 @@ Rectangle {
     TapHandler {
         id: tapHandler
         enabled: false
+        grabPermissions: PointerHandler.TakeOverForbidden
         gesturePolicy: TapHandler.ReleaseWithinBounds
         onTapped: root.clicked()
     }

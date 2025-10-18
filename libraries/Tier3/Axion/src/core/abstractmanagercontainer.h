@@ -9,7 +9,7 @@ class AbstractManagerContainer : public AbstractManager
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_CONSTANT_PTR_PROPERTY(QObjectListModel, managers, Managers, nullptr)
+    Q_COMPOSITION_PROPERTY(QObjectListModel, managers, nullptr)
 
 public:
     explicit AbstractManagerContainer(QObject *parent = nullptr);

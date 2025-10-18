@@ -53,7 +53,7 @@ void BackupExporter::run(const QString& path)
         }
 
         QString folder=dir.dirName();
-        QString dst=m_exportPath+"/"+Paths::applicationName()+"_Backup/"+folder;
+        QString dst=m_exportPath+"/"+Paths::applicationFileName()+"_Backup/"+folder;
 
         auto future = QtConcurrent::run([path, dst](){
             return QUtils::Filesystem::copy(path, dst, true);
@@ -92,6 +92,8 @@ void BackupExporter::run(const QString& path)
         .fail([](){ exitWithError(Paths::capture()); })
         .then<>([exportStep](){ return exportStep(Paths::log()); })
         .fail([](){ exitWithError(Paths::log()); })
+        .then<>([exportStep](){ return exportStep(Paths::cache()); })
+        .fail([](){ exitWithError(Paths::cache()); })
         .done([endStep](){ endStep(); });
     }, Qt::QueuedConnection);
 }

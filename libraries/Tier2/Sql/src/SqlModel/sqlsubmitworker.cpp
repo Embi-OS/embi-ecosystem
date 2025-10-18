@@ -23,7 +23,20 @@ bool SqlSubmitWorker::doRun()
     const QVariantList source = m_source;
 
     QDeferred<long long, QSqlError, QVariant> defer;
-    QFuture<bool> future = QtConcurrent::run([defer, connection, tableName, primaryField, fields, omit, expand, joins, destination, source]() mutable {
+    defer.progress([this](long long progress, const QSqlError&, const QVariant& reply) {
+        emit this->progress(reply.toString(), progress);
+    });
+    defer.fail([this](long long, const QSqlError& error, const QVariant& reply) {
+        emit this->failed(error.type(), error.text(), reply);
+    });
+    defer.done([this](long long, const QSqlError& error, const QVariant& reply) {
+        emit this->succeeded(error.type(), reply);
+    });
+    defer.complete([this](bool, long long, const QSqlError& error, const QVariant&) {
+        emit this->finished(error.type());
+    }, m_asynchronous ? Qt::QueuedConnection : Qt::AutoConnection);
+
+    auto run = [defer, connection, tableName, primaryField, fields, omit, expand, joins, destination, source]() mutable {
 
         SqlPatchable sqlPatchable;
         sqlPatchable.setConnection(connection);
@@ -40,20 +53,12 @@ bool SqlSubmitWorker::doRun()
         std::tuple<bool, long long, QSqlError, QVariant>(result, 0, sqlPatchable.lastError(), sqlPatchable.getSource());
         defer.end(result, 0, sqlPatchable.lastError(), sqlPatchable.getSource());
         return result;
-    });
+    };
 
-    defer.progress([this](long long progress, const QSqlError&, const QVariant& reply) {
-        emit this->progress(reply.toString(), progress);
-    });
-    defer.fail([this](long long, const QSqlError& error, const QVariant& reply) {
-        emit this->failed(error.type(), error.text(), reply);
-    });
-    defer.done([this](long long, const QSqlError& error, const QVariant& reply) {
-        emit this->succeeded(error.type(), reply);
-    });
-    defer.complete([this](bool, long long, const QSqlError& error, const QVariant&) {
-        emit this->finished(error.type());
-    }, Qt::QueuedConnection);
+    if(m_asynchronous)
+        QFuture<bool> future = QtConcurrent::run(run);
+    else
+        run();
 
     return true;
 }

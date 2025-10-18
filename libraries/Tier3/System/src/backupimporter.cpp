@@ -36,7 +36,7 @@ void BackupImporter::run(const QString& path)
         exitWithError(tr("Le chemin %1 n'existe pas").arg(path));
         return;
     }
-    if(fileInfo.baseName()!=Paths::applicationName()+"_Backup")
+    if(fileInfo.baseName()!=Paths::applicationFileName()+"_Backup")
     {
         exitWithError(tr("Le chemin n'est pas compatible").arg(path));
         return;
@@ -93,6 +93,8 @@ void BackupImporter::run(const QString& path)
         .fail([](){ exitWithError(Paths::setting()); })
         .then<>([importStep](){ return importStep(Paths::database()); })
         .fail([](){ exitWithError(Paths::database()); })
+        .then<>([importStep](){ return importStep(Paths::cache()); })
+        .fail([](){ exitWithError(Paths::cache()); })
         .done([endStep](){ endStep(); });
     }, Qt::QueuedConnection);
 }

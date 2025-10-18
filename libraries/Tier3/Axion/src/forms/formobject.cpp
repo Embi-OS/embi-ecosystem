@@ -614,9 +614,13 @@ QString FormObject::valueToText(const QVariant& value) const
             break;
         case FormValueTypes::List:
             text = QString::fromUtf8(QUtils::Log::variantToJson(value));
+            if(text.endsWith('\n'))
+                text.removeLast();
             break;
         case FormValueTypes::Map:
             text = QString::fromUtf8(QUtils::Log::variantToJson(value));
+            if(text.endsWith('\n'))
+                text.removeLast();
             break;
         case FormValueTypes::Integer:
             text = QLocale().c().toString(value.toLongLong());

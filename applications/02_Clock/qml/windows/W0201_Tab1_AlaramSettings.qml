@@ -60,11 +60,7 @@ Item {
             sortOrder: Qt.DescendingOrder
         },
         RoleSorter {
-            roleName: "hour"
-            sortOrder: Qt.AscendingOrder
-        },
-        RoleSorter {
-            roleName: "minute"
+            roleName: "msToNextRingTime"
             sortOrder: Qt.AscendingOrder
         }]
     }

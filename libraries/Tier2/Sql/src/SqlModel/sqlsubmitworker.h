@@ -9,6 +9,7 @@ class SqlSubmitWorker : public QSWorker
     Q_OBJECT
     QML_ELEMENT
 
+    Q_WRITABLE_VAR_PROPERTY(bool, asynchronous, Asynchronous, true)
     Q_WRITABLE_REF_PROPERTY(QString, connection, Connection, SqlDefaultConnection)
     Q_WRITABLE_REF_PROPERTY(QString, tableName, TableName, "")
     Q_WRITABLE_REF_PROPERTY(QString, primaryField, PrimaryField, "")

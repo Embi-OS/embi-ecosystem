@@ -98,7 +98,7 @@ bool SqlDbManager::openConnection(const SqlDbProfile& profile)
     }
     else
     {
-        QSqlQuery query = SqlBuilder::version().exec();
+        QSqlQuery query = SqlBuilder::version().connection(profile.connectionName).exec();
         const QString version = SqlBuilder::value(query,0,"VERSION").toString();
         SQLLOG_INFO()<<"Database"<<profile.connectionName<<"Version:"<<version;
     }

@@ -91,6 +91,26 @@ bool QVariantMapper::setValue(const QString &key, const QVariant &value)
     return true;
 }
 
+bool QVariantMapper::reset()
+{
+    if(m_storage.isEmpty())
+        return false;
+    const QStringList keys = m_storage.keys();
+    bool result = true;
+    for(const QString& key: keys)
+        result &= setValue(key, QVariant());
+    return result;
+}
+
+bool QVariantMapper::clear()
+{
+    if(m_storage.isEmpty())
+        return false;
+    m_storage.clear();
+    contentInvalidate();
+    return true;
+}
+
 QVariantMap QVariantMapper::values(QStringList keys) const
 {
     if(keys.isEmpty())
@@ -289,7 +309,7 @@ void QVariantMapper::onPropertyChanged()
         if(signalIndex==mp.notifySignalIndex())
         {
             const QVariant value = readProperty(object, mp);
-            setValue(mappedProperty.name,value);
+            setValue(mappedProperty.name, value);
             QUTILSLOG_TRACE()<<"Property"<<object<<mappedProperty.name<<"updated in"<<this;
             return;
         }

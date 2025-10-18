@@ -1,4 +1,10 @@
+find_package(Qt6 REQUIRED COMPONENTS Core)
+
 function(create_deb_package TARGET)
+
+    if(NOT EXEC_CPACK)
+        return()
+    endif()
 
     set(args_option "")
     set(args_single "")
@@ -44,7 +50,6 @@ function(create_deb_package TARGET)
     # ---------------------------
     # CPack configuration
     set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}_Deb/${arg_OUTPUT_DIRECTORY_PREFIX}/${TARGET}")
-    set(DEB_DIRECTORY "${OUTPUT_DIRECTORY}/..")
     set(CPACK_PACKAGE_NAME ${TARGET})
     set(CPACK_PACKAGE_VERSION ${CMAKE_PROJECT_VERSION})
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${CMAKE_PROJECT_DESCRIPTION})
@@ -52,11 +57,15 @@ function(create_deb_package TARGET)
     set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
     set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
     set(CPACK_VERBATIM_VARIABLES ON)
-    set(CPACK_PACKAGE_DIRECTORY "${DEB_DIRECTORY}")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/${QT_DEPLOY_PREFIX}/${TARGET}")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CMAKE_PROJECT_MAINTAINER}")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libstdc++6, libgcc-s1, libxcb-cursor0")
+    set(CPACK_OUTPUT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_CPackConfig.cmake")
+    set(CPACK_SOURCE_OUTPUT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_CPackSourceConfig.cmake")
+    set(CPACK_INSTALLED_DIRECTORIES "${OUTPUT_DIRECTORY};/")
     include(CPack)
+
+    message(STATUS "[DEB] After configuration, you will find the cpack config file at: ${CPACK_OUTPUT_CONFIG_FILE}")
 
     # ---------------------------
     # This makes the install step happen automatically as part of the build.
@@ -67,7 +76,7 @@ function(create_deb_package TARGET)
         OUTPUT "${OUTPUT_DIRECTORY}/.stamp"
         COMMAND ${CMAKE_COMMAND} -E rm -rf "${OUTPUT_DIRECTORY}"
         COMMAND ${CMAKE_COMMAND} -E make_directory "${OUTPUT_DIRECTORY}"
-        COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}" --prefix "${OUTPUT_DIRECTORY}" --config $<CONFIG>
+        COMMAND ${CMAKE_COMMAND} --install "${CMAKE_CURRENT_BINARY_DIR}" --prefix "${OUTPUT_DIRECTORY}" --config $<CONFIG>
         COMMAND ${CMAKE_COMMAND} -E touch "${OUTPUT_DIRECTORY}/.stamp"
         DEPENDS ${TARGET}
         COMMENT "[RUNDIR] Installing and deploying ${TARGET} into ${OUTPUT_DIRECTORY}"
@@ -82,24 +91,26 @@ function(create_deb_package TARGET)
 
     # ---------------------------
     # Run cpack at build time
-    if(EXEC_CPACK)
-        find_program(CPACK_EXEC cpack REQUIRED)
-        set(DEB_FILE "${OUTPUT_DIRECTORY}/${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}.deb")
+    find_program(CPACK_EXEC cpack REQUIRED)
+    set(DEB_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}.deb")
+    set(DEB_FILE "${CMAKE_CURRENT_BINARY_DIR}/${DEB_FILE_NAME}")
+    set(OUTPUT_DEB_FILE "${OUTPUT_DIRECTORY}/../${DEB_FILE_NAME}")
 
-        add_custom_command(
-            OUTPUT ${DEB_FILE}
-            COMMAND "${CPACK_EXEC}" -G DEB --config "${CMAKE_BINARY_DIR}/CPackConfig.cmake"
-            DEPENDS "${TARGET}_rundir"
-            COMMENT "[DEB] Creating ${DEB_FILE} using CPack"
-            VERBATIM
-        )
+    add_custom_command(
+        OUTPUT ${OUTPUT_DEB_FILE}
+        COMMAND "${CPACK_EXEC}" -G DEB --config "${CPACK_OUTPUT_CONFIG_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${OUTPUT_DIRECTORY}/.."
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${DEB_FILE}" "${OUTPUT_DIRECTORY}/.."
+        DEPENDS "${TARGET}_rundir"
+        COMMENT "[DEB] Creating ${OUTPUT_DEB_FILE} using CPack"
+        VERBATIM
+    )
 
-        add_custom_target("${TARGET}_deb" ALL
-            DEPENDS "${DEB_FILE}"
-        )
+    add_custom_target("${TARGET}_deb" ALL
+        DEPENDS "${OUTPUT_DEB_FILE}"
+    )
 
-        message(STATUS "[DEB] After build, package will be at ${DEB_FILE}")
-    endif()
+    message(STATUS "[DEB] After build, package will be at ${OUTPUT_DEB_FILE}")
 
 endfunction()
 

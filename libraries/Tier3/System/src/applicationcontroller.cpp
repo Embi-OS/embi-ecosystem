@@ -94,7 +94,7 @@ void ApplicationController::update(const QString& path)
         exitWithError(tr("Le fichier %1 n'existe pas").arg(path));
         return;
     }
-    if(fileInfo.fileName()!=Paths::applicationName())
+    if(fileInfo.fileName()!=Paths::applicationFileName())
     {
         exitWithError(tr("La mise à jour n'est pas compatible").arg(path));
         return;
@@ -208,17 +208,18 @@ void ApplicationController::install(const QString& path)
             return;
         }
 
-        const QFileInfo currentpath = QFileInfo(QCoreApplication::applicationFilePath());
-        QDir installDir = QDir(currentpath.absolutePath());
-        installDir.cdUp();
-
-        QString applicationName = fileInfo.baseName();
-        static QRegularExpression pattern("^A\\d{2}_.+");
-        if (applicationName.contains(pattern)) {
-            applicationName.removeFirst();
+        const QString applicationDirPath = QCoreApplication::applicationDirPath();
+        QDir installDir = QDir(applicationDirPath);
+        if (applicationDirPath.endsWith(QCoreApplication::applicationName())) {
+            installDir.cdUp();
+            QString applicationName = fileInfo.baseName();
+            static const QRegularExpression pattern("^A\\d{2}_.+");
+            if (applicationName.contains(pattern)) {
+                applicationName.removeFirst();
+            }
+            installDir.mkpath(applicationName);
+            installDir.cd(applicationName);
         }
-        installDir.mkpath(applicationName);
-        installDir.cd(applicationName);
 
         const QString installFilePath = installDir.absoluteFilePath(fileInfo.fileName());
         bool result = QUtils::Filesystem::copy(path, installFilePath, true);
@@ -333,7 +334,6 @@ void ApplicationController::removeDefault()
     SOLIDLOG_INFO()<<"Removing default";
     QProcess *proc = new QProcess(this);
     connect(proc, &QProcess::finished, this, [this, proc](int exitCode, QProcess::ExitStatus exitStatus) {
-        qTrace()<<exitCode<<exitStatus;
         if(exitCode != 0)
             emit this->errorOccurred(proc->readAllStandardError());
         emit this->currentDefaultChanged();

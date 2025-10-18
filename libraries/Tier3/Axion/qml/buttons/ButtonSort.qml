@@ -38,6 +38,7 @@ Rectangle {
 
     TapHandler {
         id: mouseArea
+        grabPermissions: PointerHandler.TakeOverForbidden
         onTapped: root.clicked()
     }
 }

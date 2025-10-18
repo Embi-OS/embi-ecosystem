@@ -50,6 +50,7 @@ SvgColorImage {
     TapHandler {
         id: tapHandler
         margin: 5
+        grabPermissions: PointerHandler.TakeOverForbidden
         gesturePolicy: TapHandler.ReleaseWithinBounds
         onTapped: root.clicked()
         onDoubleTapped: root.doubleClicked()

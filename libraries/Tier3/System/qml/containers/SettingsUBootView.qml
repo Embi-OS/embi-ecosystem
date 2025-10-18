@@ -53,7 +53,7 @@ PaneTreeView {
             }
         }
         SeparatorTreeDelegate {}
-        FormInfoDelegate {
+        FormLabelDelegate {
             visible: ubootSettings.canSetOverlays
             label: "Overlays"
             valueType: FormValueTypes.List

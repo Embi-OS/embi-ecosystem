@@ -34,6 +34,10 @@ BasicPane {
     property alias viewRemoveDisplaced: view.removeDisplaced
     property alias viewMoveDisplaced: view.moveDisplaced
 
+    property bool canRefresh: false
+
+    signal refreshTriggered()
+
     function gotoIndex(index: int, mode: int) {
         view.gotoIndex(index, mode)
     }
@@ -77,6 +81,15 @@ BasicPane {
             // ensure opacity and scale values return to 1.0
             NumberAnimation { property: "opacity"; to: 1.0 }
             NumberAnimation { property: "scale"; to: 1.0 }
+        }
+
+        Loader {
+            id: busyIndicatorLoader
+            active: root.canRefresh
+            sourceComponent: PullToRefreshHandle {
+                parent: view
+                onTriggered: root.refreshTriggered()
+            }
         }
     }
 }

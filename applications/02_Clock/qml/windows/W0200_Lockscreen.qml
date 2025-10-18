@@ -72,6 +72,7 @@ Rectangle {
     }
 
     TapHandler {
+        grabPermissions: PointerHandler.TakeOverForbidden
         onTapped: {
             if(ClockDisplay.state===ClockDisplayStates.Off)
                 ClockDisplay.gotoLocked()

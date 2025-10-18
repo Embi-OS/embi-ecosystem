@@ -28,7 +28,20 @@ bool SqlSelectWorker::doRun()
     const int page = m_page;
 
     QDeferred<long long, QSqlError, QVariant> defer;
-    QFuture<bool> future = QtConcurrent::run([defer, connection, tableName, filterInverted, filters, sorters, fields, omit, expand, joins, limit, offset, perPage, page]() mutable {
+    defer.progress([this](long long progress, const QSqlError&, const QVariant& reply) {
+        emit this->progress(reply.toString(), progress);
+    });
+    defer.fail([this](long long, const QSqlError& error, const QVariant& reply) {
+        emit this->failed(error.type(), error.text(), reply);
+    });
+    defer.done([this](long long, const QSqlError& error, const QVariant& reply) {
+        emit this->succeeded(error.type(), reply);
+    });
+    defer.complete([this](bool, long long, const QSqlError& error, const QVariant&) {
+        emit this->finished(error.type());
+    }, m_asynchronous ? Qt::QueuedConnection : Qt::AutoConnection);
+
+    auto run = [defer, connection, tableName, filterInverted, filters, sorters, fields, omit, expand, joins, limit, offset, perPage, page]() mutable {
 
         if (tableName.isEmpty()) {
             QSqlError error("No table name given", QString(), QSqlError::StatementError);
@@ -92,20 +105,12 @@ bool SqlSelectWorker::doRun()
 
         defer.end(!sqlReply.lastError().isValid(), 0, sqlReply.lastError(), reply);
         return !sqlReply.lastError().isValid();
-    });
+    };
 
-    defer.progress([this](long long progress, const QSqlError&, const QVariant& reply) {
-        emit this->progress(reply.toString(), progress);
-    });
-    defer.fail([this](long long, const QSqlError& error, const QVariant& reply) {
-        emit this->failed(error.type(), error.text(), reply);
-    });
-    defer.done([this](long long, const QSqlError& error, const QVariant& reply) {
-        emit this->succeeded(error.type(), reply);
-    });
-    defer.complete([this](bool, long long, const QSqlError& error, const QVariant&) {
-        emit this->finished(error.type());
-    }, Qt::QueuedConnection);
+    if(m_asynchronous)
+        QFuture<bool> future = QtConcurrent::run(run);
+    else
+        run();
 
     return true;
 }

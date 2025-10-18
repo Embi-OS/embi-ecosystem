@@ -92,7 +92,6 @@ void QLoopProcessor::end()
     setRunning(false);
 
     QUTILSLOG_DEBUG()<<"QLoopProcessor took"<<m_elapsedTotal.nsecsElapsed()/1000000.0<<"ms for"<<m_index<<"elements";
-    qTrace()<<"QLoopProcessor took"<<m_elapsedTotal.nsecsElapsed()/1000000.0<<"ms and"<<m_release<<"releases for"<<m_index<<"elements";
 
     if(m_autoDelete)
         deleteLater();

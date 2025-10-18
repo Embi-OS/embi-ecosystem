@@ -19,6 +19,7 @@ class SqlModel: public QVariantListModel
     // QVariantListModel::primaryField
     // QVariantListModel::roles
     // QVariantListModel::placeholder
+    Q_WRITABLE_VAR_PROPERTY(bool, asynchronous, Asynchronous, true)
     Q_WRITABLE_REF_PROPERTY(QString, connection, Connection, SqlDefaultConnection)
 
     // Specify filters parameters

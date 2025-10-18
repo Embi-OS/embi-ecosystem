@@ -31,4 +31,6 @@ embi_add_qml_module(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_try_link_libraries(${PROJECT_NAME} swupdate SWUPDATE)
+if(NOT DISABLE_SWUPDATE)
+    target_try_link_libraries(${PROJECT_NAME} swupdate SWUPDATE)
+endif()

@@ -249,6 +249,7 @@ QSWorker* SqlModel::createSelectWorker()
             sorters.insert(m_sortRoleName, m_sortOrder);
     }
 
+    worker->setAsynchronous(m_asynchronous);
     worker->setConnection(m_connection);
     worker->setTableName(m_baseName);
     worker->setFilterInverted(m_filterInverted);
@@ -274,6 +275,7 @@ QSWorker* SqlModel::createSubmitWorker()
 {
     SqlSubmitWorker* worker = new SqlSubmitWorker(this);
 
+    worker->setAsynchronous(m_asynchronous);
     worker->setConnection(m_connection);
     worker->setTableName(m_baseName);
     worker->setPrimaryField(m_primaryField);

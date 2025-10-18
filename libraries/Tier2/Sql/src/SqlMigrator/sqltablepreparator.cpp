@@ -113,7 +113,7 @@ bool SqlTablePreparator::createIndexes()
     for (const QString& index : indexToRemove)
     {
         SQLLOG_DEBUG()<<"Dropping index"<<index;
-        SqlBuilder::dropIndex(index).ifExists().table(m_name).exec(&result);
+        SqlBuilder::dropIndex(index).ifExists().table(m_name).connection(m_connectionName).exec(&result);
     }
 
     // 5. Créer les index manquants
@@ -131,7 +131,7 @@ bool SqlTablePreparator::createIndexes()
         }
 
         SQLLOG_INFO()<<"Creating index"<<indexName<<"on table:"<<m_name;
-        SqlBuilder::createIndex(indexName).ifNotExists().table(m_name).field(fields.join(',')).exec(&result);
+        SqlBuilder::createIndex(indexName).ifNotExists().table(m_name).field(fields.join(',')).connection(m_connectionName).exec(&result);
 
         if (!result) {
             SQLLOG_WARNING()<<"Failed to create index"<<indexName;

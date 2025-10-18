@@ -17,12 +17,14 @@ protected:
 
 public:
     Q_INVOKABLE static QString applicationFilePath();
+    Q_INVOKABLE static QString applicationFileName();
     Q_INVOKABLE static QString applicationName();
     Q_INVOKABLE static QString local(const QString& file = QString());
     Q_INVOKABLE static QString log(const QString& file = QString());
     Q_INVOKABLE static QString capture(const QString& file = QString());
     Q_INVOKABLE static QString setting(const QString& file = QString());
     Q_INVOKABLE static QString database(const QString& file = QString());
+    Q_INVOKABLE static QString cache(const QString& file = QString());
 
     Q_INVOKABLE static QString specificLocation(const QString& folder, const QString& file = QString());
 

@@ -59,6 +59,7 @@ T.Label {
 
         TapHandler {
             id: tapHandler
+            grabPermissions: PointerHandler.TakeOverForbidden
             gesturePolicy: TapHandler.ReleaseWithinBounds
             onTapped: root.clicked()
             onDoubleTapped: root.doubleClicked()

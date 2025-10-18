@@ -18,6 +18,7 @@ class SqlMapper: public QVariantMapper
     // QVariantMapper::primaryField
     // QVariantMapper::roles
     // QVariantMapper::placeholder
+    Q_WRITABLE_VAR_PROPERTY(bool, asynchronous, Asynchronous, true)
     Q_WRITABLE_REF_PROPERTY(QString, connection, Connection, SqlDefaultConnection)
 
     // Specify method

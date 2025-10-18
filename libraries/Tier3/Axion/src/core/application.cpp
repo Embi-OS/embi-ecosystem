@@ -1,13 +1,28 @@
 #include "application.h"
 #include "axion_log.h"
 
-#include "version.h"
+#include "axion_helpertypes.h"
 #include "log.h"
 #include "paths.h"
-#include "axion_helpertypes.h"
+#include "version.h"
 
 #ifdef Q_OS_WASM
 #include <emscripten/emscripten.h>
+#endif
+
+using QByteArrayMap = QMap<QString,QByteArray>;
+#ifndef Q_OS_WASM
+Q_GLOBAL_STATIC_WITH_ARGS(QByteArrayMap, s_environmentVariable, ({
+    // {"QSG_VISUALIZE", "overdraw"},
+    // {"QT_DEBUG_PLUGINS", "1"},
+    // {"QML_IMPORT_TRACE", "1"},
+    // {"QML_DISABLE_DISK_CACHE", "1"},
+    {"QT_MEDIA_BACKEND", "gstreamer"},
+    {"QT_IM_MODULE", "qtvirtualkeyboard"},
+    {"QT_VIRTUALKEYBOARD_STYLE", "axion"}
+}))
+#else
+Q_GLOBAL_STATIC_WITH_ARGS(QByteArrayMap, s_environmentVariable, ({}))
 #endif
 
 static QApplication *createQtApplication(int &argc, char **argv, const QString &applicationName)
@@ -21,15 +36,11 @@ static QApplication *createQtApplication(int &argc, char **argv, const QString &
     QQuickStyle::setStyle(QStringLiteral("Material"));
 
 #ifndef Q_OS_WASM
-    qputenv("QT_MEDIA_BACKEND", QByteArray("gstreamer"));
-    qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
-    qputenv("QT_VIRTUALKEYBOARD_STYLE", QByteArray("axion"));
+    for (auto it = s_environmentVariable->constBegin(); it != s_environmentVariable->constEnd(); ++it) {
+        qDebug()<<"qputenv"<<it.key()<<it.value();
+        qputenv(it.key().toUtf8().constData(), it.value());
+    }
 #endif
-
-    // qputenv("QSG_VISUALIZE", QByteArray("overdraw"));
-    // qputenv("QT_DEBUG_PLUGINS", QByteArray("1"));
-    // qputenv("QML_IMPORT_TRACE", QByteArray("1"));
-    // qputenv("QML_DISABLE_DISK_CACHE", QByteArray("1"));
 
     QApplication *app = new QApplication(argc, argv);
 
@@ -61,6 +72,33 @@ Application::~Application()
     m_application.reset();
 
     Log::unInit();
+}
+
+void Application::putEnvironmentVariable(const char *varName, QByteArrayView value)
+{
+    if (!varName || !*varName)
+        return;
+
+    QMap<QString, QByteArray> &map = *s_environmentVariable();
+    const QString key = QString::fromUtf8(varName);
+
+    map[key] = value.toByteArray();
+}
+
+void Application::unsetEnvironmentVariable(const char *varName)
+{
+    if (!varName || !*varName)
+        return;
+
+    QMap<QString, QByteArray> &map = *s_environmentVariable();
+    const QString key = QString::fromUtf8(varName);
+
+    map.remove(key);
+}
+
+const QMap<QString, QByteArray>& Application::environmentVariable()
+{
+    return *s_environmentVariable();
 }
 
 int Application::run(QAnyStringView uri, QAnyStringView typeName)

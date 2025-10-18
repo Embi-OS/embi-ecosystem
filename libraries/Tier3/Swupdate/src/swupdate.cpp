@@ -131,7 +131,7 @@ void Swupdate::open()
 bool Swupdate::update(const QString& file)
 {
 #ifdef SWUPDATE_FOUND
-    return QProcess::execute("swupdate-client", {"-q", "-p", file});
+    return QProcess::startDetached("swupdate-client", {"-q", "-p", file});
 #else
     return false;
 #endif

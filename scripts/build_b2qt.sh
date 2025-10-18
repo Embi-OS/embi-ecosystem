@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 # Load common config and helpers
@@ -7,7 +7,7 @@ set -e
 start_timer
 
 QT_B2QT_KIT="raspberrypi-armv8"
-B2QT_PREFIX_PATH="$QT_ROOT/$QT_VERSION/EmbiOS/$QT_B2QT_KIT/toolchain/sysroots/x86_64-pokysdk-linux"
+B2QT_PREFIX_PATH="$QT_ROOT/$QT_VERSION/Boot2Qt/$QT_B2QT_KIT/toolchain/sysroots/x86_64-pokysdk-linux"
 B2QT_MAKE_PROGRAM="$B2QT_PREFIX_PATH/usr/bin/ninja"
 B2QT_CMAKE_BIN="$B2QT_PREFIX_PATH/usr/bin/cmake"
 B2QT_TOOLCHAIN_PATH="$B2QT_PREFIX_PATH/usr/lib/cmake/Qt6/qt.toolchain.cmake"

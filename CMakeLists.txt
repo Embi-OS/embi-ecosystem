@@ -17,6 +17,11 @@ if(NOT DEFINED DEFAULT_PROJECT_VERSION)
     set(DEFAULT_PROJECT_VERSION 1.0.0)  # default version
 endif()
 
+# Only set if DEFAULT_PROJECT_DESCRIPTION is not defined
+if(NOT DEFINED DEFAULT_PROJECT_DESCRIPTION)
+    set(DEFAULT_PROJECT_DESCRIPTION "")  # default description
+endif()
+
 project(Embi-Ecosystem
     VERSION ${DEFAULT_PROJECT_VERSION}
     LANGUAGES CXX)
@@ -25,6 +30,7 @@ set(CMAKE_PROJECT_WEBSITE "github.com/Embi-OS")
 set(CMAKE_PROJECT_DOMAIN "embi.os")
 set(CMAKE_PROJECT_COPYRIGHT "")
 set(CMAKE_PROJECT_MAINTAINER "Embi-OS <github.com/Embi-OS>")
+message(NOTICE "Setup project ${PROJECT_NAME} v${DEFAULT_PROJECT_VERSION} (${DEFAULT_PROJECT_DESCRIPTION})")
 
 include(Boot2Qt)
 
@@ -75,13 +81,15 @@ set(CMAKE_OUTPUT_PREFIX "${CMAKE_BINARY_DIR}/../${CMAKE_PROJECT_NAME}")
 
 if(BOOT2QT)
 
+    message(NOTICE "CMake Building for Boot2Qt")
+
     # optimization
     if(ENABLE_OPTIMIZATION)
         message(STATUS "Build with optimization")
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
     endif()
-    
+
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}_Boot2Qt_${QT_VERSION}/v${CMAKE_PROJECT_VERSION}")
     set(QT_DEPLOY_PREFIX "/Embi")
 
@@ -98,6 +106,8 @@ if(BOOT2QT)
 
 elseif(EMSCRIPTEN)
 
+    message(NOTICE "CMake Building for WASM")
+
     # optimization
     if(ENABLE_OPTIMIZATION)
         message(STATUS "Build with optimization")
@@ -110,6 +120,8 @@ elseif(EMSCRIPTEN)
     set(QT_DEPLOY_PREFIX "")
 
 else()
+
+    message(NOTICE "CMake Building for Linux")
 
     # optimization
     if(ENABLE_OPTIMIZATION)
