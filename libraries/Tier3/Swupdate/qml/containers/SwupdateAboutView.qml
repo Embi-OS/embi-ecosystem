@@ -42,6 +42,10 @@ PaneTreeView {
         unit: "swupdate-progress.service"
     }
 
+    UBootSettings {
+        id: ubootSettings
+    }
+
     ProxyModel {
         id: proxyModel
         delayed: true
@@ -76,6 +80,11 @@ PaneTreeView {
         InfoTreeDelegate {text: qsTr("Platforme");info: DeviceInfo.deviceName}
         InfoTreeDelegate {text: qsTr("Kernel");info: DeviceInfo.platformKernelVersion}
         InfoTreeDelegate {text: qsTr("Date de compilation");info: DeviceInfo.buildDate}
+        SeparatorTreeDelegate {}
+        InfoTreeDelegate {text: "ustate";info: ubootSettings.printEnv("ustate")}
+        InfoTreeDelegate {text: "bootcount";info: ubootSettings.printEnv("bootcount")}
+        InfoTreeDelegate {text: "storage_name";info: DeviceInfo.storageName}
+        InfoTreeDelegate {text: "storage_device";info: DeviceInfo.storageDevice}
 
         SeparatorTreeDelegate {}
         SubtitleTreeDelegate {

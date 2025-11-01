@@ -24,6 +24,7 @@ endif()
 
 project(Embi-Ecosystem
     VERSION ${DEFAULT_PROJECT_VERSION}
+    DESCRIPTION "${DEFAULT_PROJECT_DESCRIPTION}"
     LANGUAGES CXX)
 set(CMAKE_PROJECT_COMPANY "Embi-OS")
 set(CMAKE_PROJECT_WEBSITE "github.com/Embi-OS")
@@ -65,7 +66,10 @@ list(APPEND DEPLOYABLE_APPS "02_Clock")
 # ──────────────────────
 
 # ──── Build config ────
-# add_definitions(-DREST_NO_WEBSOCKET)
+if(DISABLE_WEBSOCKET)
+    message(NOTICE "Build without websockets")
+    add_definitions(-DREST_NO_WEBSOCKET)
+endif()
 add_definitions(-DQSLOG_FILE_ENABLED)
 # ──────────────────────
 

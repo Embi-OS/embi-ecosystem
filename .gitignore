@@ -59,6 +59,7 @@ CMakeLists.txt.user*
 !/src/plugins/**/wizard.json
 /src/plugins/coreplugin/ide_version.h
 /.cmake/
+/.qtcreator/
 /.vs/
 app_version.h
 phony.c

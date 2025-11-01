@@ -47,6 +47,9 @@ class DeviceInfo : public QObject,
     Q_PROPERTY(QString deviceId         READ deviceId       CONSTANT FINAL)
     Q_PROPERTY(QString deviceShortId    READ deviceShortId  CONSTANT FINAL)
 
+    Q_PROPERTY(QString storageName      READ storageName    CONSTANT FINAL)
+    Q_PROPERTY(QString storageDevice    READ storageDevice  CONSTANT FINAL)
+
     Q_PROPERTY(QString platformVersion         READ platformVersion         CONSTANT FINAL)
     Q_PROPERTY(QString platformType            READ platformType            CONSTANT FINAL)
     Q_PROPERTY(QString platformName            READ platformName            CONSTANT FINAL)
@@ -102,6 +105,9 @@ public:
     static QString deviceName();
     static QString deviceId();
     static QString deviceShortId();
+
+    static QString storageName();
+    static QString storageDevice();
 
     static QString platformVersion();
     static QString platformType();

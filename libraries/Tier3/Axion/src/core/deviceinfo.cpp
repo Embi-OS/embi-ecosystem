@@ -6,6 +6,7 @@
 #include <QCryptographicHash>
 #include <QProcess>
 #include <QtGlobal>
+#include <QStorageInfo>
 
 DeviceInfo::DeviceInfo(QObject *parent) :
     QObject(parent)
@@ -26,11 +27,12 @@ void DeviceInfo::dumpInfos()
 
 QString DeviceInfo::about()
 {
+    static const QString desc = QString(PROJECT_DESCRIPTION).isEmpty() ? QString() : QString("[%1]").arg(PROJECT_DESCRIPTION);
     QString about;
     about += QString("Running on: %1 [%2] arch %3\n").arg(platformName(),platformKernelVersion(), platformCpuArchitecture());
     about += QString("Qt Version: %1 [%2]\n").arg(qtVersion(), buildAbi());
     about += QString("Qt Version build: %1\n").arg(qtVersionBuild());
-    about += QString("Version: %1\n").arg(QVersionNumber(PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH).toString());
+    about += QString("Version: %1 %2\n").arg(QVersionNumber(PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH).toString(), desc);
     about += QString("Build date: %1 at %2").arg(buildDate(), buildTime());
     return about;
 }
@@ -315,6 +317,17 @@ QString DeviceInfo::deviceShortId()
 {
     QString hash = QString::fromUtf8(QCryptographicHash::hash(deviceId().toUtf8(), QCryptographicHash::Md5).toHex());
     return hash.remove(QStringLiteral("-")).left(8);
+}
+
+QString DeviceInfo::storageName()
+{
+    qTrace()<<QStorageInfo::root().name()<<QStorageInfo::root();
+    return QStorageInfo::root().name();
+}
+
+QString DeviceInfo::storageDevice()
+{
+    return QStorageInfo::root().device();
 }
 
 QString DeviceInfo::platformVersion()

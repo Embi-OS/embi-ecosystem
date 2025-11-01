@@ -53,6 +53,7 @@ PaneTreeView {
             }
         }
         SeparatorTreeDelegate {}
+        InfoTreeDelegate {text: qsTr("Version");info: ubootSettings.printEnv("ver")}
         FormLabelDelegate {
             visible: ubootSettings.canSetOverlays
             label: "Overlays"

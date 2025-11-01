@@ -24,8 +24,6 @@ embi_add_application(${PROJECT_NAME}
         ${ALL_QML_FILES}
     DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-    OUTPUT_DIRECTORY_PREFIX
-        /samples
 )
 
 create_deb_package(${APP_NAME})
