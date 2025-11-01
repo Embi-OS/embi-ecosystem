@@ -43,7 +43,7 @@ run_cmd "$WASM_CMAKE_BIN" --build "$WASM_BUILD_DIR" --target all
 ARTIFACT_PATTERNS=(
     "$WASM_OUTPUT_DIR/*"
 )
-log "BootQt build completed. Verifying expected artifacts..."
+log "WASM build completed. Verifying expected artifacts..."
 verify_artifacts "${ARTIFACT_PATTERNS[@]}"
 log "Packaging WASM artifacts into zip archives..."
 WASM_ARTIFACT_DIR=$(prepare_artifact_dir "wasm")
@@ -54,7 +54,7 @@ if [ -d "$WASM_OUTPUT_DIR" ]; then
         has_entries=1
         if [ -d "$item" ]; then
             app_name=$(basename "$item")
-            zip_path="$WASM_ARTIFACT_DIR/A${app_name}_v${SANITIZED_PROJECT_VERSION}_Wasm.zip"
+            zip_path="$WASM_ARTIFACT_DIR/A${app_name}_${SANITIZED_PROJECT_VERSION}_Wasm.zip"
             rm -f "$zip_path"
             log "Packaging WASM app $app_name → $zip_path"
             run_cmd bash -lc "cd \"$item\" && zip -r -q \"$zip_path\" ."

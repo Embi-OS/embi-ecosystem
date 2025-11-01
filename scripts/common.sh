@@ -81,12 +81,19 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+SANITIZED_PROJECT_NAME=$(printf '%s' "$PROJECT_NAME" | tr '[:space:]' '_' | tr -c 'A-Za-z0-9._-' '_')
+[ -n "$SANITIZED_PROJECT_NAME" ] || SANITIZED_PROJECT_NAME="project"
+SANITIZED_PROJECT_VERSION=$(printf '%s' "$PROJECT_VERSION" | tr '[:space:]' '_' | tr -c 'A-Za-z0-9._-' '_')
+[ -n "$SANITIZED_PROJECT_VERSION" ] || SANITIZED_PROJECT_VERSION="0.0.0"
+SANITIZED_PROJECT_VERSION=$(IFS=.; for x in $SANITIZED_PROJECT_VERSION; do printf "%02d" "$x"; done)
+
 # Define common CMake variables passed to all builds
 EXTRA_CMAKE_VARIABLES="-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
 -DCMAKE_CXX_FLAGS:STRING=-w -DCMAKE_C_FLAGS:STRING=-w \
 -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=ON \
 -DDEFAULT_PROJECT_VERSION:STRING=${PROJECT_VERSION} \
 -DDEFAULT_PROJECT_DESCRIPTION:STRING=${PROJECT_DESCRIPTION} \
+-DSANITIZED_PROJECT_VERSION:STRING=${SANITIZED_PROJECT_VERSION} \
 -DENABLE_OPTIMIZATION:BOOL=ON \
 -DDISABLE_SAMPLES:BOOL=ON \
 -DDISABLE_TESTS:BOOL=ON"
@@ -194,11 +201,7 @@ end_timer() {
 
 # -------- Artifacts helpers --------
 # Determine consolidated artifact directories (sanitized for filesystem safety)
-SANITIZED_PROJECT_NAME=$(printf '%s' "$PROJECT_NAME" | tr '[:space:]' '_' | tr -c 'A-Za-z0-9._-' '_')
-[ -n "$SANITIZED_PROJECT_NAME" ] || SANITIZED_PROJECT_NAME="project"
-SANITIZED_PROJECT_VERSION=$(printf '%s' "$PROJECT_VERSION" | tr '[:space:]' '_' | tr -c 'A-Za-z0-9._-' '_')
-[ -n "$SANITIZED_PROJECT_VERSION" ] || SANITIZED_PROJECT_VERSION="0.0.0"
-ARTIFACTS_VERSION_DIR="$BUILD_DIR/${SANITIZED_PROJECT_NAME}_v${SANITIZED_PROJECT_VERSION}_Artifacts"
+ARTIFACTS_VERSION_DIR="$BUILD_DIR/artifacts_${SANITIZED_PROJECT_NAME}_${SANITIZED_PROJECT_VERSION}"
 
 verify_artifacts() {
     local pattern

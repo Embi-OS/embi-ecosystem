@@ -35,7 +35,7 @@ run_cmd "$LINUX_CMAKE_BIN" --log-level=NOTICE -G "$GENERATOR" -S "$PROJECT_ROOT"
 run_cmd "$LINUX_CMAKE_BIN" --build "$LINUX_BUILD_DIR" --target all
 
 ARTIFACT_PATTERNS=(
-    "$LINUX_OUTPUT_DIR/*_${PROJECT_VERSION}_Linux-x86_64.deb"
+    "$LINUX_OUTPUT_DIR/*.deb"
 )
 log "Linux build completed. Verifying expected artifacts..."
 verify_artifacts "${ARTIFACT_PATTERNS[@]}"
