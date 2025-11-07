@@ -51,6 +51,9 @@ public:
 
     bool isCompleted() const;
 
+    static void setNoRestSocket(bool noRestSocket);
+    static bool noRestSocket();
+
 public slots:
     virtual void queueBind();
     virtual void bind();

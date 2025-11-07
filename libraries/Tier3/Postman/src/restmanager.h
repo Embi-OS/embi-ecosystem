@@ -18,6 +18,7 @@ class RestManager : public AbstractManager
     Q_WRITABLE_REF_PROPERTY(QString, apiBaseUrl, ApiBaseUrl, "http://localhost")
     Q_WRITABLE_VAR_PROPERTY(int, apiPort, ApiPort, 32768)
     Q_WRITABLE_VAR_PROPERTY(bool, apiTrailingSlash, ApiTrailingSlash, true)
+    Q_WRITABLE_VAR_PROPERTY(bool, apiNoRestSocket, ApiNoRestSocket, false)
     Q_WRITABLE_REF_PROPERTY(QString, apiKey, ApiKey, "")
 
 private:

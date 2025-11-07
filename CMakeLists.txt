@@ -65,14 +65,6 @@ list(APPEND DEPLOYABLE_APPS "01_Gallery")
 list(APPEND DEPLOYABLE_APPS "02_Clock")
 # ──────────────────────
 
-# ──── Build config ────
-if(DISABLE_WEBSOCKET)
-    message(NOTICE "Build without websockets")
-    add_definitions(-DREST_NO_WEBSOCKET)
-endif()
-add_definitions(-DQSLOG_FILE_ENABLED)
-# ──────────────────────
-
 # ────── Qt stuff ──────
 set(BUILD_SHARED_LIBS OFF)
 qt_standard_project_setup(REQUIRES 6.8)

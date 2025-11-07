@@ -48,6 +48,8 @@ bool RestManager::init()
         m_apiDataMode = args.value("apiDataMode")=="Cbor" ? RestDataModes::Cbor : RestDataModes::Json;
     if(args.contains("apiTrailingSlash"))
         m_apiTrailingSlash = args.value("apiTrailingSlash").toBool();
+    if(args.contains("apiNoRestSocket"))
+        m_apiNoRestSocket = args.value("apiNoRestSocket").toBool();
 
     QSettingsMapper* persistantData = new QSettingsMapper(this);
     persistantData->setSelectPolicy(QVariantMapperPolicies::Manual);
@@ -60,7 +62,10 @@ bool RestManager::init()
     persistantData->mapProperty(this,"apiBaseUrl");
     persistantData->mapProperty(this,"apiPort");
     persistantData->mapProperty(this,"apiTrailingSlash");
+    persistantData->mapProperty(this,"apiNoRestSocket");
     persistantData->mapProperty(this,"apiKey");
+
+    RestSocket::setNoRestSocket(m_apiNoRestSocket);
 
     const QString hostName = QUrl(m_apiBaseUrl).host();
     const QHostAddress address = QHostAddress(hostName);

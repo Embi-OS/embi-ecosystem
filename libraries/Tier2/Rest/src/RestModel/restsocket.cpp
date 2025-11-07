@@ -6,6 +6,22 @@
 
 #include <QWebSocketHandshakeOptions>
 
+Q_GLOBAL_STATIC_WITH_ARGS(bool, g_noRestSocket, (false))
+void RestSocket::setNoRestSocket(bool noRestSocket)
+{
+    *g_noRestSocket = noRestSocket;
+    if(noRestSocket) {
+        QUTILSLOG_INFO()<<"RestSocket has been globally disabled";
+    }
+    else {
+        QUTILSLOG_INFO()<<"RestSocket has been globally enabled";
+    }
+}
+bool RestSocket::noRestSocket()
+{
+    return *g_noRestSocket;
+}
+
 RestSocket::RestSocket(QObject *parent):
     RestSocket("", parent)
 {
@@ -224,7 +240,9 @@ void RestSocket::bind()
 
 bool RestSocket::waitForBind(int timeout)
 {
-#ifndef REST_NO_WEBSOCKET
+    if(RestSocket::noRestSocket())
+        return true;
+
     if(m_status==RestSocketStates::Open)
         return true;
 
@@ -235,9 +253,6 @@ bool RestSocket::waitForBind(int timeout)
     loop.exec(QEventLoop::AllEvents);
 
     return m_status==RestSocketStates::Open;
-#endif
-
-    return true;
 }
 
 void RestSocket::unbind()
@@ -247,7 +262,9 @@ void RestSocket::unbind()
 
 qint64 RestSocket::sendTextMessage(const QString &message)
 {
-#ifndef REST_NO_WEBSOCKET
+    if(RestSocket::noRestSocket())
+        return 0;
+
     if (m_status != RestSocketStates::Open) {
         setError("Messages can only be sent when the socket is open");
         setStatus(RestSocketStates::Error);
@@ -257,14 +274,13 @@ qint64 RestSocket::sendTextMessage(const QString &message)
     RESTLOG_DEBUG()<<message;
 
     return m_socket->sendTextMessage(message);
-#endif
-
-    return 0;
 }
 
 qint64 RestSocket::sendBinaryMessage(const QByteArray &message)
 {
-#ifndef REST_NO_WEBSOCKET
+    if(RestSocket::noRestSocket())
+        return 0;
+
     if (m_status != RestSocketStates::Open) {
         setError("Messages can only be sent when the socket is open");
         setStatus(RestSocketStates::Error);
@@ -274,9 +290,6 @@ qint64 RestSocket::sendBinaryMessage(const QByteArray &message)
     RESTLOG_DEBUG()<<message;
 
     return m_socket->sendBinaryMessage(message);
-#endif
-
-    return 0;
 }
 
 qint64 RestSocket::sendMessage(const QVariant &message)
@@ -301,7 +314,9 @@ qint64 RestSocket::sendMessage(const QVariant &message)
 
 void RestSocket::ping(const QByteArray &payload)
 {
-#ifndef REST_NO_WEBSOCKET
+    if(RestSocket::noRestSocket())
+        return;
+
     if (m_status != RestSocketStates::Open) {
         setError("Ping can only be sent when the socket is open");
         setStatus(RestSocketStates::Error);
@@ -309,12 +324,13 @@ void RestSocket::ping(const QByteArray &payload)
     }
 
     m_socket->ping(payload);
-#endif
 }
 
 void RestSocket::open()
 {
-#ifndef REST_NO_WEBSOCKET
+    if(RestSocket::noRestSocket())
+        return;
+
     RestRequestBuilder builder = RestHelper::apiClient(m_connection)->builder();
 
     m_dataMode = builder.dataMode();
@@ -343,7 +359,6 @@ void RestSocket::open()
 
     // qNotice()<<this<<"REST socket open"<<url.toString();
     m_socket->open(request, options);
-#endif
 }
 
 void RestSocket::close()
