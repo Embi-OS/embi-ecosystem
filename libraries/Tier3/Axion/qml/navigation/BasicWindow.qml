@@ -43,6 +43,8 @@ Window {
     property bool canLoadApplication: true
     required property ManagerContainer backend
     readonly property Item frontend: appLoader.item as Item
+    readonly property bool backendReady: root.backend?.ready ?? false
+    readonly property bool frontendReady: root.frontend?.visible ?? false
 
     property alias asynchronous: appLoader.asynchronous
     property alias application: appLoader.sourceComponent

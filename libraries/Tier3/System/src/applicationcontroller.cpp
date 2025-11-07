@@ -51,7 +51,9 @@ void ApplicationController::init(bool makeDefault)
     }
 
 #ifdef Q_OS_BOOT2QT
-    if(makeDefault) {
+    const QString applicationDirPath = QCoreApplication::applicationDirPath();
+    const QStorageInfo storageInfo(applicationDirPath);
+    if(makeDefault && storageInfo.isRoot()) {
         QString localFile = Paths::applicationFilePath();
         SOLIDLOG_INFO()<<"Making default"<<localFile;
         QProcess::startDetached(APPCONTROLLER_CMD, {"--make-default", localFile});

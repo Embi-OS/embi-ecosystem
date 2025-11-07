@@ -13,7 +13,7 @@ public:
     Q_DISABLE_COPY(QJsonVariantReader)
 
     qint64 currentOffset() const final override { return ptr - json; }
-    qint64 totalSize() const final override { return m_size; }
+    qint64 totalSize() const final override { return m_buffer.size(); }
 
     bool hasError() final override { return lastError() != QJsonParseError::NoError; };
     bool hasNext() const final override;
@@ -28,6 +28,7 @@ public:
     bool enterContainer() final override;
     bool leaveContainer() final override;
 
+    QString readString() final override;
     QVariant readValue() final override;
 
     QJsonParseError::ParseError lastError() const { return m_lastError; }
@@ -50,7 +51,6 @@ private:
     const char *json;
     const char *ptr;
     const char *end;
-    const qint64 m_size;
 };
 
 #endif // QJSONVARIANTREADER_H

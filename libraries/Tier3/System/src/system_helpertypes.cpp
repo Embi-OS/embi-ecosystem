@@ -2,8 +2,6 @@
 
 #include <Axion>
 
-#include "Timedate/timedatesettings.h"
-
 #include <QStandardPaths>
 #include <QtConcurrentRun>
 
@@ -11,15 +9,6 @@ SystemHelper::SystemHelper(QObject *parent) :
     QObject(parent)
 {
 
-}
-
-void SystemHelper::showTimedateCtl()
-{
-    QVariantMap settings;
-    settings["message"] = "timedatectl";
-    settings["infos"] = TimedateSettings::timedateCtl();
-    settings["diagnose"] = false;
-    DialogManager::Get()->showText(settings);
 }
 
 void SystemHelper::clearLogs()

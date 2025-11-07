@@ -44,10 +44,15 @@ YOCTO_ENV_CMD+=" export PRODUCT_VERSION=\"$PROJECT_VERSION\";"
 YOCTO_ENV_CMD+=" export PRODUCT_VERSION_NAME=\"$PROJECT_DESCRIPTION\";"
 YOCTO_ENV_CMD+=" export PRODUCT_IMAGE_BRANCH=\"$PROJECT_BRANCH\";"
 
-BITBAKE_CMD="bitbake $YOCTO_TARGET ${BITBAKE_EXTRA_ARGS}";
+BITBAKE_CMD="bitbake $YOCTO_TARGET ${BITBAKE_EXTRA_ARGS}"
+YOCTO_BUILD_COMMAND="cd \"$YOCTO_DIR\"; $YOCTO_ENV_CMD $BITBAKE_CMD"
 
 # Run the combined yocto build command in a single subshell to preserve the sourced environment
-run_cmd --full bash -lc "cd \"$YOCTO_DIR\"; $YOCTO_ENV_CMD $BITBAKE_CMD"
+log "Starting Yocto build (non-deterministic hash warnings will be ignored)"
+log ">>> $YOCTO_BUILD_COMMAND"
+if ! bash -lc "$YOCTO_BUILD_COMMAND"; then
+    warn "Yocto build command reported a non-zero exit. Proceeding anyway; inspect Yocto logs if this is unexpected."
+fi
 
 # Print typical output locations (best effort guess)
 YOCTO_BUILD_DIR_GUESS="$YOCTO_DIR/build-$YOCTO_MACHINE"

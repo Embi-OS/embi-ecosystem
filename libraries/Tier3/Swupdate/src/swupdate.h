@@ -93,8 +93,8 @@ public:
     bool isReady() const;
 
 public slots:
-    static void init();
-    static void unInit();
+    void init();
+    void unInit();
 
     bool update(const QString& file);
     bool restart();
@@ -105,6 +105,7 @@ private slots:
     void onProgressMessage();
 
 private:
+    bool m_initialized;
     QSocketNotifier* m_socketNotifier=nullptr;
 };
 

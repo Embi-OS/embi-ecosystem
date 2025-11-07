@@ -1,7 +1,6 @@
 #include <System>
 #include <Solid>
 #include <Axion>
-#include <Swupdate>
 
 int main(int argc, char *argv[])
 {
@@ -9,7 +8,6 @@ int main(int argc, char *argv[])
 
     ApplicationController::init(false);
     LocaleSettings::init();
-    Swupdate::init();
 
     AxionHelper::onRestartAccepted(Power::restart);
     AxionHelper::onRebootAccepted(Power::reboot);

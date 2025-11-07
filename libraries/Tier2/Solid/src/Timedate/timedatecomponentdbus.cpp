@@ -18,7 +18,7 @@ int TimedateComponentDBus::getCapabilities()
     return Capabilities::Timezone |
            Capabilities::Ntp |
            Capabilities::SystemDateTime |
-           Capabilities::Timeservers;
+           Capabilities::NtpServer;
 }
 
 QString TimedateComponentDBus::getTimezone() const
@@ -61,35 +61,6 @@ bool TimedateComponentDBus::setNtp(const bool aNtp)
     return true;
 }
 
-QString TimedateComponentDBus::getTimeservers() const
-{
-    if(!QFile::exists(SETTINGS_FILENAME))
-        return QString();
-
-    QSettings settings = QSettings(SETTINGS_FILENAME, QSettings::IniFormat);
-    settings.beginGroup("Time");
-
-    return settings.value("NTP", QString()).toString();
-}
-
-bool TimedateComponentDBus::setTimeservers(const QString& timeservers)
-{
-    if(!QFile::exists(SETTINGS_FILENAME))
-        return false;
-
-    QSettings settings = QSettings(SETTINGS_FILENAME, QSettings::IniFormat);
-    settings.beginGroup("Time");
-
-    if(settings.value("NTP", QString()).toString()==timeservers)
-        return true;
-
-    settings.setValue("NTP", timeservers);
-    settings.sync();
-
-    return true;
-}
-
-
 bool TimedateComponentDBus::setSystemTime(const QDateTime& aTime)
 {
     if(!m_timedateInterface)
@@ -101,23 +72,97 @@ bool TimedateComponentDBus::setSystemTime(const QDateTime& aTime)
     return true;
 }
 
-QString TimedateComponentDBus::serverName() const
+QString TimedateComponentDBus::getNtpServer() const
 {
-    return m_timesyncInterface ? m_timesyncInterface->serverName() : QString();
+    if(!QFile::exists(SETTINGS_FILENAME))
+        return QString();
+
+    QFile file(SETTINGS_FILENAME);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return QString(); // Could not open file
+    }
+
+    QTextStream in(&file);
+    QString ntpValue;
+    static const QRegularExpression ntpRegex(R"(^\s*#?\s*NTP\s*=\s*(.*)\s*$)");
+
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        QRegularExpressionMatch match = ntpRegex.match(line);
+        if (match.hasMatch()) {
+            ntpValue = match.captured(1).trimmed();
+            break;
+        }
+    }
+
+    file.close();
+    return ntpValue;
 }
-QString TimedateComponentDBus::serverAddress() const
+
+bool TimedateComponentDBus::setNtpServer(const QString& ntpServer)
 {
-    return m_timesyncInterface ? m_timesyncInterface->serverAddress() : QString();
+    if(!QFile::exists(SETTINGS_FILENAME))
+        return false;
+
+    QFile file(SETTINGS_FILENAME);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return false;
+    }
+
+    QTextStream in(&file);
+    QStringList lines = in.readAll().split('\n');
+    file.close();
+
+    bool found = false;
+    QRegularExpression ntpRegex(R"(^\s*#?\s*NTP\s*=.*$)");
+
+    for (QString &line : lines) {
+        if (ntpRegex.match(line).hasMatch()) {
+            found = true;
+            if (ntpServer.trimmed().isEmpty()) {
+                // Comment out the NTP line with no value
+                line = "#NTP=";
+            } else {
+                // Uncomment and set the NTP server(s)
+                line = QString("NTP=%1").arg(ntpServer.trimmed());
+            }
+            break;
+        }
+    }
+
+    if (!found) {
+        // If no existing NTP line, add it under [Time] section
+        for (int i = 0; i < lines.size(); ++i) {
+            if (lines[i].trimmed() == "[Time]") {
+                lines.insert(i + 1, ntpServer.trimmed().isEmpty()
+                             ? "#NTP="
+                             : QString("NTP=%1").arg(ntpServer.trimmed()));
+                found = true;
+                break;
+            }
+        }
+    }
+
+    if (!found)
+        // If still not found, just append it to the end
+        lines << (ntpServer.trimmed().isEmpty()
+                      ? "#NTP="
+                      : QString("NTP=%1").arg(ntpServer.trimmed()));
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+        return false;
+
+    QTextStream out(&file);
+    out << lines.join('\n') << '\n';
+    file.close();
+
+    return true;
 }
-int TimedateComponentDBus::pollIntervalMinUSec() const
+
+QString TimedateComponentDBus::getServerName() const
 {
-    return m_timesyncInterface ? m_timesyncInterface->pollIntervalMinUSec() : -1;
-}
-int TimedateComponentDBus::pollIntervalMaxUSec() const
-{
-    return m_timesyncInterface ? m_timesyncInterface->pollIntervalMaxUSec() : -1;
-}
-int TimedateComponentDBus::frequency() const
-{
-    return m_timesyncInterface ? m_timesyncInterface->frequency() : -1;
+    if(!m_timesyncInterface)
+        return QString();
+
+    return m_timesyncInterface->serverName();
 }

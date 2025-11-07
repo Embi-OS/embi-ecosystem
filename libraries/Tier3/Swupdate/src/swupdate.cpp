@@ -46,17 +46,20 @@ QDebug operator<<(QDebug dbg, const SwupdateProgressMessage &msg)
 
 Swupdate::Swupdate(QObject* parent):
     QObject(parent),
-    m_progressFd(-1)
+    m_progressFd(-1),
+    m_initialized(false)
 {
-    QTimer::singleShot(2000, this, [this](){
-        test();
-        open();
-    });
+
 }
 
 void Swupdate::init()
 {
-    Swupdate::Get();
+    if(m_initialized)
+        return;
+    m_initialized = true;
+
+    test();
+    open();
 
     SnackbarLoader* loader = new SnackbarLoader(Swupdate::Get());
     loader->setSeverity(SnackbarSeverities::None);
@@ -77,7 +80,7 @@ void Swupdate::init()
 
 void Swupdate::unInit()
 {
-    Swupdate::Get()->deleteLater();
+    deleteLater();
 }
 
 bool Swupdate::isReady() const

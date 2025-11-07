@@ -58,18 +58,18 @@ bool TimedateSettings::canSetNtp()
     return getComponent()->canSetNtp();
 }
 
-bool TimedateSettings::canSetTimeservers()
-{
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetTimeservers();
-}
-
 bool TimedateSettings::canSetSystemDateTime()
 {
     if(!getComponent())
         return false;
     return getComponent()->canSetSystemDateTime();
+}
+
+bool TimedateSettings::canSetNtpServer()
+{
+    if(!getComponent())
+        return false;
+    return getComponent()->canSetNtpServer();
 }
 
 bool TimedateSettings::canReadRTC()
@@ -121,31 +121,6 @@ void TimedateSettings::setNtp(const bool ntp)
         emit this->ntpChanged();
 }
 
-QString TimedateSettings::getTimeservers() const
-{
-    if(!canSetTimeservers())
-    {
-        SOLIDLOG_DEBUG()<<"Cannot get timeservers, fallback to default";
-        return QString();
-    }
-
-    return getComponent()->getTimeservers();
-}
-
-void TimedateSettings::setTimeservers(const QString& timeservers)
-{
-    if(!canSetTimeservers())
-    {
-        SOLIDLOG_WARNING()<<"Cannot set timeservers";
-        return;
-    }
-
-    if(getComponent()->setTimeservers(timeservers))
-        emit this->timeserversChanged();
-
-    syncNtp();
-}
-
 QDateTime TimedateSettings::getSystemDateTime() const
 {
     return QDateTime::currentDateTime();
@@ -161,35 +136,40 @@ QTime TimedateSettings::getSystemTime() const
     return getSystemDateTime().time();
 }
 
-QString TimedateSettings::serverName() const
+QString TimedateSettings::getNtpServer() const
 {
-    if(!getComponent())
+    if(!canSetNtpServer())
+    {
+        SOLIDLOG_DEBUG()<<"Cannot get ntp server, fallback to default";
         return QString();
-    return getComponent()->serverName();
+    }
+
+    return getComponent()->getNtpServer();
 }
-QString TimedateSettings::serverAddress() const
+
+void TimedateSettings::setNtpServer(const QString& ntpServer)
 {
-    if(!getComponent())
+    if(!canSetNtp())
+    {
+        SOLIDLOG_WARNING()<<"Cannot set ntpServer";
+        return;
+    }
+
+    if(getComponent()->setNtpServer(ntpServer))
+        emit this->ntpServerChanged();
+
+    syncNtp();
+}
+
+QString TimedateSettings::getServerName() const
+{
+    if(!canSetNtpServer())
+    {
+        SOLIDLOG_DEBUG()<<"Cannot get ntp server, fallback to default";
         return QString();
-    return getComponent()->serverAddress();
-}
-int TimedateSettings::pollIntervalMinUSec() const
-{
-    if(!getComponent())
-        return -1;
-    return getComponent()->pollIntervalMinUSec();
-}
-int TimedateSettings::pollIntervalMaxUSec() const
-{
-    if(!getComponent())
-        return -1;
-    return getComponent()->pollIntervalMaxUSec();
-}
-int TimedateSettings::frequency() const
-{
-    if(!getComponent())
-        return -1;
-    return getComponent()->frequency();
+    }
+
+    return getComponent()->getServerName();
 }
 
 void TimedateSettings::setSystemDateTime(const QDateTime& systemDateTime)
@@ -254,31 +234,58 @@ QString TimedateSettings::timedateCtl()
     return ret.join("\n");
 }
 
-bool TimedateSettings::syncNtp()
+QString TimedateSettings::timesyncStatus()
 {
-    QString program="systemctl";
-    QStringList arguments = QStringList()<<"restart"<<"systemd-timesyncd";
+    QString program="timedatectl";
+    QStringList arguments = QStringList()<<"timesync-status";
 
     QProcess process;
     process.setProgram(program);
     process.setArguments(arguments);
     process.start();
 
-    bool result = process.waitForFinished(1000);
+    process.waitForFinished(1000);
 
     QString processOutput = process.readAllStandardOutput();
     QString processError = process.readAllStandardError();
 
-    if(!processOutput.isEmpty()) {
-        SOLIDLOG_TRACE().noquote()<<QString("processOutput:\n%1").arg(processOutput);
-    }
-    if(!processError.isEmpty()) {
-        SOLIDLOG_CRITICAL().noquote()<<QString("processError:\n%1").arg(processError);
-    }
+    if(!processError.isEmpty())
+        return processError;
 
-    emit this->timesyncChanged();
+    QStringList ret;
+    const QStringList processOutputs = processOutput.split("\n", Qt::SkipEmptyParts);
+    for(const QString& output: processOutputs)
+        ret.append(output.trimmed());
 
-    return result;
+    return ret.join("\n");
+}
+
+bool TimedateSettings::syncNtp()
+{
+    const QString program="systemctl";
+    const QStringList arguments = QStringList()<<"restart"<<"systemd-timesyncd";
+
+    QProcess *proc = new QProcess(this);
+    connect(proc, &QProcess::finished, this, [this, proc](int exitCode, QProcess::ExitStatus) {
+        QString processOutput = proc->readAllStandardOutput();
+        QString processError = proc->readAllStandardError();
+
+        if(!processOutput.isEmpty()) {
+            SOLIDLOG_TRACE().noquote()<<QString("processOutput:\n%1").arg(processOutput);
+        }
+        if(!processError.isEmpty()) {
+            SOLIDLOG_CRITICAL().noquote()<<QString("processError:\n%1").arg(processError);
+        }
+
+        emit this->timesyncChanged();
+
+        proc->deleteLater();
+    });
+    proc->setProgram(program);
+    proc->setArguments(arguments);
+    proc->start();
+
+    return proc->waitForStarted();
 }
 
 bool TimedateSettings::syncRtc()

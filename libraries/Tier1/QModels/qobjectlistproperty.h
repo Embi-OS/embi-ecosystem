@@ -85,6 +85,15 @@ public:
         }
         return m_content.at(index);
     }
+    T* takeAt(int index)
+    {
+        if(index < 0 || index >= m_content.size())
+        {
+            QMODELSLOG_WARNING()<<templateClassName()<<"The index"<<index<<"is out of bound.";
+            return nullptr;
+        }
+        return m_content.takeAt(index);
+    }
 
     bool contains(const T* object) const
     {

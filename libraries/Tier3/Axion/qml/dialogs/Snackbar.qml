@@ -167,7 +167,6 @@ T.Control {
 
         TapHandler {
             id: tapHandler
-            // enabled: root.details!==""
             grabPermissions: PointerHandler.TakeOverForbidden
             gesturePolicy: TapHandler.ReleaseWithinBounds
             onTapped: {

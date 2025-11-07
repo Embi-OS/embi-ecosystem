@@ -3,8 +3,7 @@
 #include <QCborStreamReader>
 
 QCborVariantReader::QCborVariantReader(QIODevice *device):
-    m_device(new QCborStreamReader(device)),
-    m_size(device->bytesAvailable())
+    QCborVariantReader(device->readAll())
 {
 
 }
@@ -19,6 +18,11 @@ QCborVariantReader::QCborVariantReader(const QByteArray &data):
 QCborVariantReader::~QCborVariantReader()
 {
     delete m_device;
+}
+
+QCborStreamReader* QCborVariantReader::device() const
+{
+    return m_device;
 }
 
 bool QCborVariantReader::atEnd()
@@ -39,6 +43,14 @@ QVariantReader::Type QCborVariantReader::type() const
         return QVariantReader::Value;
         break;
     }
+}
+
+QString QCborVariantReader::readString()
+{
+    QString key = m_device->readString().data;
+    m_device->next();
+    return key;
+    // return m_device->readAllString();
 }
 
 QVariant QCborVariantReader::readValue()

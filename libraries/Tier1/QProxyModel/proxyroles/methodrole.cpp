@@ -97,11 +97,13 @@ void MethodRole::updateMethod()
         }
     }
 
-    if (!m_method.isValid())
+    if (!m_method.isValid()) {
+        qWarning()<<"MethodRole method is not valid";
         return;
+    }
 
     if (m_method.parameterCount() < 1) {
-        qWarning()<<"TableViewMethodColumn method requires at least one parameter";
+        qWarning()<<"MethodRole method requires at least one parameter";
         return;
     }
 

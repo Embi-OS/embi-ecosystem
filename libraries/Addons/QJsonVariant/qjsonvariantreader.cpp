@@ -30,8 +30,7 @@ QJsonVariantReader::QJsonVariantReader(const QByteArray &data):
     m_buffer(data),
     json(m_buffer.constData()),
     ptr(m_buffer.constData()),
-    end(m_buffer.constData() + m_buffer.size()),
-    m_size(m_buffer.size())
+    end(m_buffer.constData() + m_buffer.size())
 {
     skipByteOrderMark();
     skipWhitespace();
@@ -103,6 +102,11 @@ QVariantReader::Type QJsonVariantReader::type() const
     default:
         return QJsonVariantReader::Value;
     }
+}
+
+QString QJsonVariantReader::readString()
+{
+    return parseString();
 }
 
 QVariant QJsonVariantReader::readValue()

@@ -16,7 +16,6 @@ protected:
     explicit SystemHelper(QObject *parent = nullptr);
 
 public slots:
-    void showTimedateCtl();
     void clearLogs();
     void exportLogs();
     void clearCache();

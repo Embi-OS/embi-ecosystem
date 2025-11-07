@@ -39,6 +39,14 @@ PaneTreeView {
             rightLabel: qsTr("On")
             targetProperty: "ntp"
         }
+        FormTextFieldDelegate {
+            visible: TimedateSettings.canSetServerName
+            enabled: ntp.checked
+            label: qsTr("Serveur NTP")
+            placeholder: qsTr("Seulement si NTP activé")
+            infos: qsTr("Laisser vide pour utiliser les valuers par défaut")
+            targetProperty: "ntpServer"
+        }
         FormComboBoxDelegate {
             visible: TimedateSettings.canSetTimezone
             label: qsTr("Fuseau horaire")
@@ -65,13 +73,37 @@ PaneTreeView {
         FormButtonDelegate {
             label: "Timedate CTL"
             icon: MaterialIcons.consoleLine
-            onClicked: SystemHelper.showTimedateCtl()
+            onClicked: {
+                var settings = ({
+                    "message": "timedatectl",
+                    "infos": TimedateSettings.timedateCtl(),
+                    "diagnose": false
+                })
+                DialogManager.showText(settings);
+            }
         }
         FormButtonDelegate {
             visible: TimedateSettings.canReadRTC
             label: "Sync RTC"
             icon: MaterialIcons.clock
             onClicked: TimedateSettings.syncRtc()
+        }
+        FormButtonDelegate {
+            label: "Timesync status"
+            icon: MaterialIcons.consoleLine
+            onClicked: {
+                var settings = ({
+                    "message": "timedatectl",
+                    "infos": TimedateSettings.timesyncStatus(),
+                    "diagnose": false
+                })
+                DialogManager.showText(settings);
+            }
+        }
+        FormButtonDelegate {
+            label: "Sync NTP"
+            icon: MaterialIcons.clockStarFourPoints
+            onClicked: TimedateSettings.syncNtp()
         }
         SeparatorTreeDelegate {}
         InfoTreeDelegate {
@@ -82,15 +114,9 @@ PaneTreeView {
             text: qsTr("Heure")
             info: DateTimeUtils.formatTime(DateTimeUtils.systemDateTime)
         }
-        SeparatorTreeDelegate {}
         InfoTreeDelegate {
-            text: qsTr("Serveur NTP")
+            text: qsTr("NTP")
             info: TimedateSettings.serverName
-        }
-        FormButtonDelegate {
-            label: "Sync NTP"
-            icon: MaterialIcons.clockStarFourPoints
-            onClicked: TimedateSettings.syncNtp()
         }
     }
 }

@@ -14,14 +14,14 @@ public:
         Timezone = 0x01,
         Ntp = 0x02,
         SystemDateTime = 0x04,
-        Timeservers = 0x08
+        NtpServer = 0x08
     };
 
     bool hasCapability(int capability) { return getCapabilities() & capability; };
     bool canSetTimezone() { return hasCapability(Capabilities::Timezone); }
     bool canSetNtp() { return hasCapability(Capabilities::Ntp); }
     bool canSetSystemDateTime() { return hasCapability(Capabilities::SystemDateTime); }
-    bool canSetTimeservers() { return hasCapability(Capabilities::Timeservers); }
+    bool canSetNtpServer() { return hasCapability(Capabilities::NtpServer); }
 
     virtual int getCapabilities() = 0;
 
@@ -33,14 +33,10 @@ public:
 
     virtual bool setSystemTime(const QDateTime& aTime) { Q_UNUSED(aTime); return false; };
 
-    virtual QString getTimeservers() const { return QString(); };
-    virtual bool setTimeservers(const QString& timeservers) { Q_UNUSED(timeservers); return false; };
+    virtual QString getNtpServer() const { return QString(); };
+    virtual bool setNtpServer(const QString& ntpServer) { Q_UNUSED(ntpServer); return false; };
 
-    virtual QString serverName() const { return QString(); };
-    virtual QString serverAddress() const { return QString(); };
-    virtual int pollIntervalMinUSec() const { return 0; };
-    virtual int pollIntervalMaxUSec() const { return 0; };
-    virtual int frequency() const { return 0; };
+    virtual QString getServerName() const { return QString(); };
 };
 
 #endif // ABSTRACTTIMEDATECOMPONENT_H

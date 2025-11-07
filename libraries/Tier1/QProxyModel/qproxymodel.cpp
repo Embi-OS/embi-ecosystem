@@ -4,8 +4,6 @@
 QProxyModel::QProxyModel(QObject *parent) :
     QSortFilterProxyModel(parent)
 {
-    connect(this, &QAbstractProxyModel::sourceModelChanged, this, &QProxyModel::updateRoles);
-    connect(this, &QAbstractItemModel::modelReset, this, &QProxyModel::updateRoles);
     connect(this, &QAbstractItemModel::rowsInserted, this, &QProxyModel::countInvalidate);
     connect(this, &QAbstractItemModel::rowsRemoved, this, &QProxyModel::countInvalidate);
     connect(this, &QAbstractItemModel::modelReset, this, &QProxyModel::countInvalidate);
@@ -263,6 +261,7 @@ void QProxyModel::setSourceModel(QAbstractItemModel *model)
         connect(model, &QAbstractItemModel::modelReset, this, &QProxyModel::initRoles);
     }
     QSortFilterProxyModel::setSourceModel(model);
+    initRoles();
 }
 
 void QProxyModel::resetInternalData()
@@ -319,6 +318,7 @@ void QProxyModel::invalidate()
     m_isActive = true;
     m_invalidateQueued = false;
 
+    updateRoles();
     QSortFilterProxyModel::invalidate();
     QProxyModel::invalidateSorter();
 }

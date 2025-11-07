@@ -6,7 +6,7 @@ AbstractHappyField::AbstractHappyField(QObject* parent):
 {
     connect(this, &AbstractHappyField::nameChanged, this, [this](const QString& name){
         m_nameJson = QUtils::Json::variantToJson(name);
-        m_nameCbor = QUtils::Cbor::variantToCbor(name);
+        m_nameCbor = name.toUtf8();
     });
 }
 

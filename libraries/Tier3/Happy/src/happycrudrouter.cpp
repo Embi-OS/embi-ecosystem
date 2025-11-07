@@ -309,11 +309,12 @@ QByteArray HappyCrudRouter::serializeFieldsJson(QSqlQuery&& query, const QString
         const QSqlRecord rec = query.record();
         for(AbstractHappyField* field: fields)
         {
+            writer.writeRaw(field->nameJson());
+            writer.writeNameSeparator();
+
             VarHappyField* varField = qobject_cast<VarHappyField*>(field);
             if(varField && varField->getType()==SqlColumnTypes::Json && varField->nameIndex()>=0)
             {
-                writer.writeRaw(field->nameJson());
-                writer.writeNameSeparator();
                 const QByteArray rawJson = rec.value(varField->nameIndex()).toByteArray();
                 if(rawJson.isEmpty())
                     writer.writeRaw("null");
@@ -322,8 +323,6 @@ QByteArray HappyCrudRouter::serializeFieldsJson(QSqlQuery&& query, const QString
             }
             else
             {
-                writer.writeRaw(field->nameJson());
-                writer.writeNameSeparator();
                 writer.writeVariant(field->read(rec));
             }
             if (++i < fields.size())
@@ -373,7 +372,7 @@ QByteArray HappyCrudRouter::serializeFieldsCbor(QSqlQuery&& query, const QString
         const QSqlRecord rec = query.record();
         for(AbstractHappyField* field: fields)
         {
-            writer.writeString(field->getName());
+            writer.writeString(field->nameCbor());
             writer.writeVariant(field->read(rec));
         }
         writer.endMap();

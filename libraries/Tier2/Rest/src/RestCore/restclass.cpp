@@ -68,6 +68,7 @@ RestReply* RestClass::call(QNetworkReply* networkReply, QObject* parent)
         setReply(reply);
         setDownloadProgress(10000);
         setUploadProgress(10000);
+        // qNotice().noquote()<<this<<"REST reply"<<QUtils::Json::variantToJson(reply, false);
     });
     reply->onFailed([this](int httpStatus, const QVariant& reply){
         setHttpStatus(httpStatus);

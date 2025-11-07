@@ -196,10 +196,8 @@ void Logger::init(const QString& path)
     QsLogging::DestinationPtr consoleDest = QsLogging::DestinationFactory::MakeDebugOutputDestination();
     consoleDest->setIncludeTimestamp(false);
     consoleDest->setLoggingLevel(QsLogging::NoticeLevel);
-#ifdef Q_OS_WASM
-    // consoleDest->setLoggingLevel(QsLogging::DebugLevel);
-    // consoleDest->setIncludeColor(false);
-#elif defined(QSLOG_FILE_ENABLED) && defined(QT_NO_DEBUG)
+
+#if defined(QSLOG_FILE_ENABLED) && defined(QT_NO_DEBUG)
     if(!path.isEmpty())
     {
         QsLogging::DestinationPtr fileDest = QsLogging::DestinationFactory::MakeFileDestination(path,
@@ -212,7 +210,9 @@ void Logger::init(const QString& path)
     }
 #endif
     QsLogging::Logger::instance().addDestination(consoleDest);
+#ifdef QT_CREATOR_RUN
     QsLogging::Logger::instance().setLoggingLevel(QsLogging::NoticeLevel);
+#endif
 
     qInfo()<<"Creating logger instance !!!";
     qInfo()<<"Logging to"<<qPrintable(path);

@@ -13,21 +13,16 @@ class TimedateSettings : public QObject,
 
     Q_PROPERTY(bool canSetTimezone          READ canSetTimezone         CONSTANT FINAL)
     Q_PROPERTY(bool canSetNtp               READ canSetNtp              CONSTANT FINAL)
-    Q_PROPERTY(bool canSetTimeservers       READ canSetTimeservers      CONSTANT FINAL)
     Q_PROPERTY(bool canSetSystemDateTime    READ canSetSystemDateTime   CONSTANT FINAL)
+    Q_PROPERTY(bool canSetNtpServer         READ canSetNtpServer        CONSTANT FINAL)
     Q_PROPERTY(bool canReadRTC              READ canReadRTC             CONSTANT FINAL)
     Q_PROPERTY(QString timezone             READ getTimezone            WRITE setTimezone       NOTIFY timezoneChanged FINAL)
     Q_PROPERTY(bool ntp                     READ getNtp                 WRITE setNtp            NOTIFY ntpChanged FINAL)
-    Q_PROPERTY(QString timeservers          READ getTimeservers         WRITE setTimeservers    NOTIFY timeserversChanged FINAL)
     Q_PROPERTY(QDateTime systemDateTime     READ getSystemDateTime      WRITE setSystemDateTime NOTIFY systemDateTimeChanged FINAL)
     Q_PROPERTY(QDate systemDate             READ getSystemDate          WRITE setSystemDate     NOTIFY systemDateTimeChanged FINAL)
     Q_PROPERTY(QTime systemTime             READ getSystemTime          WRITE setSystemTime     NOTIFY systemDateTimeChanged FINAL)
-
-    Q_PROPERTY(QString serverName           READ serverName             NOTIFY timesyncChanged FINAL)
-    Q_PROPERTY(QString serverAddress        READ serverAddress          NOTIFY timesyncChanged FINAL)
-    Q_PROPERTY(int pollIntervalMinUSec      READ pollIntervalMinUSec    NOTIFY timesyncChanged FINAL)
-    Q_PROPERTY(int pollIntervalMaxUSec      READ pollIntervalMaxUSec    NOTIFY timesyncChanged FINAL)
-    Q_PROPERTY(int frequency                READ frequency              NOTIFY timesyncChanged FINAL)
+    Q_PROPERTY(QString ntpServer            READ getNtpServer           WRITE setNtpServer      NOTIFY ntpServerChanged FINAL)
+    Q_PROPERTY(QString serverName           READ getServerName          NOTIFY timesyncChanged FINAL)
 
 protected:
     friend QQmlSingleton<TimedateSettings>;
@@ -36,32 +31,28 @@ protected:
 public:
     static bool canSetTimezone();
     static bool canSetNtp();
-    static bool canSetTimeservers();
     static bool canSetSystemDateTime();
+    static bool canSetNtpServer();
     static bool canReadRTC();
 
     QString getTimezone() const;
     bool getNtp() const;
-    QString getTimeservers() const;
     QDateTime getSystemDateTime() const;
     QDate getSystemDate() const;
     QTime getSystemTime() const;
-
-    QString serverName() const;
-    QString serverAddress() const;
-    int pollIntervalMinUSec() const;
-    int pollIntervalMaxUSec() const;
-    int frequency() const;
+    QString getNtpServer() const;
+    QString getServerName() const;
 
     Q_INVOKABLE static QString timedateCtl();
+    Q_INVOKABLE static QString timesyncStatus();
 
 public slots:
     void setTimezone(const QString& timezone);
     void setNtp(const bool ntp);
-    void setTimeservers(const QString& timeservers);
     void setSystemDateTime(const QDateTime& systemDateTime);
     void setSystemDate(const QDate& systemDate);
     void setSystemTime(const QTime& systemTime);
+    void setNtpServer(const QString& ntpServer);
 
     bool syncNtp();
     bool syncRtc();
@@ -71,6 +62,7 @@ signals:
     void ntpChanged();
     void systemDateTimeChanged();
     void timeserversChanged();
+    void ntpServerChanged();
     void timesyncChanged();
 
 private slots:

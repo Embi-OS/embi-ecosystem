@@ -1,6 +1,8 @@
 import QtQuick
+import Eco.Tier1.Utils
 import Eco.Tier2.Solid
 import Eco.Tier3.Axion
+import Eco.Tier3.System
 import L02_Clock
 
 BasicWindow {
@@ -60,4 +62,10 @@ BasicWindow {
     BasicKeyboard {
         hide: root.hideKeyboard
     }
+
+    Watchdog {
+        enabled: root.backendReady // && root.frontendReady
+    }
+
+    onApplicationLoaded: Swupdate.init();
 }

@@ -54,6 +54,10 @@ FormObjectModel {
         label: qsTr("DNS")
         value: root.nameservers.ModelHelper.getProperties("display").join(", ")
     }
+    FormInfoDelegate {
+        label: qsTr("NTP")
+        value: root.timeservers.ModelHelper.getProperties("display").join(", ")
+    }
 
     SeparatorTreeDelegate {}
 

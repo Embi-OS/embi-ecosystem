@@ -163,7 +163,6 @@ void QQmlSortFilterProxyModel::onDataChanged(const QModelIndex& topLeft, const Q
 
 void QQmlSortFilterProxyModel::queueInvalidateProxyRoles()
 {
-    queueInvalidate();
     if (m_delayed) {
         if (!m_invalidateProxyRolesQueued) {
             m_invalidateProxyRolesQueued = true;
@@ -229,9 +228,9 @@ void QQmlSortFilterProxyModel::onProxyRoleAppended(QQsfpm::ProxyRole *proxyRole)
         proxyRole->proxyModelCompleted(*this);
 
     beginResetModel();
-    connect(proxyRole, &QQsfpm::ProxyRole::roleNamesInvalidated, this, &QQmlSortFilterProxyModel::updateObjectRoles);
     connect(proxyRole, &QQsfpm::ProxyRole::invalidated, this, &QQmlSortFilterProxyModel::queueInvalidateProxyRoles);
     connect(proxyRole, &QQsfpm::ProxyRole::namesChanged, this, &QQmlSortFilterProxyModel::queueInvalidate);
+    connect(proxyRole, &QQsfpm::ProxyRole::roleNamesInvalidated, this, &QQmlSortFilterProxyModel::updateObjectRoles);
     endResetModel();
 }
 

@@ -321,7 +321,6 @@ QString DeviceInfo::deviceShortId()
 
 QString DeviceInfo::storageName()
 {
-    qTrace()<<QStorageInfo::root().name()<<QStorageInfo::root();
     return QStorageInfo::root().name();
 }
 

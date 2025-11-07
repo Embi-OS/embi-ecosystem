@@ -32,12 +32,12 @@ QVariantList QVariantReader::readList()
 QVariantMap QVariantReader::readMap()
 {
     QVariantMap map;
-    // if (m_device->isLengthKnown())
-    //     map.reserve(m_device->length());
+    // if (isLengthKnown())
+    //     map.reserve(length());
 
     enterContainer();
     while (!hasError() && hasNext()) {
-        QString key = read().toString();
+        QString key = readString();
         map.insert(std::move(key), read());
     }
     if (!hasError())
