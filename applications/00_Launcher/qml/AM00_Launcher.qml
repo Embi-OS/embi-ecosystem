@@ -46,7 +46,6 @@ Page {
 
     DialogPower {
         id: powerPopup
-        quitVisible: false
         suspendVisible: false
     }
 

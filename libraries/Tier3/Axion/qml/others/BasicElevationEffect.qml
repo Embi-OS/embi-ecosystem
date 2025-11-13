@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 
+// TODO: Qt 6.9 RectangularShadow
 MultiEffect {
     id: root
 

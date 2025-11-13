@@ -9,9 +9,6 @@
 #include <QtConcurrentRun>
 #endif
 
-#define DEV_FILE_PATH (QString("/dev"))
-#define MNT_FILE_PATH (QString("/mnt"))
-#define MEDIA_FILE_PATH (QString("/media"))
 FilesystemDrive::FilesystemDrive(const QStorageInfo& storage, const QFileInfo& info, QObject* parent) :
     QObject (parent)
 {
@@ -86,19 +83,17 @@ QString FilesystemDrive::toString() const
 
 FilesystemDriveModel::FilesystemDriveModel(QObject* parent) :
     QObjectListModel(parent, &FilesystemDrive::staticMetaObject),
-    m_watcher(new QFileSystemWatcher(this)),
+    m_mountWatcher(new FileSystemMountWatcher(this)),
     m_refreshCaller(this)
 {
     m_refreshCaller.setSingleShot(true);
     connect(&m_refreshCaller, &QTimer::timeout, this, &FilesystemDriveModel::refresh);
 
-    refresh();
+    connect(m_mountWatcher, &FileSystemMountWatcher::mountRemoved, this, &FilesystemDriveModel::watcherMountRemoved);
+    connect(m_mountWatcher, &FileSystemMountWatcher::mountAdded, this, &FilesystemDriveModel::watcherMountAdded);
 
-    connect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesystemDriveModel::markDirty);
-    m_watcher->addPath(DEV_FILE_PATH);
-    m_watcher->addPath(MNT_FILE_PATH);
-    m_watcher->addPath(MEDIA_FILE_PATH);
-
+    connect(this, &FilesystemDriveModel::watcherMountRemoved, this, &FilesystemDriveModel::markDirty);
+    connect(this, &FilesystemDriveModel::watcherMountAdded, this, &FilesystemDriveModel::markDirty);
     connect(this, &FilesystemDriveModel::showRootDrivesChanged, this, &FilesystemDriveModel::markDirty);
     connect(this, &FilesystemDriveModel::showSnapPackageDrivesChanged, this, &FilesystemDriveModel::markDirty);
     connect(this, &FilesystemDriveModel::showUnmountedAutofsDrivesChanged, this, &FilesystemDriveModel::markDirty);
@@ -107,6 +102,8 @@ FilesystemDriveModel::FilesystemDriveModel(QObject* parent) :
     connect(this, &FilesystemDriveModel::showConfigDrivesChanged, this, &FilesystemDriveModel::markDirty);
     connect(this, &FilesystemDriveModel::showReadOnlyDrivesChanged, this, &FilesystemDriveModel::markDirty);
     connect(this, &FilesystemDriveModel::showFsTabDrivesChanged, this, &FilesystemDriveModel::markDirty);
+
+    refresh();
 }
 
 QList<QStorageInfo> FilesystemDriveModel::mountedVolumes(bool mount)
@@ -219,7 +216,7 @@ void FilesystemDriveModel::eject(FilesystemDrive* drive)
 void FilesystemDriveModel::markDirty()
 {
     m_refreshCaller.stop();
-    m_refreshCaller.start(500);
+    m_refreshCaller.start(100);
     setProcessing(true);
 }
 

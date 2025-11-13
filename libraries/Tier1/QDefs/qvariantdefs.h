@@ -3,10 +3,39 @@
 
 #include <QString>
 #include <QVariant>
+#include <QJSValue>
 
 //──────────────────────────────────────────────────────────────────────
 // Read/Write methods
 //──────────────────────────────────────────────────────────────────────
+
+inline QVariant qVariantFromJSVariant(const QVariant &variant)
+{
+    int type = variant.userType();
+
+    if (type == qMetaTypeId<QJSValue>()) {
+        return qVariantFromJSVariant(variant.value<QJSValue>().toVariant());
+    } else if (type == QMetaType::QVariant) {
+        // got a matryoshka variant
+        return qVariantFromJSVariant(variant.value<QVariant>());
+    } else if (type == QMetaType::QVariantList) {
+        const QVariantList inList = variant.toList();
+        QVariantList outList;
+        outList.reserve(inList.size());
+        for (const QVariant& v: inList)
+            outList.append(qVariantFromJSVariant(v));
+        return outList;
+    } else if (type == QMetaType::QVariantMap) {
+        const QVariantMap inMap = variant.toMap();
+        QVariantMap outMap;
+        // outMap.reserve(inMap.size());
+        for (auto [key, value] : inMap.asKeyValueRange())
+            outMap.insert(key, qVariantFromJSVariant(value));
+        return outMap;
+    } else {
+        return variant;
+    }
+}
 
 inline QVariant qVariantGetNestedValue(const QVariant& variant, const QStringList& keys, bool* ok=nullptr, int index=0)
 {

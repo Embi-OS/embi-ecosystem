@@ -26,7 +26,7 @@ public slots:
     SnackbarObject* showFatal(const QVariant& settings={});
     SnackbarObject* showSuccess(const QVariant& settings={});
 
-    void diagnose(SnackbarSeverity severity, QString log) const;
+    void diagnose(SnackbarSeverities::Enum severity, QString log) const;
 
 private:
     void onObjectInserted(SnackbarObject* object) const;

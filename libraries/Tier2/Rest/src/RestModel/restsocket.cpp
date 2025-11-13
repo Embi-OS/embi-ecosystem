@@ -6,20 +6,20 @@
 
 #include <QWebSocketHandshakeOptions>
 
-Q_GLOBAL_STATIC_WITH_ARGS(bool, g_noRestSocket, (false))
-void RestSocket::setNoRestSocket(bool noRestSocket)
+Q_GLOBAL_STATIC_WITH_ARGS(bool, g_restSocketGloballyEnabled, (true))
+void RestSocket::setGloballyEnabled(bool globallyEnabled)
 {
-    *g_noRestSocket = noRestSocket;
-    if(noRestSocket) {
-        QUTILSLOG_INFO()<<"RestSocket has been globally disabled";
-    }
-    else {
+    *g_restSocketGloballyEnabled = globallyEnabled;
+    if(globallyEnabled) {
         QUTILSLOG_INFO()<<"RestSocket has been globally enabled";
     }
+    else {
+        QUTILSLOG_INFO()<<"RestSocket has been globally disabled";
+    }
 }
-bool RestSocket::noRestSocket()
+bool RestSocket::globallyEnabled()
 {
-    return *g_noRestSocket;
+    return *g_restSocketGloballyEnabled;
 }
 
 RestSocket::RestSocket(QObject *parent):
@@ -240,7 +240,7 @@ void RestSocket::bind()
 
 bool RestSocket::waitForBind(int timeout)
 {
-    if(RestSocket::noRestSocket())
+    if(!RestSocket::globallyEnabled())
         return true;
 
     if(m_status==RestSocketStates::Open)
@@ -262,7 +262,7 @@ void RestSocket::unbind()
 
 qint64 RestSocket::sendTextMessage(const QString &message)
 {
-    if(RestSocket::noRestSocket())
+    if(!RestSocket::globallyEnabled())
         return 0;
 
     if (m_status != RestSocketStates::Open) {
@@ -278,7 +278,7 @@ qint64 RestSocket::sendTextMessage(const QString &message)
 
 qint64 RestSocket::sendBinaryMessage(const QByteArray &message)
 {
-    if(RestSocket::noRestSocket())
+    if(!RestSocket::globallyEnabled())
         return 0;
 
     if (m_status != RestSocketStates::Open) {
@@ -314,7 +314,7 @@ qint64 RestSocket::sendMessage(const QVariant &message)
 
 void RestSocket::ping(const QByteArray &payload)
 {
-    if(RestSocket::noRestSocket())
+    if(!RestSocket::globallyEnabled())
         return;
 
     if (m_status != RestSocketStates::Open) {
@@ -328,7 +328,7 @@ void RestSocket::ping(const QByteArray &payload)
 
 void RestSocket::open()
 {
-    if(RestSocket::noRestSocket())
+    if(!RestSocket::globallyEnabled())
         return;
 
     RestRequestBuilder builder = RestHelper::apiClient(m_connection)->builder();

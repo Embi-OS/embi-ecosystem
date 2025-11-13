@@ -14,6 +14,7 @@ QT_ROOT="/opt/Qt"
 GENERATOR="Ninja"
 BUILD_TYPE="Release"
 REBUILD=0
+OPTIMIZATION="OFF"
 QT_VERSION="6.8.5"
 PROJECT_NAME="Project"
 PROJECT_VERSION="1.0.0"
@@ -37,6 +38,10 @@ while [ $# -gt 0 ]; do
         --rebuild)
             echo "option: $1"
             REBUILD=1
+            ;;
+        --optimization)
+            echo "option: $1"
+            OPTIMIZATION="ON"
             ;;
         --qt-version)
             echo "option: $1"
@@ -94,7 +99,7 @@ EXTRA_CMAKE_VARIABLES="-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
 -DDEFAULT_PROJECT_VERSION:STRING=${PROJECT_VERSION} \
 -DDEFAULT_PROJECT_DESCRIPTION:STRING=${PROJECT_DESCRIPTION} \
 -DSANITIZED_PROJECT_VERSION:STRING=${SANITIZED_PROJECT_VERSION} \
--DENABLE_OPTIMIZATION:BOOL=ON \
+-DENABLE_OPTIMIZATION:BOOL=${OPTIMIZATION} \
 -DDISABLE_SAMPLES:BOOL=ON \
 -DDISABLE_TESTS:BOOL=ON"
 
@@ -182,6 +187,14 @@ run_cmd() {
             error_exit "!!! Command failed: $*"
         fi
     fi
+}
+
+require_tools() {
+    for cmd in "$@"; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            error_exit "Required command '$cmd' not found in PATH"
+        fi
+    done
 }
 
 # -------- Timing helpers --------

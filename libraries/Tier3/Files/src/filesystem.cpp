@@ -22,7 +22,20 @@ Filesystem::Filesystem(QObject *parent) :
     m_workingDirectoryPath(QDir::currentPath()),
     m_drives(new FilesystemDriveModel(this))
 {
-
+    connect(m_drives, &FilesystemDriveModel::watcherMountAdded, this, [](const QString &mountPoint, const QString &device){
+        QVariantMap settings;
+        settings["title"] = tr("Nouveau disque monté");
+        settings["caption"] = mountPoint;
+        settings["diagnose"] = false;
+        SnackbarManager::Get()->show(settings);
+    });
+    connect(m_drives, &FilesystemDriveModel::watcherMountRemoved, this, [](const QString &mountPoint, const QString &device){
+        QVariantMap settings;
+        settings["title"] = tr("Disque éjecté avec succès");
+        settings["caption"] = mountPoint;
+        settings["diagnose"] = false;
+        SnackbarManager::Get()->show(settings);
+    });
 }
 
 bool Filesystem::isDir(const QString& path)

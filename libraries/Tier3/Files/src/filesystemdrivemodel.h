@@ -4,7 +4,7 @@
 #include <QModels>
 #include <QDefs>
 #include <QStorageInfo>
-#include <QFileSystemWatcher>
+#include "filesystemmountwatcher.h"
 
 struct FstabEntry;
 class FilesystemDriveModel;
@@ -90,6 +90,10 @@ public slots:
 
     void markDirty();
 
+signals:
+    void watcherMountAdded(const QString &mountPoint, const QString &device);
+    void watcherMountRemoved(const QString &mountPoint, const QString &device);
+
 private slots:
     void markClean();
 
@@ -97,7 +101,7 @@ private:
     bool isStorageInfoValid(const QStorageInfo& storage);
     bool isFstabEntryValid(const FstabEntry& entry);
 
-    QFileSystemWatcher* m_watcher=nullptr;
+    FileSystemMountWatcher* m_mountWatcher=nullptr;
     QTimer m_refreshCaller;
     bool m_isRefreshing=false;
 };

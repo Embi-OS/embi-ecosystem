@@ -51,8 +51,8 @@ public:
 
     bool isCompleted() const;
 
-    static void setNoRestSocket(bool noRestSocket);
-    static bool noRestSocket();
+    static void setGloballyEnabled(bool globallyEnabled);
+    static bool globallyEnabled();
 
 public slots:
     virtual void queueBind();

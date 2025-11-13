@@ -93,7 +93,7 @@ void SnackbarManager::onObjectInserted(SnackbarObject* object) const
     diagnose(object->getSeverity(), object->getCaption());
 }
 
-void SnackbarManager::diagnose(SnackbarSeverity severity, QString log) const
+void SnackbarManager::diagnose(SnackbarSeverities::Enum severity, QString log) const
 {
     if(!log.isEmpty())
     {
