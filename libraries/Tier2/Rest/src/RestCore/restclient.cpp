@@ -41,9 +41,9 @@ RestClass *RestClient::createClass(const QString &path, QObject *parent)
 
 RestRequestBuilder RestClient::builder() const
 {
-    QUrl url = QUrl(m_baseUrl);
-    if(m_port>=0)
-        url.setPort(m_port);
+    const QString trimmed = m_baseUrl.trimmed();
+    QUrl url = QUrl::fromUserInput(trimmed);
+    url.setPort(m_port);
     RestRequestBuilder builder{url, m_manager};
 
     builder.setVersion(m_apiVersion)

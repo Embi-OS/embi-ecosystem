@@ -19,7 +19,7 @@ class SqlColumnPreparator : public QObject
 
 public:
     explicit SqlColumnPreparator(QObject* parent = nullptr);
-    explicit SqlColumnPreparator(const QString& name, SqlColumnTypes::Enum type, SqlColumnOption options=SqlColumnOptions::None, const QVariant& defaultValue=QVariant(), QObject* parent = nullptr);
+    explicit SqlColumnPreparator(const QString& name, SqlColumnTypes::Enum type, int precision=0, SqlColumnOption options=SqlColumnOptions::None, const QVariant& defaultValue=QVariant(), QObject* parent = nullptr);
 
     bool isValid() const;
     bool hasDefaultValue() const;

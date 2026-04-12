@@ -39,6 +39,10 @@ public:
         const QString cacheDirPath=QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
         changeCachePath(cacheDirPath);
     }
+    ~SvgMetaDataCache()
+    {
+        qDeleteAll(hashMutexes);
+    }
 
     void changeCachePath(const QString& path) {
         QMutexLocker lock(&pathMutex);

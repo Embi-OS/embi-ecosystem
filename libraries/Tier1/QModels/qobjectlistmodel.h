@@ -552,7 +552,7 @@ class QObjectListModelAttached : public QObject
 
     Q_PROPERTY(QObjectListModel *model READ getModel WRITE setModel NOTIFY modelChanged FINAL)
 
-    Q_CONSTANT_PTR_PROPERTY(QObject, qtObject, QtObject, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QObject, qtObject)
     Q_READONLY_VAR_PROPERTY(int, count, Count, -1)
     Q_READONLY_VAR_PROPERTY(int, index, Index, -1)
     Q_READONLY_VAR_PROPERTY(bool, isFirst, IsFirst, false)

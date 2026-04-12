@@ -92,7 +92,7 @@ public:
 
 private:
 	// thread safety first
-    QRecursiveMutex m_mutex;
+    mutable QRecursiveMutex m_mutex;
 	// list of connections to avoid memory leaks
 	QList<QMetaObject::Connection> m_connectionList;
 	// struct to store callback data
@@ -139,13 +139,29 @@ QDynamicEventsData<Types...>::QDynamicEventsData()
 	// nothing to do here
 }
 
+// template<class ...Types>
+// QDynamicEventsData<Types...>::QDynamicEventsData(const QDynamicEventsData &other) : QSharedData(other),
+//     m_mutex(other.m_mutex),
+//     m_connectionList(other.m_connectionList),
+//     m_callbacksMap(other.m_callbacksMap)
+// {
+// 	// nothing to do here
+// }
+
 template<class ...Types>
-QDynamicEventsData<Types...>::QDynamicEventsData(const QDynamicEventsData &other) : QSharedData(other),
-m_mutex(other.m_mutex),
-m_connectionList(other.m_connectionList),
-m_callbacksMap(other.m_callbacksMap)
+QDynamicEventsData<Types...>::QDynamicEventsData(const QDynamicEventsData &other) :
+    QSharedData(other),
+    m_mutex() // Initialise un nouveau mutex pour la copie
 {
-	// nothing to do here
+    // On verrouille l'original pour copier les maps de manière cohérente
+    QMutexLocker locker(&other.m_mutex);
+
+    // Copies sécurisées des structures de données
+    // Comme ce sont des QMap d'objets (pas de pointeurs),
+    // Qt gère la copie profonde des données automatiquement.
+    m_connectionList   = other.m_connectionList;
+    m_callbacksMap     = other.m_callbacksMap;
+    m_callbacksMapOnce = other.m_callbacksMapOnce;
 }
 
 template<class ...Types>

@@ -65,7 +65,7 @@ PaneTreeView {
         InfoTreeDelegate {text: "API url"; info: RestManager.apiBaseUrl }
         InfoTreeDelegate {text: "API port"; info: RestManager.apiPort }
         InfoTreeDelegate {text: "API trailing slash"; info: RestManager.apiTrailingSlash }
-        InfoTreeDelegate {text: "API no rest socket"; info: RestManager.apiNoRestSocket }
+        InfoTreeDelegate {text: "API web socket"; info: RestManager.apiSocketEnabled }
         FormLabelDelegate {label: "API global headers"; value: RestManager.client.globalHeaders; valueType: FormValueTypes.Map; visible: root.editable }
         FormLabelDelegate {label: "API global parameters"; value: RestManager.client.globalParameters; valueType: FormValueTypes.Map; visible: root.editable }
         FormButtonDelegate {

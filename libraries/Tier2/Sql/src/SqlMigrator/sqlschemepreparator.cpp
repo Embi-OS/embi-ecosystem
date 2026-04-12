@@ -102,7 +102,7 @@ bool SqlSchemePreparator::createTables()
         if(existingTables.contains(table->getName()+"_new"))
             SqlBuilder::drop().table(table->getName()+"_new").ifExists().connection(m_dbConnectionName).exec(&result);
 
-        SQLLOG_NOTICE()<<"Working on table:"<<table->getName();
+        SQLLOG_TRACE()<<"Working on table:"<<table->getName();
 
         if(existingTables.contains(table->getName()))
         {
@@ -157,7 +157,7 @@ bool SqlSchemePreparator::dropTables()
 
 bool SqlSchemePreparator::updatePrimaries()
 {
-    SqlDbPool::database(m_dbConnectionName).transaction();
+    SqlDbPool::transaction(m_dbConnectionName);
 
     for(SqlTablePreparator* table: m_tables)
     {
@@ -167,14 +167,14 @@ bool SqlSchemePreparator::updatePrimaries()
         }
     }
 
-    SqlDbPool::database(m_dbConnectionName).commit();
+    SqlDbPool::commit(m_dbConnectionName);
 
     return true;
 }
 
 bool SqlSchemePreparator::fillDefaultEntriesTables()
 {
-    SqlDbPool::database(m_dbConnectionName).transaction();
+    SqlDbPool::transaction(m_dbConnectionName);
 
     for(SqlTablePreparator* table: m_tables)
     {
@@ -184,14 +184,14 @@ bool SqlSchemePreparator::fillDefaultEntriesTables()
         }
     }
 
-    SqlDbPool::database(m_dbConnectionName).commit();
+    SqlDbPool::commit(m_dbConnectionName);
 
     return true;
 }
 
 bool SqlSchemePreparator::fillBasicEntriesTables()
 {
-    SqlDbPool::database(m_dbConnectionName).transaction();
+    SqlDbPool::transaction(m_dbConnectionName);
 
     for(SqlTablePreparator* table: m_tables)
     {
@@ -201,7 +201,7 @@ bool SqlSchemePreparator::fillBasicEntriesTables()
         }
     }
 
-    SqlDbPool::database(m_dbConnectionName).commit();
+    SqlDbPool::commit(m_dbConnectionName);
 
     return true;
 }

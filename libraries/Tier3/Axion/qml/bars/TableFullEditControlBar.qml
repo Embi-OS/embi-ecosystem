@@ -14,6 +14,7 @@ RowContainer {
     required property VariantListModel sourceModel
     required property Component formModel
     required property Component defaultObject
+    property var formModelProperties: ({})
     property QtObject formObject
 
     property int nbDataMax: 0
@@ -123,7 +124,7 @@ RowContainer {
             destroyObject = true
         }
 
-        var model = root.formModel.createObject(root) as FormObjectModel
+        var model = root.formModel.createObject(root, root.formModelProperties) as FormObjectModel
         var settings = {
             // "title": root.title,
             "formModel": model,

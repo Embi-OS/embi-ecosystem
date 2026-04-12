@@ -242,8 +242,10 @@ Q_SIGNALS:
 
 private:
     static inline void positionColor(QRgb rgb, QList<ImageData::colorStat> &clusters);
-    static void positionColorMP(const decltype(ImageData::m_samples) &samples, decltype(ImageData::m_clusters) &clusters, int numCore = 0);
+    static void positionColorMP(const decltype(ImageData::m_samples) &samples, decltype(ImageData::m_clusters) &clusters);
     static ImageData generatePalette(const QImage &sourceImage);
+    static void finalizePalette(ImageData &imageData, qint64 red, qint64 green, qint64 blue, qint64 count);
+    static void buildPaletteFromClusters(ImageData &imageData);
 
     static double getClusterScore(const ImageData::colorStat &stat);
     void postProcess(ImageData &imageData, const QColor &backgroundColor, const QColor &textColor) const;

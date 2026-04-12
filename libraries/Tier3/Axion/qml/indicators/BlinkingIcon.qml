@@ -9,12 +9,12 @@ SvgColorImage {
     property int interval: 350
     property int fadeDuration: 30
 
-    onBlinkChanged: throttler.throttle()
-    onIntervalChanged: throttler.throttle()
+    onBlinkChanged: throttler.start()
+    onIntervalChanged: throttler.start()
 
-    SignalTrailingThrottler {
+    Timer {
         id: throttler
-        timeout: 16
+        interval: 16
         onTriggered: root.evaluate()
     }
 

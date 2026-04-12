@@ -23,6 +23,7 @@ class RegExpUtils : public QObject,
     Q_PROPERTY(QRegularExpression uncPathRegExp READ uncPathRegExp CONSTANT FINAL)
     Q_PROPERTY(QRegularExpression pathRegExp READ pathRegExp CONSTANT FINAL)
     Q_PROPERTY(QRegularExpression nonSpaceRegExp READ nonSpaceRegExp CONSTANT FINAL)
+    Q_PROPERTY(QRegularExpression passwordRegExp READ passwordRegExp CONSTANT FINAL)
 
 protected:
     friend QQmlSingleton<RegExpUtils>;
@@ -40,6 +41,9 @@ public:
     static const QRegularExpression& uncPathRegExp();
     static const QRegularExpression& pathRegExp();
     static const QRegularExpression& nonSpaceRegExp();
+
+    // Requires at least one lowercase, one uppercase, one digit, one special character, and a minimum of 8 characters in total
+    static const QRegularExpression& passwordRegExp();
 };
 
 #endif // REGEXPUTILS_H

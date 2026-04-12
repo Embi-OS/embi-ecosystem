@@ -32,7 +32,7 @@ void SystemHelper::clearLogs()
         future.then(this, [dialog](bool result) {
             dialog->hide();
             if(!result)
-                DialogManager::Get()->showError(tr("Erreur lors de la suppression"));
+                DialogManager::Get()->showCritical(tr("Erreur lors de la suppression"));
             else
                 AxionHelper::criticalRestart(tr("Suppression terminée"));
         });
@@ -49,7 +49,7 @@ void SystemHelper::exportLogs()
     DialogObject* dialog = DialogManager::Get()->showFileTree(settings);
     dialog->onPathSelected([this](const QString& path) mutable {
 
-        DialogObject* dialog = DialogManager::Get()->showBusy(tr("Suppression des logs en cours!"));
+        DialogObject* dialog = DialogManager::Get()->showBusy(tr("Export des logs en cours!"));
         auto future = QtConcurrent::run([path](){
             bool result = true;
             result &= Log::Get()->copy(path);
@@ -59,7 +59,9 @@ void SystemHelper::exportLogs()
         future.then(this, [dialog](bool result) {
             dialog->hide();
             if(!result)
-                DialogManager::Get()->showError(tr("Erreur lors de l'export"));
+                DialogManager::Get()->showCritical(tr("Erreur lors de l'export"));
+            else
+                DialogManager::Get()->showMessage(tr("Export terminé"));
         });
     });
 }
@@ -87,7 +89,7 @@ void SystemHelper::clearCache()
         future.then(this, [dialog](bool result) {
             dialog->hide();
             if(!result)
-                DialogManager::Get()->showError(tr("Erreur lors de la suppression"));
+                DialogManager::Get()->showCritical(tr("Erreur lors de la suppression"));
             else
                 AxionHelper::criticalRestart(tr("Suppression terminée"));
         });
@@ -117,7 +119,7 @@ void SystemHelper::clearSettings()
         future.then(this, [dialog](bool result) {
             dialog->hide();
             if(!result)
-                DialogManager::Get()->showError(tr("Erreur lors de la suppression"));
+                DialogManager::Get()->showCritical(tr("Erreur lors de la suppression"));
             else
                 AxionHelper::criticalRestart(tr("Suppression terminée"));
         });
@@ -151,7 +153,7 @@ void SystemHelper::clearAll()
         future.then(this, [dialog](bool result) {
             dialog->hide();
             if(!result)
-                DialogManager::Get()->showError(tr("Erreur lors de la suppression"));
+                DialogManager::Get()->showCritical(tr("Erreur lors de la suppression"));
             else
                 AxionHelper::criticalRestart(tr("Suppression terminée"));
         });

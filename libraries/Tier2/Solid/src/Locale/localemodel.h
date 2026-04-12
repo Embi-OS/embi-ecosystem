@@ -11,12 +11,12 @@ class LocaleObject : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_CONSTANT_REF_PROPERTY(QLocale, locale, Locale, {})
-    Q_CONSTANT_REF_PROPERTY(QString, name, Name, "")
-    Q_CONSTANT_REF_PROPERTY(QString, territory, Territory, "")
-    Q_CONSTANT_REF_PROPERTY(QString, language, Language, "")
-    Q_CONSTANT_REF_PROPERTY(QString, lang, Lang, "")
-    Q_CONSTANT_REF_PROPERTY(QString, display, Display, "")
+    Q_CONSTANT_REF_PROPERTY(QLocale, locale, {})
+    Q_CONSTANT_REF_PROPERTY(QString, name, "")
+    Q_CONSTANT_REF_PROPERTY(QString, territory, "")
+    Q_CONSTANT_REF_PROPERTY(QString, language, "")
+    Q_CONSTANT_REF_PROPERTY(QString, lang, "")
+    Q_CONSTANT_REF_PROPERTY(QString, display, "")
 
 public:
     explicit LocaleObject(const QLocale& locale, QObject *parent = nullptr);

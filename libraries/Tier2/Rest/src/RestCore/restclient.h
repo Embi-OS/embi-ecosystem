@@ -25,8 +25,8 @@ class RestClient : public QObject
     Q_WRITABLE_REF_PROPERTY(QString, password, Password, {})
 
     Q_WRITABLE_REF_PROPERTY(QString, name, Name, {})
-    Q_COMPOSITION_PROPERTY(QNetworkAccessManager, manager, nullptr)
-    Q_COMPOSITION_PROPERTY(RestClass, rootClass, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QNetworkAccessManager, manager)
+    Q_CONSTANT_PTR_PROPERTY(RestClass, rootClass)
 
     Q_WRITABLE_VAR_PROPERTY(bool, available, Available, true)
 

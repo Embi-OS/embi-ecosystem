@@ -89,7 +89,7 @@ void FstabModel::refresh()
 {
     const QList<FstabEntry> entries = FstabEntry::entries();
 
-    if(m_entries.size()!=entries.size())
+    if(entries.isEmpty() || m_entries.size()!=entries.size())
     {
         beginResetModel();
         m_entries = entries;
@@ -125,8 +125,8 @@ bool FstabModel::addSmbShare(const QVariantMap& mountParams)
     {
         if(!QDir().mkpath(data.mountPoint()))
         {
-            FILESLOG_WARNING()<<"Failed to mkdir"<<data.mountPoint();
-            emit this->error(QString("Failed to mkdir %1").arg(data.mountPoint()));
+            FILESLOG_WARNING()<<"Failed to mkpath"<<data.mountPoint();
+            emit this->error(QString("Failed to mkpath %1").arg(data.mountPoint()));
             return false;
         }
     }
@@ -142,6 +142,13 @@ bool FstabModel::addSmbShare(const QVariantMap& mountParams)
     QList<FstabEntry> entries = FstabEntry::entries();
     entries.append(data);
     bool result = FstabEntry::writeMountpoints(entries);
+
+    if (!result)
+    {
+        emit this->error(QString("Failed to update %1").arg(FSTAB_FILE_PATH));
+        refresh();
+        return false;
+    }
 
     mount();
     refresh();
@@ -163,7 +170,14 @@ bool FstabModel::updateSmbShare(const QString& mountPoint, const QVariantMap& mo
     {
         FILESLOG_WARNING()<<mountPoint<<"does not exists";
         emit this->error(QString("%1 does not exists").arg(mountPoint));
-        return true;
+        return false;
+    }
+
+    if (data.mountPoint() != mountPoint && QModelHelper::contains(this, "mountPoint", data.mountPoint()))
+    {
+        FILESLOG_WARNING()<<data.mountPoint()<<"already exists";
+        emit this->error(QString("%1 already exists").arg(data.mountPoint()));
+        return false;
     }
 
     QList<FstabEntry> entries = FstabEntry::entries();
@@ -174,6 +188,14 @@ bool FstabModel::updateSmbShare(const QString& mountPoint, const QVariantMap& mo
 
     umount(mountPoint);
     bool result = FstabEntry::writeMountpoints(entries);
+
+    if (!result)
+    {
+        emit this->error(QString("Failed to update %1").arg(FSTAB_FILE_PATH));
+        refresh();
+        return false;
+    }
+
     mount();
     refresh();
 
@@ -196,6 +218,14 @@ bool FstabModel::removeSmbShare(const QString& mountPoint)
 
     umount(mountPoint);
     bool result = FstabEntry::writeMountpoints(entries);
+
+    if (!result)
+    {
+        emit this->error(QString("Failed to update %1").arg(FSTAB_FILE_PATH));
+        refresh();
+        return false;
+    }
+
     mount();
     refresh();
 
@@ -218,16 +248,16 @@ void FstabModel::testSmbShare(const QVariantMap& mountParams)
     if(!QDir(fakeMountPoint).exists() && QDir().mkpath(fakeMountPoint))
         tmpDir = true;
 
-    QString program="mount";
-    QStringList arguments = QStringList()<<data.fsSpec()<<fakeMountPoint;
+    const QString program="mount";
+    QStringList arguments;
+    if(!data.type().isEmpty())
+        arguments << "-t" << data.type();
+    if(!data.options().isEmpty())
+        arguments << "-o" << data.optionsString();
+    arguments << data.fsSpec() << fakeMountPoint;
 
     setCurrentProcess(program+" "+arguments.join(" "));
     setProcessRunning(true);
-
-    if(!data.type().isEmpty())
-        arguments<<"-t"<<data.type();
-    if(!data.options().isEmpty())
-        arguments<<"-o"<<data.optionsString();
 
     QUtils::Process::exec(program, arguments, [this, data, fakeMountPoint, tmpDir](QProcess* process){
         bool result = process->exitCode()==0;
@@ -253,6 +283,7 @@ void FstabModel::testSmbShare(const QVariantMap& mountParams)
         });
     });
 #else
+    Q_UNUSED(mountParams)
     emit this->error(QString("failed to mount: %1").arg("QProcess is not available"));
 #endif
 }
@@ -297,7 +328,8 @@ void FstabModel::umount(const QString& mountPoint)
         emit this->umounted(mountPoint, result);
     });
 #else
-    emit this->error(QString("failed to umount: %1").arg("QProcess is not available"));
+    Q_UNUSED(mountPoint)
+    emit this->error(QString("failed to mount: %1").arg("QProcess is not available"));
 #endif
 }
 

@@ -8,6 +8,9 @@ GridLayout {
     signal dayClicked(date date)
 
     property date selectedDate: new Date()
+    property date fromDate: selectedDate
+    property date toDate: selectedDate
+    property bool rangeMode: false
 
     property alias locale: monthGrid.locale
     property alias monthGrid: monthGrid
@@ -75,18 +78,23 @@ GridLayout {
             required property int day
             required property date date
             required property bool today
+
+            firstInRange: root.rangeMode && DateTimeUtils.isDateEqual(date, root.fromDate)
+            lastInRange: root.rangeMode && DateTimeUtils.isDateEqual(date, root.toDate)
+            inRange: root.rangeMode && DateTimeUtils.isDateBetween(date, root.fromDate, root.toDate) || firstInRange || lastInRange
+
             opacity: month===monthGrid.month ? 1.0 : 0.5
             text: day
             highlighted: today
-            outlined: DateTimeUtils.isDateEqual(date, root.selectedDate)
+            outlined: root.rangeMode ? (firstInRange && lastInRange) : DateTimeUtils.isDateEqual(date, root.selectedDate)
             onClicked: root.dayClicked(date)
         }
 
         contentItem: GridLayout {
             rows: 6
             columns: 7
-            rowSpacing: monthGrid.spacing
-            columnSpacing: monthGrid.spacing
+            rowSpacing: 1
+            columnSpacing: 0
 
             Repeater {
                 model: monthGrid.source

@@ -2,6 +2,7 @@
 #include "axion_log.h"
 
 #include "version.h"
+#include "utils/datetimeutils.h"
 
 AbstractManagerContainer::AbstractManagerContainer(QObject *parent) :
     AbstractManagerContainer(&AbstractManager::staticMetaObject, parent)
@@ -24,34 +25,38 @@ AbstractManagerContainer::AbstractManagerContainer(const QMetaObject* metaObject
 
 bool AbstractManagerContainer::init()
 {
-    m_elapsedTimer.restart();
+    return true;
+}
 
-    AXIONLOG_INFO()<<qLogLine('*');
-    AXIONLOG_INFO()<<qLogLineMessage(managerName()+"::init",'*');
+bool AbstractManagerContainer::postInit()
+{
+    for(AbstractManager* manager: m_managers->modelIterator<AbstractManager>())
+    {
+        AXIONLOG_INFO()<<qLogLineMessage(manager->managerName()+"::postInit");
+        if(manager->postInit()) {
+            manager->setReady(true);
+        }
+        else {
+            AXIONLOG_CRITICAL()<<"Something went wrong with"<<manager->managerName();
+        }
+        AXIONLOG_INFO()<<qLogLine();
+    }
 
-    Version::Get()->setProductName(QFileInfo(QCoreApplication::applicationFilePath()).fileName());
+    for(AbstractManager* manager: m_managers->modelIterator<AbstractManager>())
+    {
+        if(manager->getReady())
+            manager->endInit();
+    }
 
-    connect(qApp, &QCoreApplication::aboutToQuit, this, &AbstractManagerContainer::unInit, Qt::SingleShotConnection);
+    endInit();
+
+    setReady(true);
 
     return true;
 }
 
-void AbstractManagerContainer::postInit()
-{
-    AXIONLOG_INFO()<<qLogLineMessage(managerName()+"::postInit",'*');
-
-    postInitManager(0);
-}
-
-void AbstractManagerContainer::endInit()
-{
-    AXIONLOG_INFO()<<qLogLineMessage(QString("%1::ready after %2 ms").arg(managerName()).arg(m_elapsedTimer.nsecsElapsed()/1000000.0),'=');
-}
-
 bool AbstractManagerContainer::unInit()
 {
-    AXIONLOG_INFO()<<qLogLineMessage(managerName()+"::unInit",'*');
-
     bool ret = true;
 
     auto iterator = m_managers->modelIterator<AbstractManager>();
@@ -69,8 +74,6 @@ bool AbstractManagerContainer::unInit()
             ret = false;
         AXIONLOG_INFO()<<qLogLine('-');
     }
-
-    AXIONLOG_INFO()<<qLogLine('*');
 
     setReady(false);
 
@@ -104,39 +107,6 @@ bool AbstractManagerContainer::isValid()
     return ret;
 }
 
-void AbstractManagerContainer::postInitManager(int index)
-{
-    if(index<0 || index>=m_managers->count())
-    {
-        if(getReady())
-            return;
-        endInit();
-        emitInitDone(true);
-        return;
-    }
-
-    AbstractManager* manager = m_managers->at<AbstractManager>(index);
-    AXIONLOG_INFO()<<qLogLineMessage(manager->managerName()+"::postInit");
-    manager->postInit();
-
-    auto queuePostInitManager = [this, index, manager](){
-        bool result = manager->getReady();
-        if(!result) {
-            AXIONLOG_CRITICAL()<<"Something went wrong with"<<manager->managerName();
-        }
-        AXIONLOG_INFO()<<qLogLine();
-        QMetaObject::invokeMethod(this, &AbstractManagerContainer::postInitManager, Qt::QueuedConnection, index+1);
-    };
-
-    if(!manager->getInitializing())
-    {
-        queuePostInitManager();
-        return;
-    }
-
-    connect(manager, &AbstractManager::initDone, this, std::move(queuePostInitManager), Qt::SingleShotConnection);
-}
-
 bool AbstractManagerContainer::registerManager(AbstractManager* manager)
 {
     if(manager==nullptr)
@@ -159,7 +129,6 @@ bool AbstractManagerContainer::registerManager(AbstractManager* manager)
     }
 
     AXIONLOG_INFO()<<qLogLineMessage(manager->managerName()+"::init",'-');
-    manager->setInitializing(true);
     if (!manager->init())
     {
         AXIONLOG_CRITICAL()<<"Failed to init manager:"<<manager->managerName();
@@ -176,8 +145,6 @@ Q_GLOBAL_STATIC(QPointer<MainManagerContainer>, s_managerContainer)
 MainManagerContainer::MainManagerContainer(QObject *parent) :
     AbstractManagerContainer(parent)
 {
-    Q_ASSERT_X(s_managerContainer->isNull(), "MainManagerContainer", "MainManagerContainer can only be instanciated once");
-
     if(!s_managerContainer->isNull())
     {
         AXIONLOG_FATAL()<<"MainManagerContainer can only be instanciated once";
@@ -186,11 +153,44 @@ MainManagerContainer::MainManagerContainer(QObject *parent) :
     *s_managerContainer = this;
 }
 
+bool MainManagerContainer::init()
+{
+    m_elapsedTimer.restart();
+
+    AXIONLOG_INFO()<<qLogLineMessage(managerName()+"::init",'*');
+
+    Version::Get()->setProductName(QCoreApplication::applicationName());
+
+    connect(qApp, &QCoreApplication::aboutToQuit, this, &AbstractManagerContainer::unInit, Qt::SingleShotConnection);
+
+    return AbstractManagerContainer::init();
+}
+
+bool MainManagerContainer::postInit()
+{
+    AXIONLOG_INFO()<<qLogLineMessage(managerName()+"::postInit",'*');
+
+    return AbstractManagerContainer::postInit();
+}
+
 void MainManagerContainer::endInit()
 {
     AbstractManagerContainer::endInit();
 
     Version::Get()->dumpInfos();
+
+    AXIONLOG_INFO()<<qLogLineMessage(QString("%1::ready after %2").arg(managerName(), DateTimeUtils::formatDuration(m_elapsedTimer.elapsed(), DurationFormatOptions::ShowMilliseconds)),'=');
+}
+
+bool MainManagerContainer::unInit()
+{
+    AXIONLOG_INFO()<<qLogLineMessage(managerName()+"::unInit",'*');
+
+    bool ret = AbstractManagerContainer::unInit();
+
+    AXIONLOG_INFO()<<qLogLine('*');
+
+    return ret;
 }
 
 ManagerContainer::ManagerContainer()
@@ -200,6 +200,10 @@ ManagerContainer::ManagerContainer()
 
 MainManagerContainer* ManagerContainer::Get()
 {
+    if(!s_managerContainer->data())
+    {
+        AXIONLOG_FATAL("ManagerContainer has not been created yet !!!");
+    }
     return s_managerContainer->data();
 }
 

@@ -3,6 +3,7 @@
 
 #include <QDefs>
 #include "qsingleton.h"
+#include "timedatebackend.h"
 
 class TimedateSettings : public QObject,
                          public QQmlSingleton<TimedateSettings>
@@ -10,6 +11,8 @@ class TimedateSettings : public QObject,
     Q_OBJECT
     QML_ELEMENT
     QML_SINGLETON
+
+    Q_CONSTANT_PTR_PROPERTY(TimedateBackend, backend)
 
     Q_PROPERTY(bool canSetTimezone          READ canSetTimezone         CONSTANT FINAL)
     Q_PROPERTY(bool canSetNtp               READ canSetNtp              CONSTANT FINAL)
@@ -29,11 +32,11 @@ protected:
     explicit TimedateSettings(QObject *parent = nullptr);
 
 public:
-    static bool canSetTimezone();
-    static bool canSetNtp();
-    static bool canSetSystemDateTime();
-    static bool canSetNtpServer();
-    static bool canReadRTC();
+    bool canSetTimezone() const;
+    bool canSetNtp() const;
+    bool canSetSystemDateTime() const;
+    bool canSetNtpServer() const;
+    bool canReadRTC() const;
 
     QString getTimezone() const;
     bool getNtp() const;

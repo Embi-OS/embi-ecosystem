@@ -17,8 +17,12 @@ protected:
 
 public:
     Q_INVOKABLE static void await(int msecs, QEventLoop::ProcessEventsFlags flags = QEventLoop::AllEvents);
+    Q_INVOKABLE static void singleshotTimer(int interval, QJSValue callback);
+    Q_INVOKABLE static void singleshotTimer(int interval, QObject* context, QJSValue callback);
 
-    Q_INVOKABLE QStringList fontFamilies() const;
+    Q_INVOKABLE static QStringList fontFamilies();
+
+    Q_INVOKABLE static bool pointIsValid(const QPointF& point);
 };
 
 #endif // UTILS_H

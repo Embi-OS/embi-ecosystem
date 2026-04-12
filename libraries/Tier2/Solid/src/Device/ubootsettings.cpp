@@ -3,27 +3,11 @@
 
 #include <QtConcurrentRun>
 #include <QProcess>
+#include <QStandardPaths>
 
 #define PRINTENV_CMD QStringLiteral("fw_printenv")
 #define SETENV_CMD QStringLiteral("fw_setenv")
 #define OVERLAYS_PATH QStringLiteral("/boot/overlays.txt")
-
-static bool which(const QString& command)
-{
-    const QString program="which";
-    const QStringList arguments = QStringList()<<command;
-
-    QProcess process;
-    process.setProgram(program);
-    process.setArguments(arguments);
-    process.start();
-
-    process.waitForFinished(1000);
-
-    const QString processOutput = process.readAllStandardOutput();
-
-    return processOutput.contains(command);
-}
 
 UBootSettings::UBootSettings(QObject *parent) :
     QObject(parent)
@@ -33,13 +17,13 @@ UBootSettings::UBootSettings(QObject *parent) :
 
 bool UBootSettings::canPrintEnv()
 {
-    static bool canPrintEnv = ::which(SETENV_CMD);
+    static bool canPrintEnv = !QStandardPaths::findExecutable(PRINTENV_CMD).isEmpty();
     return canPrintEnv;
 }
 
 bool UBootSettings::canSetEnv()
 {
-    static bool canSetEnv = ::which(PRINTENV_CMD);
+    static bool canSetEnv = !QStandardPaths::findExecutable(SETENV_CMD).isEmpty();
     return canSetEnv;
 }
 

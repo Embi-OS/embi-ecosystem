@@ -137,7 +137,7 @@ void QSelectionHelper::setSelectedRows(QList<int> rows)
     m_isUpdatingFromProperty=true;
 
     m_selection->clearSelection();
-    for(int row: rows)
+    for(int row: std::as_const(rows))
         selectRow(row);
 
     m_isUpdatingFromProperty=false;
@@ -158,7 +158,7 @@ void QSelectionHelper::setSelectedColumns(QList<int> columns)
     m_isUpdatingFromProperty=true;
 
     m_selection->clearSelection();
-    for(int column: columns)
+    for(int column: std::as_const(columns))
         selectColumn(column);
 
     m_isUpdatingFromProperty=false;
@@ -277,7 +277,7 @@ QModelIndex QSelectionHelper::index(QItemSelectionModel* selection, int row, int
 
 QList<int> QSelectionHelper::selectedRows(QItemSelectionModel* selection, int column)
 {
-    QModelIndexList indexes = selection->selectedRows(column);
+    const QModelIndexList indexes = selection->selectedRows(column);
     QList<int> ret;
     ret.reserve(indexes.size());
     for(const QModelIndex& index: indexes)
@@ -290,7 +290,7 @@ QList<int> QSelectionHelper::selectedRows(QItemSelectionModel* selection, int co
 
 QList<int> QSelectionHelper::selectedColumns(QItemSelectionModel* selection, int row)
 {
-    QModelIndexList indexes = selection->selectedColumns(row);
+    const QModelIndexList indexes = selection->selectedColumns(row);
     QList<int> ret;
     ret.reserve(indexes.size());
     for(const QModelIndex& index: indexes)

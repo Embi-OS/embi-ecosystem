@@ -1,21 +1,137 @@
 #include "imagecolorshelper.h"
 #include "axion_log.h"
 
-#include <QDebug>
-#include <QGuiApplication>
-#include <QTimer>
-
 #define IMAGE_COLOR_HELPER_THREADED
 
 #ifdef QT_CONCURRENT_LIB
 #include <QFuture>
+#include <QFutureSynchronizer>
 #include <QFutureWatcher>
+#include <QThread>
 #include <QtConcurrentRun>
 #else
 #undef IMAGE_COLOR_HELPER_THREADED
 #endif
 
 Q_GLOBAL_STATIC_WITH_ARGS(QRegularExpression, qrcRegExp, ("qrc:/+"))
+
+namespace
+{
+struct ColumnRange
+{
+    int firstColumn;
+    int lastColumn;
+};
+
+struct SampleBatch
+{
+    QList<QRgb> samples;
+    qint64 red = 0;
+    qint64 green = 0;
+    qint64 blue = 0;
+    qint64 count = 0;
+};
+
+struct SampleRange
+{
+    qsizetype firstIndex;
+    qsizetype lastIndex;
+};
+
+struct ClusterAccumulator
+{
+    qint64 red = 0;
+    qint64 green = 0;
+    qint64 blue = 0;
+    qint64 count = 0;
+};
+
+struct AssignmentBatch
+{
+    QVector<ClusterAccumulator> accumulators;
+};
+
+#ifdef IMAGE_COLOR_HELPER_THREADED
+SampleBatch sampleImageRange(const QImage &sourceImage, const ColumnRange &range)
+{
+    SampleBatch batch;
+    batch.samples.reserve((range.lastColumn - range.firstColumn) * sourceImage.height());
+
+    for (int x = range.firstColumn; x < range.lastColumn; ++x) {
+        for (int y = 0; y < sourceImage.height(); ++y) {
+            const QColor sampleColor = sourceImage.pixelColor(x, y);
+            if (sampleColor.alpha() == 0) {
+                continue;
+            }
+            if (ColorUtils::chroma(sampleColor) < 0) {
+                continue;
+            }
+
+            const QRgb rgb = sampleColor.rgb();
+            ++batch.count;
+            batch.red += qRed(rgb);
+            batch.green += qGreen(rgb);
+            batch.blue += qBlue(rgb);
+            batch.samples.append(rgb);
+        }
+    }
+
+    return batch;
+}
+
+void appendSampleBatch(ImageData &imageData, const SampleBatch &batch, qint64 &red, qint64 &green, qint64 &blue, qint64 &count)
+{
+    red += batch.red;
+    green += batch.green;
+    blue += batch.blue;
+    count += batch.count;
+    imageData.m_samples.append(batch.samples);
+}
+
+QVector<ColumnRange> columnRanges(int width)
+{
+    const int workerCount = qMax(1, qMin(width, QThread::idealThreadCount()));
+    QVector<ColumnRange> ranges;
+    ranges.reserve(workerCount);
+
+    const int columnsPerWorker = width / workerCount;
+    const int extraColumns = width % workerCount;
+    int firstColumn = 0;
+    for (int workerIndex = 0; workerIndex < workerCount; ++workerIndex) {
+        const int columnCount = columnsPerWorker + (workerIndex < extraColumns ? 1 : 0);
+        if (columnCount == 0)
+            continue;
+
+        ranges.append({firstColumn, firstColumn + columnCount});
+        firstColumn += columnCount;
+    }
+
+    return ranges;
+}
+
+QVector<SampleRange> sampleRanges(qsizetype sampleCount)
+{
+    const int workerCount = qMax(1, qMin(int(sampleCount), QThread::idealThreadCount()));
+    QVector<SampleRange> ranges;
+    ranges.reserve(workerCount);
+
+    const qsizetype samplesPerWorker = sampleCount / workerCount;
+    const qsizetype extraSamples = sampleCount % workerCount;
+    qsizetype firstIndex = 0;
+    for (int workerIndex = 0; workerIndex < workerCount; ++workerIndex) {
+        const qsizetype rangeSize = samplesPerWorker + (workerIndex < extraSamples ? 1 : 0);
+        if (rangeSize == 0)
+            continue;
+
+        ranges.append({firstIndex, firstIndex + rangeSize});
+        firstIndex += rangeSize;
+    }
+
+    return ranges;
+}
+#endif
+
+}
 
 PaletteSwatch::PaletteSwatch()
 {
@@ -86,7 +202,7 @@ void ImageColorsHelper::setSource(const QVariant &source)
         if (QIcon::hasThemeIcon(sourceString)) {
             setSourceImage(QIcon::fromTheme(sourceString).pixmap(128, 128).toImage());
         } else {
-#ifdef SVG_IMAGE_HELPER_THREADED
+#ifdef IMAGE_COLOR_HELPER_THREADED
             QFuture<QImage> future = QtConcurrent::run([sourceString]() {
                 if (auto url = QUrl(sourceString); url.isLocalFile()) {
                     return QImage(url.toLocalFile());
@@ -286,9 +402,8 @@ void ImageColorsHelper::positionColor(QRgb rgb, QList<ImageData::colorStat> &clu
     clusters << stat;
 }
 
-void ImageColorsHelper::positionColorMP(const decltype(ImageData::m_samples) &samples, decltype(ImageData::m_clusters) &clusters, int numCore)
+void ImageColorsHelper::positionColorMP(const decltype(ImageData::m_samples) &samples, decltype(ImageData::m_clusters) &clusters)
 {
-    // Fall back to single thread
     for (auto color : samples) {
         positionColor(color, clusters);
     }
@@ -302,15 +417,29 @@ ImageData ImageColorsHelper::generatePalette(const QImage &sourceImage)
         return imageData;
     }
 
-    imageData.m_clusters.clear();
     imageData.m_samples.clear();
+    qint64 red = 0;
+    qint64 green = 0;
+    qint64 blue = 0;
+    qint64 count = 0;
 
-    constexpr int numCore = 1;
-    int r = 0;
-    int g = 0;
-    int b = 0;
-    int c = 0;
+#ifdef IMAGE_COLOR_HELPER_THREADED
+    const QVector<ColumnRange> ranges = columnRanges(sourceImage.width());
+    if (ranges.size() > 1) {
+        QFutureSynchronizer<SampleBatch> synchronizer;
+        for (const ColumnRange &range : ranges) {
+            synchronizer.addFuture(QtConcurrent::run([sourceImage, range]() {
+                return sampleImageRange(sourceImage, range);
+            }));
+        }
 
+        synchronizer.waitForFinished();
+
+        for (const QFuture<SampleBatch> &future : synchronizer.futures()) {
+            appendSampleBatch(imageData, future.result(), red, green, blue, count);
+        }
+    } else
+#endif
     for (int x = 0; x < sourceImage.width(); ++x) {
         for (int y = 0; y < sourceImage.height(); ++y) {
             const QColor sampleColor = sourceImage.pixelColor(x, y);
@@ -321,58 +450,160 @@ ImageData ImageColorsHelper::generatePalette(const QImage &sourceImage)
                 continue;
             }
             QRgb rgb = sampleColor.rgb();
-            ++c;
-            r += qRed(rgb);
-            g += qGreen(rgb);
-            b += qBlue(rgb);
-            imageData.m_samples << rgb;
+            ++count;
+            red += qRed(rgb);
+            green += qGreen(rgb);
+            blue += qBlue(rgb);
+            imageData.m_samples.append(rgb);
         }
     }
 
+    finalizePalette(imageData, red, green, blue, count);
+
+    return imageData;
+}
+
+void ImageColorsHelper::finalizePalette(ImageData &imageData, qint64 red, qint64 green, qint64 blue, qint64 count)
+{
     if (imageData.m_samples.isEmpty()) {
-        return imageData;
+        return;
     }
 
-    positionColorMP(imageData.m_samples, imageData.m_clusters, numCore);
+    imageData.m_clusters.clear();
 
-    if(c!=0)
-        imageData.m_average = QColor(r / c, g / c, b / c, 255);
+    if (count != 0)
+        imageData.m_average = QColor(int(red / count), int(green / count), int(blue / count), 255);
     else
         imageData.m_average = QColor(0, 0, 0, 255);
 
-    for (int iteration = 0; iteration < 5; ++iteration) {
-        for (int i = 0; i < imageData.m_clusters.size(); ++i) {
-            auto &stat = imageData.m_clusters[i];
-            r = 0;
-            g = 0;
-            b = 0;
-            c = 0;
+    positionColorMP(imageData.m_samples, imageData.m_clusters);
 
-            for (auto color : std::as_const(stat.colors)) {
-                c++;
-                r += qRed(color);
-                g += qGreen(color);
-                b += qBlue(color);
-            }
-            if(c!=0) {
-                r = r / c;
-                g = g / c;
-                b = b / c;
-            }
-            stat.centroid = qRgb(r, g, b);
-            stat.ratio = std::clamp(double(stat.colors.count()) / double(imageData.m_samples.count()), 0.0, 1.0);
-            stat.colors = QList<QRgb>({stat.centroid});
+#ifdef IMAGE_COLOR_HELPER_THREADED
+    const QVector<SampleRange> ranges = sampleRanges(imageData.m_samples.size());
+#endif
+
+    for (int iteration = 0; iteration < 5; ++iteration) {
+        if (imageData.m_clusters.isEmpty())
+            break;
+
+        QVector<QRgb> centroids;
+        centroids.reserve(imageData.m_clusters.size());
+        for (const auto &cluster : std::as_const(imageData.m_clusters)) {
+            centroids.append(cluster.centroid);
         }
 
-        positionColorMP(imageData.m_samples, imageData.m_clusters, numCore);
+        QVector<ClusterAccumulator> mergedAccumulators(centroids.size());
+
+#ifdef IMAGE_COLOR_HELPER_THREADED
+        if (ranges.size() > 1) {
+            const auto *samples = &imageData.m_samples;
+            QFutureSynchronizer<AssignmentBatch> synchronizer;
+            for (const SampleRange &range : ranges) {
+                synchronizer.addFuture(QtConcurrent::run([samples, centroids, range]() {
+                    AssignmentBatch batch;
+                    batch.accumulators.resize(centroids.size());
+
+                    for (qsizetype sampleIndex = range.firstIndex; sampleIndex < range.lastIndex; ++sampleIndex) {
+                        const QRgb sample = samples->at(sampleIndex);
+
+                        int bestClusterIndex = 0;
+                        int bestDistance = squareDistance(sample, centroids.at(0));
+                        for (int clusterIndex = 1; clusterIndex < centroids.size(); ++clusterIndex) {
+                            const int distance = squareDistance(sample, centroids.at(clusterIndex));
+                            if (distance < bestDistance) {
+                                bestDistance = distance;
+                                bestClusterIndex = clusterIndex;
+                            }
+                        }
+
+                        auto &accumulator = batch.accumulators[bestClusterIndex];
+                        accumulator.red += qRed(sample);
+                        accumulator.green += qGreen(sample);
+                        accumulator.blue += qBlue(sample);
+                        ++accumulator.count;
+                    }
+
+                    return batch;
+                }));
+            }
+
+            synchronizer.waitForFinished();
+
+            for (const QFuture<AssignmentBatch> &future : synchronizer.futures()) {
+                const AssignmentBatch batch = future.result();
+                for (int clusterIndex = 0; clusterIndex < batch.accumulators.size(); ++clusterIndex) {
+                    const auto &source = batch.accumulators.at(clusterIndex);
+                    auto &destination = mergedAccumulators[clusterIndex];
+                    destination.red += source.red;
+                    destination.green += source.green;
+                    destination.blue += source.blue;
+                    destination.count += source.count;
+                }
+            }
+        } else
+#endif
+        {
+            for (QRgb sample : std::as_const(imageData.m_samples)) {
+                int bestClusterIndex = 0;
+                int bestDistance = squareDistance(sample, centroids.at(0));
+                for (int clusterIndex = 1; clusterIndex < centroids.size(); ++clusterIndex) {
+                    const int distance = squareDistance(sample, centroids.at(clusterIndex));
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestClusterIndex = clusterIndex;
+                    }
+                }
+
+                auto &accumulator = mergedAccumulators[bestClusterIndex];
+                accumulator.red += qRed(sample);
+                accumulator.green += qGreen(sample);
+                accumulator.blue += qBlue(sample);
+                ++accumulator.count;
+            }
+        }
+
+        QList<ImageData::colorStat> nextClusters;
+        nextClusters.reserve(imageData.m_clusters.size());
+        for (int i = 0; i < imageData.m_clusters.size(); ++i) {
+            const auto &accumulator = mergedAccumulators.at(i);
+            if (accumulator.count == 0)
+                continue;
+
+            ImageData::colorStat stat;
+            stat.centroid = qRgb(int(accumulator.red / accumulator.count),
+                                 int(accumulator.green / accumulator.count),
+                                 int(accumulator.blue / accumulator.count));
+            stat.ratio = std::clamp(double(accumulator.count) / double(imageData.m_samples.count()), 0.0, 1.0);
+            stat.colors = QList<QRgb>({stat.centroid});
+            nextClusters.append(stat);
+        }
+
+        imageData.m_clusters = nextClusters;
     }
+
+    buildPaletteFromClusters(imageData);
+}
+
+void ImageColorsHelper::buildPaletteFromClusters(ImageData &imageData)
+{
     std::stable_sort(imageData.m_clusters.begin(), imageData.m_clusters.end(), [](const ImageData::colorStat &a, const ImageData::colorStat &b) {
         return getClusterScore(a) > getClusterScore(b);
     });
 
-    // compress blocks that became too similar
+    if (imageData.m_clusters.isEmpty()) {
+        imageData.m_palette.clear();
+        imageData.m_colors.clear();
+        imageData.m_dominant = Qt::transparent;
+        imageData.m_dominantContrast = Qt::transparent;
+        imageData.m_dominantInverted = Qt::transparent;
+        imageData.m_dominantComplementary = Qt::transparent;
+        imageData.m_highlight = Qt::transparent;
+        imageData.m_closestToBlack = Qt::black;
+        imageData.m_closestToWhite = Qt::white;
+        return;
+    }
+
     auto sourceIt = imageData.m_clusters.end();
-    // Use index instead of iterator, because QList::erase may invalidate iterator.
     std::vector<int> itemsToDelete;
     while (sourceIt != imageData.m_clusters.begin()) {
         sourceIt--;
@@ -409,16 +640,13 @@ ImageData ImageColorsHelper::generatePalette(const QImage &sourceImage)
         const QColor color(stat.centroid);
 
         QColor contrast = QColor(255 - color.red(), 255 - color.green(), 255 - color.blue());
-        contrast.setHsl(contrast.hslHue(), //
-                        contrast.hslSaturation(), //
-                        128 + (128 - contrast.lightness()));
+        contrast.setHsl(contrast.hslHue(), contrast.hslSaturation(), 128 + (128 - contrast.lightness()));
         QColor tempContrast;
-        int minimumDistance = 4681800; // max distance: 4*3*2*3*255*255
-        for (const auto &stat : std::as_const(imageData.m_clusters)) {
-            const int distance = squareDistance(contrast.rgb(), stat.centroid);
-
+        int minimumDistance = 4681800;
+        for (const auto &cluster : std::as_const(imageData.m_clusters)) {
+            const int distance = squareDistance(contrast.rgb(), cluster.centroid);
             if (distance < minimumDistance) {
-                tempContrast = QColor(stat.centroid);
+                tempContrast = QColor(cluster.centroid);
                 minimumDistance = distance;
             }
         }
@@ -427,12 +655,7 @@ ImageData ImageColorsHelper::generatePalette(const QImage &sourceImage)
         QColor complementary = ColorUtils::complement(imageData.m_dominant);
 
         if (imageData.m_clusters.size() <= 3) {
-            if (qGray(imageData.m_dominant.rgb()) < 120) {
-                contrast = QColor(230, 230, 230);
-            } else {
-                contrast = QColor(20, 20, 20);
-            }
-            // TODO: replace m_clusters.size() > 3 with entropy calculation
+            contrast = qGray(imageData.m_dominant.rgb()) < 120 ? QColor(230, 230, 230) : QColor(20, 20, 20);
         } else if (squareDistance(contrast.rgb(), tempContrast.rgb()) < s_minimumSquareDistance * 1.5) {
             contrast = tempContrast;
         } else {
@@ -453,17 +676,15 @@ ImageData ImageColorsHelper::generatePalette(const QImage &sourceImage)
         if (!imageData.m_highlight.isValid() || ColorUtils::chroma(color) > ColorUtils::chroma(imageData.m_highlight)) {
             imageData.m_highlight = color;
         }
-
         if (qGray(color.rgb()) > qGray(imageData.m_closestToWhite.rgb())) {
             imageData.m_closestToWhite = color;
         }
         if (qGray(color.rgb()) < qGray(imageData.m_closestToBlack.rgb())) {
             imageData.m_closestToBlack = color;
         }
+
         imageData.m_palette << PaletteSwatch(stat.ratio, color, contrast);
     }
-
-    return imageData;
 }
 
 double ImageColorsHelper::getClusterScore(const ImageData::colorStat &stat)
@@ -478,25 +699,18 @@ void ImageColorsHelper::postProcess(ImageData &imageData, const QColor &backgrou
 
     const double backgroundLum = ColorUtils::luminance(backgroundColor);
     double lowerLum, upperLum;
-    // 192 is from kcm_colors
     if (qGray(backgroundColor.rgb()) < 192) {
-        // (lowerLum + 0.05) / (backgroundLum + 0.05) >= 3
         lowerLum = WCAG_NON_TEXT_CONTRAST_RATIO * (backgroundLum + 0.05) - 0.05;
         upperLum = 0.95;
     } else {
-        // For light themes, still prefer lighter colors
-        // (lowerLum + 0.05) / (textLum + 0.05) >= 4.5
         const double textLum = ColorUtils::luminance(textColor);
         lowerLum = WCAG_TEXT_CONTRAST_RATIO * (textLum + 0.05) - 0.05;
         upperLum = backgroundLum;
     }
 
     auto adjustSaturation = [](QColor &color) {
-        // Adjust saturation to make the color more vibrant
         if (color.hsvSaturationF() < 0.5) {
-            const double h = color.hsvHueF();
-            const double v = color.valueF();
-            color.setHsvF(h, 0.5, v);
+            color.setHsvF(color.hsvHueF(), 0.5, color.valueF());
         }
     };
     adjustSaturation(imageData.m_dominant);

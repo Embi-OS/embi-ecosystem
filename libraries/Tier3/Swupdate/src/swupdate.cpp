@@ -6,8 +6,9 @@
 #include "dialogs/snackbarmanager.h"
 #include "dialogs/dialogloader.h"
 #include "Device/ubootsettings.h"
+#include <QStandardPaths>
 
-#ifdef SWUPDATE_FOUND
+#if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
 #include <progress_ipc.h>
 #include <network_ipc.h>
 #include <fcntl.h>
@@ -85,7 +86,7 @@ void Swupdate::unInit()
 
 bool Swupdate::isReady() const
 {
-#ifdef SWUPDATE_FOUND
+#if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
     return m_progressFd>=0;
 #else
     return false;
@@ -102,18 +103,18 @@ void Swupdate::test()
     }
     else if(ustate=="3")
     {
-        SnackbarManager::Get()->showError(QVariantMap({{"title", tr("Mise à jour échouée")}, {"closable", true}}));
+        SnackbarManager::Get()->showCritical(QVariantMap({{"title", tr("Mise à jour échouée")}, {"closable", true}}));
     }
 }
 
 void Swupdate::open()
 {
-#ifdef SWUPDATE_FOUND
+#if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
     int fd = progress_ipc_connect(false);
     setProgressFd(fd);
     SOLIDLOG_DEBUG()<<"Swupdate open progress socket with fd:"<<fd;
     if (fd < 0) {
-        SnackbarManager::Get()->showError(tr("Impossible de se connecter à SWUpdate"))->setClosable(true);
+        SnackbarManager::Get()->showCritical(tr("Impossible de se connecter à SWUpdate"))->setClosable(true);
         SOLIDLOG_WARNING()<<"Swupdate: Failed to connect to SWUpdate progress IPC";
         QTimer::singleShot(500, this, &Swupdate::open);
         return;
@@ -133,18 +134,21 @@ void Swupdate::open()
 
 bool Swupdate::update(const QString& file)
 {
-#ifdef SWUPDATE_FOUND
+#if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
     return QProcess::startDetached("swupdate-client", {"-q", "-p", file});
 #else
+    Q_UNUSED(file)
     return false;
 #endif
 }
 
 bool Swupdate::restart()
 {
-#ifdef SWUPDATE_FOUND
-    m_socketNotifier->deleteLater();
-    m_socketNotifier = nullptr;
+#if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
+    if (m_socketNotifier) {
+        m_socketNotifier->deleteLater();
+        m_socketNotifier = nullptr;
+    }
 
     QProcess *proc = new QProcess(this);
     connect(proc, &QProcess::finished, this, [this, proc](int exitCode, QProcess::ExitStatus) {
@@ -171,7 +175,7 @@ void Swupdate::onProgressMessage()
 
     SwupdateProgressMessage msg;
 
-#ifdef SWUPDATE_FOUND
+#if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
     struct progress_msg raw;
     int rc = progress_ipc_receive(&fd, &raw);
     if (rc <= 0) {
@@ -259,7 +263,7 @@ void Swupdate::onProgressMessage()
         }
         else if(msg.status==SwupdateRecoveryStatuses::Failure)
         {
-            SnackbarManager::Get()->showError(tr("Mise à jour échouée"));
+            SnackbarManager::Get()->showCritical(tr("Mise à jour échouée"));
         }
 
         resetProgress();

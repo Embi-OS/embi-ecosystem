@@ -12,9 +12,9 @@ QtObject {
 
     readonly property BasicWindow rootWindow: flickable?.Window.window as BasicWindow ?? null
     readonly property double windowHeight: rootWindow?.contentHeight ?? rootWindow?.height ?? 0
-    readonly property double keyboardHeight: rootWindow?.keyboardHeight ?? 0
+    readonly property double keyboardHeight: VirtualKeyboardHelper.height
+    readonly property bool keyboardVisible: VirtualKeyboardHelper.visible
     readonly property double flickableBottomPositionY: flickable ? flickable.ScenePosition.y+flickable.height : 0
-    readonly property bool keyboardVisible: Qt.inputMethod && Qt.inputMethod.visible
     readonly property double contentBottomMargin: keyboardVisible ? Math.max((keyboardHeight+scrollMargin)-(windowHeight-flickableBottomPositionY), 0) : 0
     property double scrollMargin: Style.contentRectangleRadius
 
@@ -35,6 +35,13 @@ QtObject {
             if(root.flickables.length>0)
                 delayedLoading.restart()
         }
+    }
+
+    function processVisible() {
+        if(!root.enabled)
+            return
+        for(const flickable of root.flickables)
+            root.ensureVisible(flickable)
     }
 
     function ensureVisible(flickable: Flickable) {
@@ -84,12 +91,7 @@ QtObject {
     readonly property Timer timer: Timer {
         id: delayedLoading
         interval: 0
-        onTriggered: {
-            if(!root.enabled)
-                return
-            for(const flickable of root.flickables)
-                root.ensureVisible(flickable)
-        }
+        onTriggered: root.processVisible()
     }
 
     readonly property Connections connections: Connections {

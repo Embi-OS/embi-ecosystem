@@ -10,7 +10,6 @@ Page {
         when: themeButton.checked
         delayed: true
 
-        root.ThemeAttached.logo: "qrc:/images/homeVoh.svg"
         root.ThemeAttached.backgroundAspect: ImageFillModes.PreserveAspectFit
         root.ThemeAttached.backgroundImage: ""
 
@@ -48,7 +47,7 @@ Page {
                 id: styleMenu
                 BasicSwitchDelegate {
                     id: themeButton
-                    text: "VOH.ch"
+                    text: "Theme"
                     // checked: true
                 }
                 BasicMenuSeparator {}

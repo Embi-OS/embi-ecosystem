@@ -22,10 +22,14 @@ public:
             T* instance = new T;
             instances.setLocalData(instance);
             instance->setParent(nullptr);
+            instance->singletonComplete();
             QQmlEngine::setObjectOwnership(instance, QQmlEngine::CppOwnership);
         }
         return instances.localData();
     }
+
+protected:
+    virtual void singletonComplete() {};
 };
 
 template<class T>
@@ -44,6 +48,7 @@ public:
             T* instance = new T;
             instances.setLocalData(instance);
             instance->setParent(nullptr);
+            instance->singletonComplete();
             QQmlEngine::setObjectOwnership(instance, QQmlEngine::CppOwnership);
         }
         return instances.localData();
@@ -57,6 +62,8 @@ public:
     }
 
 protected:
+    virtual void singletonComplete() {};
+
     QQmlEngine *m_qmlEngine=nullptr;
     QJSEngine *m_jsEngine=nullptr;
 };

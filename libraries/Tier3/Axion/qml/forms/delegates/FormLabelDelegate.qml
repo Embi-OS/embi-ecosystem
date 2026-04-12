@@ -6,7 +6,8 @@ import Eco.Tier3.Axion
 FormObject {
     id: root
 
-    formType: FormTypes.None
+    ignorePolicies: true
+    formType: FormTypes.Subtitle
     defaultValue: ""
 
     font: Style.textTheme.subtitle1

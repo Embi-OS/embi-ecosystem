@@ -1,12 +1,13 @@
 #include "happyhttpparameters.h"
 
-HappyHttpParameters::HappyHttpParameters(const QHttpServerRequest &request)
+HappyHttpParameters::HappyHttpParameters(const QHttpServerRequest &request):
+    HappyHttpParameters(request.query())
 {
-    const QList<std::pair<QString, QString>> queryItems = request.query().queryItems();
-    fromQueryItems(queryItems);
+
 }
 
-HappyHttpParameters::HappyHttpParameters(const QUrlQuery &query)
+HappyHttpParameters::HappyHttpParameters(const QUrlQuery &query):
+    m_isEmpty(false)
 {
     const QList<std::pair<QString, QString>> queryItems = query.queryItems();
     fromQueryItems(queryItems);
@@ -14,6 +15,8 @@ HappyHttpParameters::HappyHttpParameters(const QUrlQuery &query)
 
 void HappyHttpParameters::fromQueryItems(const QList<std::pair<QString, QString>>& queryItems)
 {
+    m_isEmpty = queryItems.isEmpty();
+
     for(const std::pair<QString, QString>& queryItem: queryItems)
     {
         const QString key = queryItem.first;
@@ -63,6 +66,11 @@ void HappyHttpParameters::fromQueryItems(const QList<std::pair<QString, QString>
             if(value.toLower()=="true" || value=="1")
                 raw = true;
         }
+        else if(key.compare("merge")==0)
+        {
+            if(value.toLower()=="true" || value=="1")
+                merge = true;
+        }
         else {
             const QVariantMap parserdFilters = parseFilters(key, value);
             for(auto [key, value]: parserdFilters.asKeyValueRange())
@@ -76,6 +84,11 @@ QString HappyHttpParameters::toString() const
     QString str;
 
     return str;
+}
+
+bool HappyHttpParameters::isEmpty() const
+{
+    return m_isEmpty;
 }
 
 QVariant HappyHttpParameters::parseFilter(const QString& value)

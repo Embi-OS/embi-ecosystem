@@ -12,6 +12,7 @@ class RelationRole : public QQsfpm::SingleRole
     Q_OBJECT
 
     Q_WRITABLE_VAR_PROPERTY(bool, delayed, Delayed, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, sorted, Sorted, false)
     Q_WRITABLE_REF_PROPERTY(QString, roleName, RoleName, {})
     Q_WRITABLE_VAR_PROPERTY(int, role, Role, -1)
     Q_WRITABLE_REF_PROPERTY(QString, modelRoleName, ModelRoleName, {})

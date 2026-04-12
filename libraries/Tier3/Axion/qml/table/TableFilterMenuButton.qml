@@ -7,8 +7,8 @@ import Eco.Tier3.Axion
 RawButton {
     id: root
 
-    property alias menu: menu
-    property alias filters: filters
+    readonly property BasicMenu menu: menu
+    readonly property AbstractItemModel filters: filters
     required property TableViewColumnModel columnModel
     readonly property bool opened: menu.opened
 
@@ -124,7 +124,6 @@ RawButton {
                 id: filter
                 padding: 4
 
-                required property var model
                 required property int index
                 required property int filterColumn
                 required property string filterOperator

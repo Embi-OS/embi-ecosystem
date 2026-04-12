@@ -20,10 +20,6 @@ void Log::init()
     m_ready = true;
 
     QsLogging::Logger::init(Paths::log("Log.log"));
-
-    // TODO: QTBUG-139113
-    static QRegularExpression regExp("^(?!QObject::disconnect: wildcard call disconnects from destroyed signal of).*");
-    QsLogging::Logger::instance().addMessageFilter(regExp);
 }
 
 void Log::unInit()

@@ -692,6 +692,9 @@ bool QVariantListModel::select()
 
     bool result = doSelect();
 
+    if(m_alwaysWaitForSelect)
+        result = waitForSelect();
+
     return result;
 }
 
@@ -767,6 +770,9 @@ bool QVariantListModel::submit()
     // TODO: generate dirtyKeys
     bool result = doSubmit();
 
+    if(m_alwaysWaitForSubmit)
+        result = waitForSubmit();
+
     return result;
 }
 
@@ -835,6 +841,9 @@ void QVariantListModel::revert()
 
     bool result = doRevert();
 
+    if(m_alwaysWaitForRevert)
+        result = waitForRevert();
+
     Q_UNUSED(result)
 }
 
@@ -883,18 +892,18 @@ void QVariantListModel::queueUpdate()
     }
 }
 
-void QVariantListModel::update()
+bool QVariantListModel::update()
 {
     setUpdatePostponed(true);
     setUpdateQueued(false);
     m_updateInhibitTimer.stop();
 
     if(!m_updateWhen)
-        return;
+        return false;
 
     if (m_updatePolicy==QVariantListModelPolicies::Disabled) {
         QMODELSLOG_WARNING()<<this<<"Update policy is disabled for"<<m_baseName;
-        return;
+        return false;
     }
 
     m_updateTimer.restart();
@@ -909,7 +918,10 @@ void QVariantListModel::update()
 
     bool result = doUpdate();
 
-    Q_UNUSED(result)
+    if(m_alwaysWaitForUpdate)
+        result = waitForUpdate();
+
+    return result;
 }
 
 bool QVariantListModel::waitForUpdate(int timeout)

@@ -78,6 +78,8 @@ PaneTreeView {
         SeparatorTreeDelegate {}
         InfoTreeDelegate {text: qsTr("Qt Version");info: DeviceInfo.qtVersion}
         InfoTreeDelegate {text: qsTr("Platforme");info: DeviceInfo.deviceName}
+        InfoTreeDelegate {text: qsTr("Hostname");info: DeviceInfo.deviceHostName}
+        InfoTreeDelegate {text: qsTr("Identifier");info: DeviceInfo.deviceId}
         InfoTreeDelegate {text: qsTr("Kernel");info: DeviceInfo.platformKernelVersion}
         InfoTreeDelegate {text: qsTr("Date de compilation");info: DeviceInfo.buildDate}
         SeparatorTreeDelegate {}

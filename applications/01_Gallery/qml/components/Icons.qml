@@ -24,7 +24,6 @@ ColumnLayout {
 
     function openFileFinder() {
         var settings = {
-            selectedPath: "/home/romain-dev/A_VOH/material-symbols/svg",
             selectionType: FolderTreeTypes.Dir,
             showFiles: false,
             onPathSelected: function(path) {
@@ -109,7 +108,6 @@ ColumnLayout {
 
             required property string fileName
             required property string filePath
-            required property var model
             required property int index
 
             property bool highlighted: false

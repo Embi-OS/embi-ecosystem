@@ -61,6 +61,17 @@ QString Version::aboutQt() const
     return about;
 }
 
+QString Version::contact() const
+{
+    QStringList contact;
+    contact += QString(PROJECT_COMPANY);
+    contact += QString(PROJECT_COMPANY_ADDRESS);
+    contact += QString(PROJECT_COMPANY_ZIPCODE);
+    contact += QString(PROJECT_COMPANY_CONTACT);
+    contact.removeAll("");
+    return contact.join("\n");
+}
+
 QString Version::versionToString(const QVersionNumber& version)
 {
     return version.toString();

@@ -3,6 +3,7 @@
 #include "RestCore/restreply.h"
 
 #include "RestModel/restsocket.h"
+#include "RestModel/restsocketwatcher.h"
 #include "RestModel/restsocketattached.h"
 #include "RestModel/restmodel.h"
 #include "RestModel/restmapper.h"

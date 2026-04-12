@@ -9,12 +9,12 @@ SvgColorImage {
     property bool ccw: false
     property int duration: 4000
 
-    onRotateChanged: throttler.throttle()
-    onCcwChanged: throttler.throttle()
+    onRotateChanged: throttler.start()
+    onCcwChanged: throttler.start()
 
-    SignalTrailingThrottler {
+    Timer {
         id: throttler
-        timeout: 16
+        interval: 16
         onTriggered: root.evaluate()
     }
 

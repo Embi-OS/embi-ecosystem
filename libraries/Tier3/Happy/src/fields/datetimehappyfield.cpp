@@ -25,5 +25,5 @@ QVariant DateTimeHappyField::write(const QVariantMap& values, bool creation, boo
     else if(ok)
         *ok = false;
 
-    return datetime.toLocalTime();
+    return datetime;
 }

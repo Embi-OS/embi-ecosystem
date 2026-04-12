@@ -36,12 +36,11 @@ T.ComboBox {
 
     signal textEdited(string text)
 
+    property string customText: ""
     property string emptyText: "N/A"
     currentIndex: 0
 
     font: Style.textTheme.headline5
-
-    displayText: currentIndex<0 ? emptyText : currentText
 
     Binding {
         target: root.popup.contentItem
@@ -96,7 +95,7 @@ T.ComboBox {
     }
 
     contentItem: BasicTextField {
-        text: root.editable ? root.editText : root.displayText
+        text: root.editable ? (root.editText || root.customText) : root.displayText
 
         enabled: root.editable
         autoScroll: root.editable

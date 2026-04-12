@@ -33,9 +33,9 @@ static void parseFsSpec(const QString& fsSpec, FstabEntryType& entryType)
     } else if (fsSpec.startsWith(QStringLiteral("LABEL="))) {
         entryType = FstabEntryTypes::Label;
     } else if (fsSpec.startsWith(QStringLiteral("PARTUUID="))) {
-        entryType = FstabEntryTypes::UUID;
+        entryType = FstabEntryTypes::PartUUID;
     } else if (fsSpec.startsWith(QStringLiteral("PARTLABEL="))) {
-        entryType = FstabEntryTypes::Label;
+        entryType = FstabEntryTypes::PartLabel;
     } else if (fsSpec.startsWith(QStringLiteral("/"))) {
         entryType = FstabEntryTypes::DeviceNode;
     } else if (fsSpec.isEmpty()) {
@@ -48,12 +48,25 @@ static std::array<unsigned int, 4> fstabColumnWidth(const QList<FstabEntry>& fst
 {
     std::array<unsigned int, 4> columnWidth;
 
-#define FIELD_WIDTH(x) 3 + escapeSpaces(std::max_element(fstabEntries.begin(), fstabEntries.end(), [](const FstabEntry& a, const FstabEntry& b) {return escapeSpaces(a.x()).length() < escapeSpaces(b.x()).length(); })->x()).length();
+    if (fstabEntries.isEmpty()) {
+        return columnWidth;
+    }
 
-    columnWidth[0] = FIELD_WIDTH(fsSpec);
-    columnWidth[1] = FIELD_WIDTH(mountPoint);
-    columnWidth[2] = FIELD_WIDTH(type);
-    columnWidth[3] = FIELD_WIDTH(optionsString);
+    const auto fieldWidth = [&fstabEntries](auto accessor) -> unsigned int {
+        const auto it = (std::max_element)(fstabEntries.cbegin(), fstabEntries.cend(),
+                                            [&accessor](const FstabEntry& a, const FstabEntry& b) {
+                                                return escapeSpaces(accessor(a)).size() < escapeSpaces(accessor(b)).size();
+                                            });
+        if (it == fstabEntries.cend()) {
+            return 3u;
+        }
+        return static_cast<unsigned int>(3 + escapeSpaces(accessor(*it)).size());
+    };
+
+    columnWidth[0] = fieldWidth([](const FstabEntry& e) { return e.fsSpec(); });
+    columnWidth[1] = fieldWidth([](const FstabEntry& e) { return e.mountPoint(); });
+    columnWidth[2] = fieldWidth([](const FstabEntry& e) { return e.type(); });
+    columnWidth[3] = fieldWidth([](const FstabEntry& e) { return e.optionsString(); });
 
     return columnWidth;
 }
@@ -268,9 +281,9 @@ FstabEntry FstabEntry::fromSmbParams(const QVariantMap& map, bool createCredenti
     if(map.contains("smbVersion"))
         version = (SMBVersion)map.value("smbVersion").toInt();
 
-    SMBIdentification indentification = SMBIdentifications::Anonym;
+    SMBIdentification identification = SMBIdentifications::Anonym;
     if(map.contains("smbIdentification"))
-        indentification = (SMBIdentification)map.value("smbIdentification").toInt();
+        identification = (SMBIdentification)map.value("smbIdentification").toInt();
 
     QString name = map.value("name").toString();
     if(name.isEmpty())
@@ -321,11 +334,11 @@ FstabEntry FstabEntry::fromSmbParams(const QVariantMap& map, bool createCredenti
 
         QString credentials = map.value("credentials").toString();
         if(credentials.isEmpty())
-            credentials = QString("/etc/.%1_creds").arg(name);
-        if(createCredentials)
+            credentials = QStringLiteral("/etc/.%1_creds").arg(name);
+        if(createCredentials && !credentials.isEmpty())
             QFile::remove(credentials);
 
-        if(indentification==SMBIdentifications::Password)
+        if(identification==SMBIdentifications::Password)
         {
             QString userName = map.value("userName").toString();
             QString password = map.value("password").toString();
@@ -344,7 +357,7 @@ FstabEntry FstabEntry::fromSmbParams(const QVariantMap& map, bool createCredenti
             if(!domain.isEmpty())
                 optionsList<<"domain="+domain;
         }
-        else if(indentification==SMBIdentifications::Guest)
+        else if(identification==SMBIdentifications::Guest)
             optionsList<<"guest";
 
         return optionsList.join(',');
@@ -358,6 +371,7 @@ FstabEntry FstabEntry::fromSmbParams(const QVariantMap& map, bool createCredenti
 QVariantMap FstabEntry::parseOptions(const QStringList& options)
 {
     QVariantMap ret;
+
     for(const QString& option: options) {
         const QStringList keyValuePair = option.split('=', Qt::SkipEmptyParts);
         const QString key = keyValuePair[0].trimmed();
@@ -421,9 +435,9 @@ QList<FstabEntry> FstabEntry::entries(const QString& fstabPath)
             auto mountPoint = unescapeSpaces(splitLine.at(1));
             auto fsType = unescapeSpaces(splitLine.at(2));
             // Options may be omitted in some rare cases like NixOS generated fstab.
-            auto options = unescapeSpaces(splitLine.length() >= 4 ? splitLine.at(3) : QStringLiteral("defaults"));
+            auto options = unescapeSpaces(splitLine.size() >= 4 ? splitLine.at(3) : QStringLiteral("defaults"));
 
-            switch (splitLine.length()) {
+            switch (splitLine.size()) {
                 case 4:
                     entries.push_back( {fsSpec, mountPoint, fsType, options } );
                     break;
@@ -439,7 +453,7 @@ QList<FstabEntry> FstabEntry::entries(const QString& fstabPath)
         }
 
         fstabFile.close();
-        if (entries.back().entryType() == FstabEntryTypes::Comment && entries.back().comment().isEmpty())
+        if (!entries.isEmpty() && entries.back().entryType() == FstabEntryTypes::Comment && entries.back().comment().isEmpty())
             entries.pop_back();
     }
 

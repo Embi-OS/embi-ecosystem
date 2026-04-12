@@ -24,8 +24,8 @@ private:
     QML_NAMED_ELEMENT(SignalThrottler)
     QML_UNCREATABLE("Abstract")
 
-    Q_CONSTANT_VAR_PROPERTY(QGenericSignalThrottler::Type, type, Type, {})
-    Q_CONSTANT_VAR_PROPERTY(QGenericSignalThrottler::EmissionPolicy, emissionPolicy, EmissionPolicy, {})
+    Q_CONSTANT_VAR_PROPERTY(QGenericSignalThrottler::Type, type, {})
+    Q_CONSTANT_VAR_PROPERTY(QGenericSignalThrottler::EmissionPolicy, emissionPolicy, {})
 
     Q_PROPERTY(int timeout READ timeout WRITE setTimeout NOTIFY timeoutChanged FINAL)
     Q_PROPERTY(Qt::TimerType timerType READ timerType WRITE setTimerType NOTIFY timerTypeChanged FINAL)

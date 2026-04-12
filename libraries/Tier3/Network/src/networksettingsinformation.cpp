@@ -1,7 +1,7 @@
 #include "networksettingsinformation.h"
 #include "solid_log.h"
 
-#include "Network/networksettingsmanager.h"
+#include "networksettingsmanager.h"
 #include "qmodelmatcher.h"
 
 NetworkSettingsInformation::NetworkSettingsInformation(QObject *parent) :

@@ -273,12 +273,15 @@ void FormObjectModel::connectFormObjectProperties(FormObject* object)
     object->setEditable(m_editable);
     object->setFitLabel(m_fitLabel);
     object->setLabelWidthRatio(m_labelWidthRatio);
-    object->setSelectPolicy(m_selectPolicy);
-    object->setSubmitPolicy(m_submitPolicy);
-    object->setRevertPolicy(m_revertPolicy);
-    object->setSelectWhen(m_selectWhen);
-    object->setSubmitWhen(m_submitWhen);
-    object->setRevertWhen(m_revertWhen);
+    if(!object->getIgnorePolicies())
+    {
+        object->setSelectPolicy(m_selectPolicy);
+        object->setSubmitPolicy(m_submitPolicy);
+        object->setRevertPolicy(m_revertPolicy);
+        object->setSelectWhen(m_selectWhen);
+        object->setSubmitWhen(m_submitWhen);
+        object->setRevertWhen(m_revertWhen);
+    }
     if(m_target)
         object->setTarget(m_target);
 
@@ -286,11 +289,14 @@ void FormObjectModel::connectFormObjectProperties(FormObject* object)
     connect(this, &FormObjectModel::editableChanged, object, &FormObject::setEditable);
     connect(this, &FormObjectModel::fitLabelChanged, object, &FormObject::setFitLabel);
     connect(this, &FormObjectModel::labelWidthRatioChanged, object, &FormObject::setLabelWidthRatio);
-    connect(this, &FormObjectModel::selectPolicyChanged, object, &FormObject::setSelectPolicy);
-    connect(this, &FormObjectModel::submitPolicyChanged, object, &FormObject::setSubmitPolicy);
-    connect(this, &FormObjectModel::revertPolicyChanged, object, &FormObject::setRevertPolicy);
-    connect(this, &FormObjectModel::selectWhenChanged, object, &FormObject::setSelectWhen);
-    connect(this, &FormObjectModel::submitWhenChanged, object, &FormObject::setSubmitWhen);
-    connect(this, &FormObjectModel::revertWhenChanged, object, &FormObject::setRevertWhen);
+    if(!object->getIgnorePolicies())
+    {
+        connect(this, &FormObjectModel::selectPolicyChanged, object, &FormObject::setSelectPolicy);
+        connect(this, &FormObjectModel::submitPolicyChanged, object, &FormObject::setSubmitPolicy);
+        connect(this, &FormObjectModel::revertPolicyChanged, object, &FormObject::setRevertPolicy);
+        connect(this, &FormObjectModel::selectWhenChanged, object, &FormObject::setSelectWhen);
+        connect(this, &FormObjectModel::submitWhenChanged, object, &FormObject::setSubmitWhen);
+        connect(this, &FormObjectModel::revertWhenChanged, object, &FormObject::setRevertWhen);
+    }
     connect(this, &FormObjectModel::targetChanged, object, &FormObject::setTarget);
 }

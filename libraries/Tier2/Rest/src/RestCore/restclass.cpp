@@ -57,10 +57,10 @@ RestReply* RestClass::call(QNetworkReply* networkReply, QObject* parent)
     reply->setAutoDelete(m_replyAutoDelete);
     reply->setAllowEmpty(m_replyAllowEmpty);
 
-    reply->onFinished([this, timer, reply](int){
+    reply->onFinished([this, timer, reply](bool, int, const QVariant&){
         setLoading(false);
         RESTLOG_DEBUG()<<"REST request"<<reply->getNetworkRequest()<<"took"<<timer->nsecsElapsed()/1000000.0<<"ms for"<<bytes(reply->getContentLength());
-        // qNotice()<<this<<"REST request"<<reply->getNetworkRequest()<<"took"<<timer->nsecsElapsed()/1000000.0<<"ms for"<<bytes(reply->getContentLength());
+        // qNotice()<<"REST request"<<reply->getNetworkRequest()<<"took"<<timer->nsecsElapsed()/1000000.0<<"ms for"<<bytes(reply->getContentLength());
         delete timer;
     }, Qt::QueuedConnection);
     reply->onSucceeded([this](int httpStatus, const QVariant& reply){
@@ -68,7 +68,7 @@ RestReply* RestClass::call(QNetworkReply* networkReply, QObject* parent)
         setReply(reply);
         setDownloadProgress(10000);
         setUploadProgress(10000);
-        // qNotice().noquote()<<this<<"REST reply"<<QUtils::Json::variantToJson(reply, false);
+        // qNotice().noquote()<<"REST reply"<<QUtils::Json::variantToJson(reply, false);
     });
     reply->onFailed([this](int httpStatus, const QVariant& reply){
         setHttpStatus(httpStatus);

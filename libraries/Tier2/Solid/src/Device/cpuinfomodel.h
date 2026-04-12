@@ -10,11 +10,11 @@ class CpuInfoModel: public QVariantListModel
     Q_OBJECT
     QML_ELEMENT
 
-    Q_CONSTANT_REF_PROPERTY(QString, model, Model, "N/A")
-    Q_CONSTANT_REF_PROPERTY(QString, revision, Revision, "N/A")
-    Q_CONSTANT_REF_PROPERTY(QString, serial, Serial, "N/A")
-    Q_CONSTANT_REF_PROPERTY(QString, productId, ProductId, "N/A")
-    Q_CONSTANT_VAR_PROPERTY(int, coreCount, CoreCount, 0)
+    Q_CONSTANT_REF_PROPERTY(QString, model, "N/A")
+    Q_CONSTANT_REF_PROPERTY(QString, revision, "N/A")
+    Q_CONSTANT_REF_PROPERTY(QString, serial, "N/A")
+    Q_CONSTANT_REF_PROPERTY(QString, productId, "N/A")
+    Q_CONSTANT_VAR_PROPERTY(int, coreCount, 0)
 
 public:
     explicit CpuInfoModel(QObject* parent=nullptr);

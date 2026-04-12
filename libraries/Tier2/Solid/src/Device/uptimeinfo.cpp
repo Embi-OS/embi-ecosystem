@@ -110,7 +110,14 @@ bool UptimeInfo::refresh()
 
 bool UptimeInfo::refresh()
 {
-    SOLIDLOG_WARNING()<<"UptimeInfo: unsupported platform!";
+    m_systemTime = 0;
+    m_idleTime = 0;
+    m_upSeconds = 0;
+    m_upMinutes = 0;
+    m_upHours = 0;
+    m_upDays = 0;
+    m_upTime.clear();
+    emit updated();
     return false;
 }
 

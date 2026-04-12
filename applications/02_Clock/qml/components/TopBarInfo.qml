@@ -135,8 +135,8 @@ RowContainer {
                     required property string driveDevice
                     required property string fileUrl
                     required property string driveDisplayType
-                    required property bool driveIsNetwork
-                    enabled: !driveIsNetwork
+                    required property bool driveIsUsb
+                    enabled: driveIsUsb
                     hint: enabled ? qsTr("Ejecter") : ""
                     text: ("%1 (%2)").arg(name).arg(driveDevice)
                     icon.source: MimeIconHelper.getSvgIconPathForUrl(fileUrl)

@@ -23,7 +23,7 @@ PaneTreeView {
 
     ApplicationController {
         id: applicationController
-        onErrorOccurred: error => DialogManager.showError(error)
+        onErrorOccurred: error => DialogManager.showCritical(error)
     }
 
     StandardObjectModel {

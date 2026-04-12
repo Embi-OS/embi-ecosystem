@@ -12,7 +12,7 @@ class DialogManager : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_COMPOSITION_PROPERTY(QObjectListModel, children, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QObjectListModel, children)
 
 private:
     friend QQmlSingleton<DialogManager>;
@@ -25,7 +25,7 @@ public:
 public slots:
     DialogObject* show(const QVariant& settings={});
 
-    DialogObject* showError(const QVariant& settings={});
+    DialogObject* showCritical(const QVariant& settings={});
     DialogObject* showWarning(const QVariant& settings={});
     DialogObject* showMessage(const QVariant& settings={});
     DialogObject* showAction(const QVariant& settings={});
@@ -40,9 +40,11 @@ public slots:
     DialogObject* showBusy(const QVariant& settings={});
 
     DialogObject* showDate(const QVariant& settings={});
+    DialogObject* showDateRange(const QVariant& settings={});
     DialogObject* showTime(const QVariant& settings={});
     DialogObject* showFileTree(const QVariant& settings={});
     DialogObject* showInput(const QVariant& settings={});
+    DialogObject* showSelect(const QVariant& settings={});
     DialogObject* showForm(const QVariant& settings={});
     DialogObject* showAlarm(const QVariant& settings={});
 

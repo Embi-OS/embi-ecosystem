@@ -1,7 +1,11 @@
 #include "qnetworkping.h"
 #include "qutils_log.h"
 
-Q_GLOBAL_STATIC_WITH_ARGS(QRegularExpression, timeRegExp, (R"(time=([\d.]+)\s*ms)"))
+#include <QElapsedTimer>
+#include <QEventLoop>
+#include <QRegularExpression>
+
+Q_GLOBAL_STATIC_WITH_ARGS(QRegularExpression, timeRegExp, (R"(time[=<]\s*([\d.]+)\s*ms)", QRegularExpression::CaseInsensitiveOption))
 
 QNetworkPing::QNetworkPing(QObject *parent):
     QObject(parent)
@@ -51,10 +55,11 @@ void QNetworkPing::ping(const QString &address, const QObject* context, std::fun
 #if QT_CONFIG(process)
 
     const QString program = "ping";
+    const int requestTimeout = qMax(1, qMin(interval, timeout));
 #ifdef Q_OS_WIN
-    const QStringList parameters = {"-n", "1", "-W", QString::number(::qMin(interval, timeout)), address};
+    const QStringList parameters = {"-n", "1", "-w", QString::number(requestTimeout), address};
 #else
-    const QStringList parameters = {"-c", "1", "-W", QString::number(::qMax(1.0, ::qMin(interval, timeout)/1000.0)), address};
+    const QStringList parameters = {"-c", "1", "-W", QString::number(qMax(1, (requestTimeout + 999) / 1000)), address};
 #endif
 
     QElapsedTimer* timer = new QElapsedTimer;
@@ -62,7 +67,7 @@ void QNetworkPing::ping(const QString &address, const QObject* context, std::fun
 
     QObject::connect(process, &QProcess::finished, context, [timer, process, context, address, timeout, interval, callback](int exitCode, QProcess::ExitStatus exitStatus) {
         const QString processOutput = process->readAllStandardOutput();
-        const QString processError = process->readAllStandardOutput();
+        const QString processError = process->readAllStandardError();
         const double elapsed = timer->nsecsElapsed()/1000000.0;
         double ping = -1;
 
@@ -73,18 +78,20 @@ void QNetworkPing::ping(const QString &address, const QObject* context, std::fun
         process->deleteLater();
         delete timer;
 
-        if(exitCode!=0 && timeout>elapsed)
-        {
+        if (exitCode != 0 && timeout > elapsed) {
             QUTILSLOG_INFO()<<"Try to ping"<<address<<"- remaining time:"<<qRound((timeout-elapsed)/1000.0)<<"sec";
             QNetworkPing::ping(address, context, callback, timeout-elapsed, interval);
             return;
         }
 
-        if(callback)
+        if (exitCode != 0 && !processError.isEmpty()) {
+            QUTILSLOG_WARNING()<<"Ping"<<address<<"failed:"<<processError.trimmed();
+        }
+
+        if (callback)
             callback(ping);
     });
 
-    process->setWorkingDirectory("/");
     process->setProgram(program);
     process->setArguments(parameters);
     process->start();

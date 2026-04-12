@@ -272,7 +272,11 @@ function(embi_add_executable NAME)
             set(NO_GENERATE_EXTRA_QMLDIRS NO_GENERATE_EXTRA_QMLDIRS)
         endif()
 
-        qt_add_executable(${NAME} main.cpp)
+        if(WIN32)
+            qt_add_executable(${NAME} WIN32 main.cpp)
+        else()
+            qt_add_executable(${NAME} main.cpp)
+        endif()
         qt_add_qml_module(${NAME}
             URI ${arg_URI}
             ${ENABLE_TYPE_COMPILER}
@@ -310,7 +314,11 @@ function(embi_add_executable NAME)
         )
 
     else()
-        qt_add_executable(${NAME} ${arg_SRC_FILES})
+        if(WIN32)
+            qt_add_executable(${NAME} WIN32 ${arg_SRC_FILES})
+        else()
+            qt_add_executable(${NAME} ${arg_SRC_FILES})
+        endif()
     endif()
 
     set_property(TARGET ${NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -423,7 +431,11 @@ function(embi_add_application NAME)
 
     message(NOTICE "[PROJECT] Setup application ${NAME} (APP_NAME = ${APP_NAME}, LIB_NAME = ${LIB_NAME})")
 
-    qt_add_executable(${APP_NAME} main.cpp)
+    if(WIN32)
+        qt_add_executable(${APP_NAME} WIN32 main.cpp)
+    else()
+        qt_add_executable(${APP_NAME} main.cpp)
+    endif()
     set_property(TARGET ${APP_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
     embi_add_qml_module(${LIB_NAME}

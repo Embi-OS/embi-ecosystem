@@ -21,6 +21,10 @@ public:
     static QSqlDriver* defaultDriver();
 
     static QStringList drivers();
+
+    static bool transaction(const QString& connection=SqlDefaultConnection);
+    static bool commit(const QString& connection=SqlDefaultConnection);
+    static bool rollback(const QString& connection=SqlDefaultConnection);
 };
 
 #endif // SQLDBPOOL_H

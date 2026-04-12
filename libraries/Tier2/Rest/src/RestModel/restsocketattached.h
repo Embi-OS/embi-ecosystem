@@ -6,7 +6,34 @@
 #include "restmapper.h"
 #include "restsocket.h"
 
-class RestSocketAttached : public RestSocket
+class RestSocketObject : public RestSocket
+{
+    Q_OBJECT
+    QML_ELEMENT
+
+    Q_WRITABLE_REF_PROPERTY(QStringList, fields, Fields, {})
+    Q_WRITABLE_REF_PROPERTY(QStringList, omit, Omit, {})
+    Q_WRITABLE_REF_PROPERTY(QStringList, expand, Expand, {})
+
+public:
+    explicit RestSocketObject(QObject* parent=nullptr);
+
+    QVariantMap bindParameters() const override;
+
+public slots:
+    void changeBaseName(const QString& baseName);
+
+protected slots:
+    virtual void onSocketMessageReceived(const QVariant& message);
+    virtual void onSocketError() {};
+
+signals:
+    void createReceived(const QVariantMap& event);
+    void updateReceived(const QVariantMap& event);
+    void deleteReceived(const QVariantMap& event);
+};
+
+class RestSocketAttached : public RestSocketObject
 {
     Q_OBJECT
     QML_ELEMENT
@@ -19,16 +46,6 @@ protected:
 public:
     static RestSocketAttached* wrap(QObject* object);
     static RestSocketAttached* qmlAttachedProperties(QObject* object);
-
-protected slots:
-    void changeBaseName(const QString& baseName);
-    virtual void onSocketMessageReceived(const QVariant& message) = 0;
-    virtual void onSocketError() = 0;
-
-signals:
-    void createReceived(const QVariantMap& event);
-    void updateReceived(const QVariantMap& event);
-    void deleteReceived(const QVariantMap& event);
 };
 
 class RestSocketModelAttached : public RestSocketAttached

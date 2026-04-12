@@ -75,7 +75,7 @@ void RestSubmitWorker::sendNextRequest()
     m_reply->onCanceled(this, [this]() {
         emit this->canceled();
     });
-    m_reply->onFinished(this, [this](int) {
+    m_reply->onFinished(this, [this](bool, int, const QVariant&) {
         m_reply.clear();
         sendNextRequest();
     }, Qt::QueuedConnection);

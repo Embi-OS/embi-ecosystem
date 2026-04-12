@@ -42,9 +42,11 @@ Item {
                          root.type===DialogTypes.Tree ? dialogTree :
                          root.type===DialogTypes.Busy ? dialogBusy :
                          root.type===DialogTypes.Date ? dialogDate :
+                         root.type===DialogTypes.DateRange ? dialogDateRange :
                          root.type===DialogTypes.Time ? dialogTime :
                          root.type===DialogTypes.FileTree ? dialogFileTree :
                          root.type===DialogTypes.Input ? dialogInput :
+                         root.type===DialogTypes.Select ? dialogSelect :
                          root.type===DialogTypes.Form ? dialogForm :
                          root.type===DialogTypes.Alarm ? dialogAlarm : undefined
     }
@@ -267,6 +269,42 @@ Item {
     }
 
     Component {
+        id: dialogDateRange
+        DialogDateRangePicker {
+            fullscreen: root.fullscreen
+            animation: root.animation
+
+            buttonReject: root.buttonReject
+            buttonAccept: root.buttonAccept
+
+            selectedDate: root.settings?.selectedDate ?? new Date()
+            fromDate: root.settings?.fromDate ?? selectedDate
+            toDate: root.settings?.toDate ?? selectedDate
+            dayOfWeekVisible: root.settings?.dayOfWeekVisible ?? true
+            weekNumberVisible: root.settings?.weekNumberVisible ?? true
+
+            onAboutToHide: root.onAboutToHide()
+            onAboutToShow: root.onAboutToShow()
+            onClosed: root.onClosed()
+            onOpened: root.onOpened()
+
+            onAccepted: root.onAccepted()
+            onApplied: root.onApplied()
+            onDiscarded: root.onDiscarded()
+            onHelpRequested: root.onHelpRequested()
+            onRejected: root.onRejected()
+            onReset: root.onReset()
+
+            onDateRangeSelected: (fromDate, toDate) => {
+                if(root.dialogObject.diagnose)
+                    DialogManager.diagnose(root.severity, "DateRangeSelected: "+fromDate+" "+toDate)
+                root.dialogObject.dateRangeSelected(fromDate, toDate);
+                root.settings?.onDateRangeSelected(fromDate, toDate);
+            }
+        }
+    }
+
+    Component {
         id: dialogTime
         DialogTimePicker {
             fullscreen: root.fullscreen
@@ -406,6 +444,47 @@ Item {
                     DialogManager.diagnose(root.severity, "InputApplied: "+value)
                 root.dialogObject.inputApplied(value);
                 root.settings?.onInputApplied(value);
+            }
+        }
+    }
+
+    Component {
+        id: dialogSelect
+        DialogSelect {
+            fullscreen: root.fullscreen
+            animation: root.animation
+
+            title: root.title
+            message: root.message
+
+            buttonReject: root.buttonReject
+            buttonAccept: root.buttonAccept
+
+            label: root.settings?.label ?? ""
+            options: root.settings?.options ?? null
+            textRole: root.settings?.textRole ?? ""
+            valueRole: root.settings?.valueRole ?? ""
+            infos: root.settings?.infos ?? ""
+            placeholder: root.settings?.placeholder ?? ""
+            warning: root.settings?.warning ?? false
+
+            onAboutToHide: root.onAboutToHide()
+            onAboutToShow: root.onAboutToShow()
+            onClosed: root.onClosed()
+            onOpened: root.onOpened()
+
+            onAccepted: root.onAccepted()
+            onApplied: root.onApplied()
+            onDiscarded: root.onDiscarded()
+            onHelpRequested: root.onHelpRequested()
+            onRejected: root.onRejected()
+            onReset: root.onReset()
+
+            onSelectAccepted: (value) => {
+                if(root.dialogObject.diagnose)
+                    DialogManager.diagnose(root.severity, "SelectAccepted: "+value)
+                root.dialogObject.selectAccepted(value);
+                root.settings?.onSelectAccepted(value);
             }
         }
     }

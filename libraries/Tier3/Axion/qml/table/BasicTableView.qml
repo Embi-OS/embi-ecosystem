@@ -1,15 +1,14 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import Eco.Tier1.Utils
 import Eco.Tier1.Models
 import Eco.Tier3.Axion
 
 Item {
     id: root
 
-    property alias tableView: view
-    property alias horizontalHeader: horizontalHeader
-    property alias verticalHeader: verticalHeader
+    readonly property TableView tableView: view
+    readonly property TableHorizontalHeaderView horizontalHeader: horizontalHeader
+    readonly property TableVerticalHeaderView verticalHeader: verticalHeader
 
     property AbstractItemModel model: null
     property alias delegate: view.delegate
@@ -35,6 +34,10 @@ Item {
     property alias resizableColumns: horizontalHeader.resizableColumns
     property alias resizableRows: verticalHeader.resizableRows
 
+    readonly property bool dragging: view.dragging || horizontalHeader.dragging || verticalHeader.dragging
+    readonly property bool flicking: view.flicking || horizontalHeader.flicking || verticalHeader.flicking
+    readonly property bool moving: view.moving || horizontalHeader.moving || verticalHeader.moving
+
     property bool canRefresh: false
 
     property bool fixedCellHeight: true
@@ -49,23 +52,54 @@ Item {
     property bool isLayouting: false
     property bool isCompleted: false
     Component.onCompleted: isCompleted=true
+    Component.onDestruction: isCompleted=false
 
-    onCellHeightChanged: root.forceLayoutThrottled()
-    onCellWidthChanged: root.forceLayoutThrottled()
+    onCellHeightChanged: root.queueForceLayout()
+    onCellWidthChanged: root.queueForceLayout()
 
-    SignalTrailingDebouncer {
+    Timer {
         id: forceLayoutThrottler
-        timeout: 0
+        interval: 0
         onTriggered: {
+            if(root.isColumnWidthInSync() && root.isRowHeightInSync())
+                return;
+
             root.isLayouting = true
             view.forceLayout()
             root.isLayouting = false
         }
     }
 
-    function forceLayoutThrottled() {
-        if(isCompleted && !isLayouting && view.rows>0)
-            forceLayoutThrottler.throttle();
+    function queueForceLayout() {
+        if(visible && isCompleted && !isLayouting) {
+            forceLayoutThrottler.start();
+        }
+    }
+
+    function isColumnWidthInSync(): bool {
+        for (let c = 0; c < view.columns; ++c) {
+            if (!view.isColumnLoaded(c) || !horizontalHeader.isColumnLoaded(c))
+                continue
+
+            let expectedW = view.columnWidthProvider(c)
+            if (expectedW !== view.columnWidth(c) || expectedW !== horizontalHeader.columnWidth(c)) {
+                return false
+            }
+        }
+        return true
+    }
+
+    function isRowHeightInSync(): bool {
+        for (let r = 0; r < view.rows; ++r) {
+            if (!view.isRowLoaded(r) || !verticalHeader.isRowLoaded(r))
+                continue
+
+            let expectedH = view.rowHeightProvider(r)
+            if (expectedH !== view.rowHeight(r) || expectedH !== verticalHeader.rowHeight(r)) {
+                return false
+            }
+        }
+        return true
     }
 
     function defaultColumnWidthProvider(column: int): real {
@@ -76,14 +110,9 @@ Item {
         if(root.fixedCellWidth) {
             return root.cellWidth;
         }
-        if(!view.isColumnLoaded(column) || (horizontalHeader.visible && !horizontalHeader.isColumnLoaded(column))) {
-            return -1;
-        }
         w = horizontalHeader.visible ? Math.max(view.implicitColumnWidth(column), horizontalHeader.implicitColumnWidth(column)) : view.implicitColumnWidth(column);
-        if(w<view.columnWidth(column) || (horizontalHeader.visible && w<horizontalHeader.columnWidth(column))) {
-            root.forceLayoutThrottled()
-        }
-        return Math.max(Math.min(w, root.cellWidthMaximum), root.cellWidth);
+        w = Math.max(Math.min(w, root.cellWidthMaximum), root.cellWidth);
+        return w;
     }
 
     function defaultRowHeightProvider(row: int): real {
@@ -94,14 +123,9 @@ Item {
         if(root.fixedCellHeight) {
             return root.cellHeight;
         }
-        if(!view.isRowLoaded(row) || (verticalHeader.visible && !verticalHeader.isRowLoaded(row))) {
-            return -1;
-        }
         h = verticalHeader.visible ? Math.max(view.implicitRowHeight(row), verticalHeader.implicitRowHeight(row)) : view.implicitRowHeight(row);
-        if(h<view.rowHeight(row) || (verticalHeader.visible && h<verticalHeader.rowHeight(row))) {
-            root.forceLayoutThrottled()
-        }
-        return Math.max(h, root.cellHeight);
+        h = Math.max(h, root.cellHeight);
+        return h;
     }
 
     function positionViewAtRow(row: int) {
@@ -124,6 +148,39 @@ Item {
         root.positionViewAtColumn(root.currentColumn)
     }
 
+    TableHorizontalHeaderView {
+        id: horizontalHeader
+        anchors.left: view.left
+        anchors.right: view.right
+        anchors.top: parent.top
+        syncView: view
+        onLayoutChanged: root.queueForceLayout()
+
+        rowHeightProvider: function (row) {
+            let h = explicitRowHeight(row)
+            if (h >= 0)
+                return h;
+            return Math.max(implicitRowHeight(row), root.cellHeight);
+        }
+    }
+
+    TableVerticalHeaderView {
+        id: verticalHeader
+        anchors.left: parent.left
+        anchors.top: horizontalHeader.bottom
+        anchors.topMargin: view.rowSpacing
+        anchors.bottom: view.bottom
+        syncView: view
+        onLayoutChanged: root.queueForceLayout()
+
+        columnWidthProvider: function(column) {
+            let w = explicitColumnWidth(column)
+            if (w >= 0)
+                return w;
+            return Math.max(Math.min(implicitColumnWidth(column), root.cellWidthMaximum), root.cellWidth);
+        }
+    }
+
     TableView {
         id: view
         anchors.right: parent.right
@@ -135,6 +192,7 @@ Item {
         anchors.rightMargin: (ScrollBar.vertical.visible ? columnSpacing+ScrollBar.vertical.width : 0)
         anchors.bottomMargin: (ScrollBar.horizontal.visible ? rowSpacing+ScrollBar.horizontal.height : 0)
 
+        onLayoutChanged: root.queueForceLayout()
         columnWidthProvider: root.defaultColumnWidthProvider
         rowHeightProvider: root.defaultRowHeightProvider
         selectionBehavior: TableView.SelectionDisabled
@@ -142,8 +200,8 @@ Item {
         keyNavigationEnabled: false
         model: root.model
 
-        rowSpacing: 1 //0
-        columnSpacing: 0 //0
+        rowSpacing: 1
+        columnSpacing: 0
 
         clip: true
         interactive: true
@@ -151,9 +209,9 @@ Item {
         resizableColumns: false
         resizableRows: false
         editTriggers: TableView.NoEditTriggers
-        flickableDirection: Flickable.AutoFlickIfNeeded
+        flickableDirection: Flickable.HorizontalAndVerticalFlick
 
-        delegate: BasicTableViewDelegate {
+        delegate: TableViewLabelDelegate {
             required property string display
             text: display
         }
@@ -184,51 +242,6 @@ Item {
                 parent: view
                 onTriggered: root.refreshTriggered()
             }
-        }
-    }
-
-    TableHorizontalHeaderView {
-        id: horizontalHeader
-        anchors.left: view.left
-        anchors.right: view.right
-        anchors.top: parent.top
-        syncView: view
-        onLayoutChanged: {
-            if(!visible)
-                return;
-            root.forceLayoutThrottled()
-        }
-        rowHeightProvider: function (row) {
-            let h = explicitRowHeight(row)
-            if (h >= 0)
-                return h;
-            return root.cellHeight;
-        }
-    }
-
-    TableVerticalHeaderView {
-        id: verticalHeader
-        anchors.left: parent.left
-        anchors.top: horizontalHeader.bottom
-        anchors.topMargin: view.rowSpacing
-        anchors.bottom: view.bottom
-        syncView: view
-        onLayoutChanged: {
-            if(!visible)
-                return;
-            root.forceLayoutThrottled()
-        }
-        rowHeightProvider: function (row) {
-            let h = explicitRowHeight(row)
-            if (h >= 0)
-                return h;
-            return root.cellHeight;
-        }
-        columnWidthProvider: function(column) {
-            let w = explicitColumnWidth(column)
-            if (w >= 0)
-                return w;
-            return Math.max(implicitColumnWidth(column), root.cellWidth);
         }
     }
 }

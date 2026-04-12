@@ -3,8 +3,8 @@
 
 UnitObject::UnitObject(UnitCategories::Enum category, QObject *parent) :
     QObject(parent),
-    m_category(category),
     m_categoryObject(Units::make(category)),
+    m_category(category),
     m_defaultType((UnitTypes::Enum)category),
     m_type((UnitTypes::Enum)category),
     m_throttler(new QSignalTrailingThrottler(this))
@@ -22,24 +22,24 @@ UnitObject::UnitObject(UnitCategories::Enum category, QObject *parent) :
 
 double UnitObject::getValue(UnitTypes::Enum type) const
 {
-    if(type==UnitTypes::NoUnit || type==getCategoryObject()->getDefaultType())
+    if(type==UnitTypes::NoUnit || type==m_categoryObject->defaultType())
         return getRawValue();
 
-    return getCategoryObject()->convertTo(getRawValue(), type);
+    return m_categoryObject->convertTo(getRawValue(), type);
 }
 
 bool UnitObject::setValue(double value, UnitTypes::Enum type)
 {
-    if(type==UnitTypes::NoUnit || type==getCategoryObject()->getDefaultType())
+    if(type==UnitTypes::NoUnit || type==m_categoryObject->defaultType())
         return setRawValue(value);
 
-    return setRawValue(getCategoryObject()->convertFrom(value, type));
+    return setRawValue(m_categoryObject->convertFrom(value, type));
 }
 
 void UnitObject::updateDisplay()
 {
-    setDisplayType(getCategoryObject()->abbreviation(m_type));
-    setDisplayValue(qFuzzyRound(getCategoryObject()->convertTo(m_rawValue,getType()), m_decimals));
+    setDisplayType(m_categoryObject->abbreviation(m_type));
+    setDisplayValue(qFuzzyRound(m_categoryObject->convertTo(m_rawValue,getType()), m_decimals));
     setFormattedValue(QString("%1").arg(QString::number(m_displayValue, 'g', QLocale::FloatingPointShortest)));
     setDisplay(QString("%1 [%2]").arg(m_formattedValue, m_displayType));
 

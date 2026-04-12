@@ -191,7 +191,18 @@ void AxionHelper::warningWrongPage(const QString& page, int index)
     settings["title"] = tr("Page inexistante!");
     settings["caption"] = QString("%1 - %2").arg(page).arg(index);
     settings["timeout"] = 2000;
+    settings["diagnose"] = false;
     SnackbarManager::Get()->showWarning(settings);
+}
+
+void AxionHelper::warningNavigation(const QString& message, const QString& infos)
+{
+    QVariantMap settings;
+    settings["caption"] = message;
+    settings["details"] = infos;
+    settings["timeout"] = 2000;
+    settings["diagnose"] = false;
+    SnackbarManager::Get()->showCritical(settings);
 }
 
 void AxionHelper::showAbout()

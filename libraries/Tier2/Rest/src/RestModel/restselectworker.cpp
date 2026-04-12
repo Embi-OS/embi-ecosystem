@@ -77,7 +77,7 @@ bool RestSelectWorker::doRun()
     m_reply->onCanceled(this, [this]() {
         emit this->canceled();
     });
-    m_reply->onFinished(this, [this](int status) {
+    m_reply->onFinished(this, [this](bool, int status, const QVariant&) {
         emit this->finished(status);
     }, Qt::QueuedConnection);
 

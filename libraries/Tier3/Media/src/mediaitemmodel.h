@@ -63,7 +63,7 @@ class MediaItemModelAttached : public QObject
     Q_OBJECT
 
     Q_WRITABLE_PTR_PROPERTY(MediaItemModel, playlist, Playlist, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(QMediaPlayer, player, player, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QMediaPlayer, player)
 
 private:
     friend MediaItemModel;

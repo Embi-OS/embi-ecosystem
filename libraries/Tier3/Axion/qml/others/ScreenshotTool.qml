@@ -74,10 +74,15 @@ T.Popup {
             if(!result)
                 return
             captureImage.source="file://"+path;
-            root.visible=true;
-            JS.singleshotTimer(1000, function(){
-                root.visible=false;
-            });
+            root.open()
         }
+    }
+
+    Timer {
+        id: openTimer
+        running: root.visible
+        repeat: false
+        interval: 1000
+        onTriggered: root.close()
     }
 }

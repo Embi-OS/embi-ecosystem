@@ -218,6 +218,29 @@ Q_ENUM_CLASS(StepObjectStates, StepObjectState,
              Failed,
              Skipped)
 
+class VirtualKeyboardHelper : public QObject,
+                              public QQmlSingleton<VirtualKeyboardHelper>
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+
+    Q_WRITABLE_FUZ_PROPERTY(double, width, Width, 0)
+    Q_WRITABLE_FUZ_PROPERTY(double, height, Height, 0)
+
+    Q_WRITABLE_VAR_PROPERTY(bool, visible, Visible, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, active, Active, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, animating, Animating, false)
+
+protected:
+    friend QQmlSingleton<VirtualKeyboardHelper>;
+    explicit VirtualKeyboardHelper(QObject *parent = nullptr):
+        QObject(parent)
+    {
+
+    };
+};
+
 class AxionHelper : public QObject,
                     public QQmlSingleton<AxionHelper>
 {
@@ -225,7 +248,7 @@ class AxionHelper : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_CONSTANT_REF_PROPERTY(QVariantMap, arguments, Arguments, {})
+    Q_CONSTANT_REF_PROPERTY(QVariantMap, arguments, {})
 
     Q_READONLY_VAR_PROPERTY(bool, pendingRestart, PendingRestart, false)
     Q_READONLY_VAR_PROPERTY(bool, pendingReboot, PendingReboot, false)
@@ -246,6 +269,8 @@ public:
 
 public slots:
     static void warningWrongPage(const QString& page, int index=0);
+    static void warningNavigation(const QString& message, const QString& infos=QString());
+
     static void showAbout();
     static void showAboutQt();
 

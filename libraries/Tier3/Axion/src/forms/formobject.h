@@ -8,6 +8,7 @@
 
 Q_ENUM_CLASS(FormTypes, FormType,
              None,
+             Info,
              Subtitle,
              TextField,
              TextArea,
@@ -66,6 +67,7 @@ class FormObject : public QStandardObject
     Q_READONLY_VAR_PROPERTY(bool, acceptableInput, AcceptableInput, true)
 
     // Can be forwarded by model
+    Q_WRITABLE_VAR_PROPERTY(bool, ignorePolicies, IgnorePolicies, false)
     Q_WRITABLE_VAR_PROPERTY(bool, fitLabel, FitLabel, false)
     Q_WRITABLE_FUZ_PROPERTY(double, labelWidthRatio, LabelWidthRatio, 0.5)
     Q_WRITABLE_VAR_PROPERTY(FormEditPolicies::Enum, selectPolicy, SelectPolicy, FormEditPolicies::Direct)

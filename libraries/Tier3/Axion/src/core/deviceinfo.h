@@ -20,7 +20,6 @@ class DeviceInfo : public QObject,
     Q_PROPERTY(bool isDesktop      READ isDesktop      CONSTANT FINAL)
     Q_PROPERTY(bool isMacX         READ isMacX         CONSTANT FINAL)
     Q_PROPERTY(bool isWindows      READ isWindows      CONSTANT FINAL)
-    Q_PROPERTY(bool isWindows8     READ isWindows8     CONSTANT FINAL)
     Q_PROPERTY(bool isLinux        READ isLinux        CONSTANT FINAL)
     Q_PROPERTY(bool isWasm         READ isWasm         CONSTANT FINAL)
     Q_PROPERTY(bool isAndroid      READ isAndroid      CONSTANT FINAL)
@@ -44,8 +43,8 @@ class DeviceInfo : public QObject,
     Q_PROPERTY(double screenDpiY            READ screenDpiY             CONSTANT FINAL)
 
     Q_PROPERTY(QString deviceName       READ deviceName     CONSTANT FINAL)
+    Q_PROPERTY(QString deviceHostName   READ deviceHostName CONSTANT FINAL)
     Q_PROPERTY(QString deviceId         READ deviceId       CONSTANT FINAL)
-    Q_PROPERTY(QString deviceShortId    READ deviceShortId  CONSTANT FINAL)
 
     Q_PROPERTY(QString storageName      READ storageName    CONSTANT FINAL)
     Q_PROPERTY(QString storageDevice    READ storageDevice  CONSTANT FINAL)
@@ -87,7 +86,6 @@ public:
     static bool isApalisIMX8();
     static bool isUbuntuTouch();
     static bool isWindowsPhone();
-    static bool isWindows8();
     static bool hasTouchScreen();
     static bool hasKeyboard();
     static bool hasMouse();
@@ -103,8 +101,8 @@ public:
     static QSize screenSize();
 
     static QString deviceName();
+    static QString deviceHostName();
     static QString deviceId();
-    static QString deviceShortId();
 
     static QString storageName();
     static QString storageDevice();

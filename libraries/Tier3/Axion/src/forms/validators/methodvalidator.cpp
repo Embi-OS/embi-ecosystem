@@ -1,9 +1,6 @@
 #include "methodvalidator.h"
 #include "form_log.h"
 
-#include <QQmlContext>
-#include <QQmlExpression>
-
 MethodValidator::MethodValidator(QObject *parent) :
     AbstractValidator(parent)
 {

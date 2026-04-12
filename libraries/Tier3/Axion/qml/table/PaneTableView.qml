@@ -1,4 +1,3 @@
-pragma ComponentBehavior: Bound
 import QtQuick
 import Eco.Tier1.Models
 import Eco.Tier3.Axion
@@ -8,10 +7,10 @@ BasicPane {
 
     padding: borderWidth
 
-    property alias view: view
-    property alias tableView: view.tableView
-    property alias horizontalHeader: view.horizontalHeader
-    property alias verticalHeader: view.verticalHeader
+    readonly property BasicTableView view: view
+    readonly property TableView tableView: view.tableView
+    readonly property TableHorizontalHeaderView horizontalHeader: view.horizontalHeader
+    readonly property TableVerticalHeaderView verticalHeader: view.verticalHeader
 
     property AbstractItemModel model: null
     property alias delegate: view.delegate
@@ -47,7 +46,7 @@ BasicPane {
     signal refreshTriggered()
 
     function forceLayout() {
-        view.forceLayoutThrottled()
+        view.queueForceLayout()
     }
 
     function defaultColumnWidthProvider(column: int): real {
@@ -81,8 +80,6 @@ BasicPane {
     contentItem: BasicTableView {
         id: view
         model: root.model
-        columnWidthProvider: root.defaultColumnWidthProvider
-        rowHeightProvider: root.defaultRowHeightProvider
         onRefreshTriggered: root.refreshTriggered()
     }
 }

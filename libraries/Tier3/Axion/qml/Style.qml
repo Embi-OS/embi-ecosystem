@@ -159,10 +159,8 @@ QtObject {
     readonly property double contentRectangleBorderWidth: root.fine ? 2 : 4
     readonly property double contentRectangleRadius: root.sharp ? 8 : 10
 
-    readonly property double pageGridButtonWidth: root.dense ? 240 : 460
-    readonly property double pageGridButtonHeight: root.dense ? 100 : 170
-    readonly property double pageGridRowSpacing: root.dense ? 20 : 50
-    readonly property double pageGridColumnSpacing: root.dense ? 20 : 50
+    readonly property double pageGridButtonWidth: 335
+    readonly property double pageGridButtonHeight: 152
     readonly property font pageGridButtonFont: root.dense ? root.textTheme.button : root.textTheme.title1
     readonly property double pageGridIconPadding: root.dense ? 12 : 21
 
@@ -362,6 +360,9 @@ QtObject {
     readonly property double checkIndicatorIconSize: root.dense ? 16 : 18
     readonly property double checkIndicatorBorderWidth: root.fine ? 1 : 2
     readonly property double checkIndicatorRadius: 4
+    readonly property double checkCircleImplicitWidth: root.dense ? 32 : 40
+    readonly property double checkCircleImplicitHeight: root.dense ? 32 : 40
+    readonly property double checkCircleIconSize: root.dense ? 18 : 24
 
     // Switch
     readonly property double switchIndicatorImplicitWidth: root.dense ? 16 : 18

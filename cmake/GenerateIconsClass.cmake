@@ -32,18 +32,14 @@ function(generateIconsClass CLASS_NAME ICON_FILES)
         "// Everything written here will be lost.\n\n"
         "#ifndef ${CLASS_NAME_UPPER}_H\n"
         "#define ${CLASS_NAME_UPPER}_H\n\n"
-        "#include <QDefs>\n"
-        "#include <QUtils>\n\n"
-        "class ${CLASS_NAME} : public QObject,\n"
-        "                      public QQmlSingleton<${CLASS_NAME}>\n"
+        "#include <QDefs>\n\n"
+        "class ${CLASS_NAME} : public QObject\n"
         "{\n"
         "    Q_OBJECT\n"
         "    QML_ELEMENT\n"
         "    QML_SINGLETON\n\n"
-        "protected:\n"
-        "    friend QQmlSingleton<${CLASS_NAME}>\;\n"
-        "    explicit ${CLASS_NAME}(QObject* parent = nullptr)\;\n\n"
         "public:\n"
+        "    explicit ${CLASS_NAME}(QObject* parent = nullptr)\;\n\n"
         )
 
     foreach(ICON_FILE ${ICON_FILES_IN})
@@ -76,11 +72,10 @@ function(generateIconsClass CLASS_NAME ICON_FILES)
                 string(REGEX REPLACE "^.(.*)" "${FIRST_LETTER}\\1" PROPERTY_WORD_U "${PROPERTY_WORD}")
             endif()
             set(PROPERTY_NAME "${PROPERTY_NAME}${PROPERTY_WORD}")
-            set(PROPERTY_NAME_U "${PROPERTY_NAME_U}${PROPERTY_WORD_U}")
             math(EXPR PROPERTY_WORD_INDEX "${PROPERTY_WORD_INDEX}+1")
         endforeach()
 
-        set(FORBIDDEN_PROPERTY_WORDS id index model modelData console do if in for let new try var case else enum eval null this true void with await break catch class const false super throw while yield delete export import public return static switch typeof default extends finally package private continue debugger function arguments interface protected implements instanceof linux)
+        set(FORBIDDEN_PROPERTY_WORDS id index model modelData console do if in for let new try var case else enum eval null this true void with await break catch class const false super throw while yield delete export import public return static switch typeof default extends finally package private continue debugger function arguments interface protected implements instanceof linux template)
 
         if (PROPERTY_NAME IN_LIST FORBIDDEN_PROPERTY_WORDS)
             set(PROPERTY_NAME ${PROPERTY_NAME}_)
@@ -89,7 +84,7 @@ function(generateIconsClass CLASS_NAME ICON_FILES)
         set(FILENAME_ABS "qrc:${arg_PREFIX}/${FILENAME}")
         string(APPEND OUT_CONTENT_H
         "    "
-        "Q_CONSTANT_REF_PROPERTY(QString, ${PROPERTY_NAME}, ${PROPERTY_NAME_U}, \"${FILENAME_ABS}\")\n")
+        "Q_CONSTANT_REF_PROPERTY(QString, ${PROPERTY_NAME}, \"${FILENAME_ABS}\")\n")
     endforeach()
 
     string(APPEND OUT_CONTENT_H

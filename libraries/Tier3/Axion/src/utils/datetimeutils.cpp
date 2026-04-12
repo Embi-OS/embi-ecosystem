@@ -1,5 +1,4 @@
 ﻿#include "datetimeutils.h"
-#include <QFontDatabase>
 #include <QUtils>
 
 DateTimeUtils::DateTimeUtils(QObject *parent) :
@@ -214,6 +213,11 @@ bool DateTimeUtils::isDateAfter(const QDateTime& date1, const QDateTime& date2)
     return date1 > date2;
 }
 
+bool DateTimeUtils::isDateBetween(const QDateTime& date1, const QDateTime& date2, const QDateTime& date3)
+{
+    return date1 > date2 && date1 < date3;
+}
+
 QDateTime DateTimeUtils::nextValidDateTimeForTime(int h, int m, int s, int ms)
 {
     QDateTime dateTime = QDateTime(QDate::currentDate(), QTime(h, m, s, ms));
@@ -235,12 +239,17 @@ QString DateTimeUtils::formatDate(const QDate& date, QLocale::FormatType format)
 
 QString DateTimeUtils::formatDateTime(const QDateTime& dateTime, QLocale::FormatType format)
 {
-    return QLocale().toString(dateTime, format);
+    return QLocale().toString(dateTime.toLocalTime(), format);
+}
+
+QString DateTimeUtils::formatDateTime(const QDateTime& dateTime, const QString& format)
+{
+    return QLocale().toString(dateTime.toLocalTime(), format);
 }
 
 QString DateTimeUtils::formatSecsSinceEpoch(qint64 secs, QLocale::FormatType format)
 {
-    return QLocale().toString(QDateTime::fromSecsSinceEpoch(secs), format);
+    return QLocale().toString(QDateTime::fromSecsSinceEpoch(secs).toLocalTime(), format);
 }
 
 enum TimeConstants {
@@ -318,7 +327,7 @@ QString DateTimeUtils::formatDecimalDuration(quint64 msecs, int decimalPlaces)
     } else if (msecs >= MSecsInSecond) {
         return tr("%1 seconds").arg(QLocale().toString(msecs / ((int)MSecsInSecond * 1.0), 'f', decimalPlaces));
     }
-    return tr("%n millisecond(s)").arg(msecs);
+    return tr("%1 millisecond(s)").arg(msecs);
 }
 
 enum DurationUnits {
@@ -333,13 +342,13 @@ static QString formatSingleDuration(DurationUnits units, int n)
     // NB: n is guaranteed to be non-negative
     switch (units) {
     case Days:
-        return DateTimeUtils::tr("%n day(s)").arg(n);
+        return DateTimeUtils::tr("%1 day(s)").arg(n);
     case Hours:
-        return DateTimeUtils::tr("%n hour(s)").arg(n);
+        return DateTimeUtils::tr("%1 hour(s)").arg(n);
     case Minutes:
-        return DateTimeUtils::tr("%n minute(s)").arg(n);
+        return DateTimeUtils::tr("%1 minute(s)").arg(n);
     case Seconds:
-        return DateTimeUtils::tr("%n second(s)").arg(n);
+        return DateTimeUtils::tr("%1 second(s)").arg(n);
     }
     Q_ASSERT(false);
     return QString();
@@ -412,7 +421,7 @@ QString DateTimeUtils::formatRelativeDate(const QDate &date, QLocale::FormatType
     case QLocale::NarrowFormat:
         return relative;
     default:
-        return QString("%1, %2").arg(relative, formatDate(date, format));
+        return QString("%1, %2").arg(relative, formatDate(date));
     }
 
     Q_UNREACHABLE();
@@ -429,7 +438,7 @@ QString DateTimeUtils::formatRelativeDateTime(const QDateTime &dateTime, QLocale
         if (minutesToNow <= 1) {
             return tr("Just now");
         } else {
-            return tr("%n minute(s) ago").arg(minutesToNow);
+            return tr("%1 minute(s) ago").arg(minutesToNow);
         }
     }
 
@@ -445,4 +454,48 @@ QString DateTimeUtils::formatRelativeDateTime(const QDateTime &dateTime, QLocale
     QString formattedDate = tr("%1 at %2").arg(dateString, QLocale().toString(dateTime.time(), timeFormatType));
 
     return formattedDate.replace(0, 1, formattedDate.at(0).toUpper());
+}
+
+QString DateTimeUtils::formatDateRange(const QDate& fromDate, const QDate& toDate, QLocale::FormatType format)
+{
+    if (!fromDate.isValid() || !toDate.isValid())
+        return tr("Invalid date range");
+
+    if (fromDate == toDate)
+        return formatDate(fromDate, format);
+
+    const QDate today = QDate::currentDate();
+
+    // Handle simple relative cases
+    if (toDate == today && fromDate.daysTo(today) < 30) {
+        return tr("Last %1 days").arg(fromDate.daysTo(today) + 1);
+    }
+
+    // Same month and year
+    if (fromDate.year() == toDate.year() && fromDate.month() == toDate.month()) {
+        return QString("%1–%2 %3 %4")
+            .arg(fromDate.day())
+            .arg(toDate.day())
+            .arg(monthName(toDate.month(), format))
+            .arg(toDate.year());
+    }
+
+    // Same year, different months
+    if (fromDate.year() == toDate.year()) {
+        return QString("%1 %2 – %3 %4 %5")
+            .arg(fromDate.day())
+            .arg(monthName(fromDate.month(), format))
+            .arg(toDate.day())
+            .arg(monthName(toDate.month(), format))
+            .arg(toDate.year());
+    }
+
+    // Different years
+    return QString("%1 %2 %3 – %4 %5 %6")
+        .arg(fromDate.day())
+        .arg(monthName(fromDate.month(), format))
+        .arg(fromDate.year())
+        .arg(toDate.day())
+        .arg(monthName(toDate.month(), format))
+        .arg(toDate.year());
 }

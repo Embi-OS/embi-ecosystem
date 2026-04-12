@@ -24,7 +24,7 @@ bool QSPatchablePatch::insert(int index, const QVariant& variant)
     QSPatchSet patches;
     patches.reserve(variants.count());
 
-    for(const QVariant& var: variants)
+    for(const QVariant& var: std::as_const(variants))
     {
         QVariantMap map = var.toMap();
         const QSPatch patch = QSPatch::createInsert(index, map);

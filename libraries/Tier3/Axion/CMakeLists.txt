@@ -60,7 +60,6 @@ embi_add_qml_module(${PROJECT_NAME}
     QML_FILES
         ${ALL_QML_FILES}
     QML_SINGLETONS
-        qml/JS.qml
         qml/Style.qml
     IMG_FILES
         ${ALL_IMG_FILES}

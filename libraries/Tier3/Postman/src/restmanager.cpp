@@ -1,6 +1,10 @@
 #include "restmanager.h"
 #include "rest_log.h"
 
+#ifdef Q_OS_WASM
+#include <emscripten/val.h>
+#endif
+
 RestManager::RestManager(QObject *parent) :
     AbstractManager(parent)
 {
@@ -9,35 +13,19 @@ RestManager::RestManager(QObject *parent) :
 
 bool RestManager::init()
 {
-    m_apiDataMode = RestDataModes::Json;
+#ifdef Q_OS_WASM
+    emscripten::val location = emscripten::val::global("location");
+    qDebug()<<location["origin"].as<std::string>();
+    qDebug()<<location["protocol"].as<std::string>();
+    qDebug()<<location["hostname"].as<std::string>();
+    qDebug()<<location["port"].as<std::string>();
 
-    // m_apiBaseUrl = "https://jsonplaceholder.typicode.com";
-    // m_apiPort = 443;
+    m_apiBaseUrl = QString::fromStdString(location["hostname"].as<std::string>());
+    const QString port = QString::fromStdString(location["port"].as<std::string>());
+    m_apiPort = port.isEmpty() ? -1 : port.toInt();
+#endif
 
-    // m_apiBaseUrl = "https://10.6.36.104";
-    // m_apiPort = 7443;
-
-    // m_apiBaseUrl = "https://10.6.100.107";
-    // m_apiPort = 7443;
-
-    // m_apiBaseUrl = "http://10.6.100.107";
-    // m_apiPort = 7080;
-
-    // m_apiBaseUrl = "http://10.6.36.101";
-    // m_apiPort = 32768;
-
-    // m_apiBaseUrl = "http://voh-c-bte-0241";
-    // m_apiPort = 7080;
-
-    // m_apiBaseUrl = "https://192.168.0.100";
-    // m_apiPort = 7443;
-
-    // m_apiBaseUrl = "https://xlqqp19l-8000.euw.devtunnels.ms/";
-    // m_apiPort = 443;
-
-    // m_apiTrailingSlash = false;
-
-    const QVariantMap args = AxionHelper::Get()->getArguments();
+    const QVariantMap args = AxionHelper::Get()->arguments();
     if(args.contains("apiBaseUrl"))
         m_apiBaseUrl = args.value("apiBaseUrl").toString();
     if(args.contains("apiPort"))
@@ -62,12 +50,14 @@ bool RestManager::init()
     persistantData->mapProperty(this,"apiBaseUrl");
     persistantData->mapProperty(this,"apiPort");
     persistantData->mapProperty(this,"apiTrailingSlash");
-    persistantData->mapProperty(this,"apiNoRestSocket");
+    persistantData->mapProperty(this,"apiSocketEnabled");
     persistantData->mapProperty(this,"apiKey");
 
     RestSocket::setGloballyEnabled(m_apiSocketEnabled);
 
-    const QString hostName = QUrl(m_apiBaseUrl).host();
+    const QString trimmed = m_apiBaseUrl.trimmed();
+    const QUrl url = QUrl::fromUserInput(trimmed);
+    const QString hostName = url.host();
     const QHostAddress address = QHostAddress(hostName);
     m_isLocalhost = address.isLoopback() || hostName=="localhost";
 

@@ -334,7 +334,20 @@ bool CpuStatModel::refresh()
 
 bool CpuStatModel::refresh()
 {
-    SOLIDLOG_WARNING()<<"CpuStatModel: unsupported platform!";
+    if (!m_cpus.isEmpty()) {
+        beginResetModel();
+        m_cpus.clear();
+        endResetModel();
+    }
+    m_cpu = CpuStat();
+    m_intr.clear();
+    m_ctxt = 0;
+    m_btime = 0;
+    m_processes = 0;
+    m_procsRunning = 0;
+    m_procsBlocked = 0;
+    m_softirq.clear();
+    emit updated();
     return false;
 }
 

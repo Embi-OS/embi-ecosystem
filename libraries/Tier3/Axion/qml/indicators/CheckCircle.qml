@@ -1,45 +1,27 @@
 import QtQuick
 import Eco.Tier3.Axion
 
-Item {
+Rectangle {
     id: root
 
-    signal clicked()
+    implicitWidth: Style.checkCircleImplicitWidth
+    implicitHeight: Style.checkCircleImplicitHeight
 
-    property bool checked: false
+    radius: height/2
+    border.width: 0
+    border.color: Style.colorWhite
+    color: Style.colorWhite
 
-    anchors.horizontalCenter: parent.right
-    anchors.verticalCenter: parent.top
+    opacity: enabled ? 1.0 : 0.5
 
-    height: width
-    width: 52
+    property color colorForeground: Style.colorBlack
+    required property int checkState
 
-    Rectangle {
-        id: circle
-        color: Style.colorWhite
-        height: 40
-        width: height
+    SvgColorImage {
         anchors.centerIn: parent
-        radius: height/2
-
-        states: State {
-            name: "pressed"
-            when: mouseArea.pressed
-            PropertyChanges { circle.scale: 0.9 }
-        }
-
-        SvgColorImage {
-            color: Style.colorBlack
-            visible: root.checked
-            anchors.centerIn: parent
-            icon: MaterialIcons.check
-            size: 24
-        }
-    }
-
-    TapHandler {
-        id: mouseArea
-        target: circle
-        onTapped: root.clicked()
+        size: Style.checkCircleIconSize
+        icon: root.checkState === Qt.Checked ? MaterialIcons.check :
+              root.checkState === Qt.PartiallyChecked ? MaterialIcons.minus : ""
+        color: root.colorForeground
     }
 }

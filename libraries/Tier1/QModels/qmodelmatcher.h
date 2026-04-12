@@ -68,6 +68,7 @@ protected slots:
 
     void updateRoles();
     void initRoles();
+    void updateMethod();
 
     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles = QList<int>());
     void onModelRowsInserted(const QModelIndex& parent, int first, int last);
@@ -76,11 +77,20 @@ protected slots:
     void onModelColumnsRemoved(const QModelIndex& parent, int first, int last);
 
 private:
+    bool methodMatch(const QModelIndex &idx) const;
+    QModelIndexList methodMatch(const QModelIndex &start, int hits, Qt::MatchFlags flags) const;
+    QModelIndexList roleMatch(const QModelIndex &start, int hits, Qt::MatchFlags flags) const;
+
     QModelIndexList m_indexes;
 
     bool m_completed=false;
     int m_count=0;
     bool m_invalidateQueued = false;
+
+    QMetaMethod m_method;
+    QList<QByteArray> m_methodParameterNames;
+    QList<int> m_methodParameterRoles;
+    QList<QMetaType> m_methodParameterTypes;
 };
 
 #endif // QMODELMATCHER_H

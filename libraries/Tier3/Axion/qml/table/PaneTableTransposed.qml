@@ -7,10 +7,10 @@ import Eco.Tier3.Axion
 PaneTableView {
     id: root
 
-    property alias tableViewModel: tableViewModel
-    property alias proxyModel: proxyModel
-    property alias sortProxyModel: sortProxyModel
-    property alias transposeProxyModel: transposeProxyModel
+    readonly property TableViewModel tableViewModel: tableViewModel
+    readonly property SortFilterProxyModel proxyModel: proxyModel
+    readonly property ProxyModel sortProxyModel: sortProxyModel
+    readonly property TransposeProxyModel transposeProxyModel: transposeProxyModel
     required property AbstractItemModel sourceModel
     required property TableViewColumnModel columnModel
 
@@ -26,28 +26,7 @@ PaneTableView {
     rowHeightProvider: function(row) {
         if(!tableViewModel.isColumnVisible(row))
             return 0;
-        return root.defaultRowHeightProvider(row)
-    }
-
-    verticalHeaderDelegate: TableViewSortHeader {
-        highlighted: sortIndex===row
-        sortIndex: root.sortRow
-        sortOrder: root.sortOrder
-        clickable: root.sortable
-        onClicked: {
-            if(root.sortRow===row) {
-                if(root.sortOrder===Qt.AscendingOrder)
-                    root.sortOrder = Qt.DescendingOrder
-                else {
-                    root.sortOrder = Qt.AscendingOrder
-                    root.sortRow = -1
-                }
-            }
-            else {
-                root.sortOrder = Qt.AscendingOrder
-                root.sortRow = row
-            }
-        }
+        return visible ? root.defaultRowHeightProvider(row) : undefined
     }
 
     SortFilterProxyModel {
@@ -73,5 +52,27 @@ PaneTableView {
     TransposeProxyModel {
         id: transposeProxyModel
         sourceModel: sortProxyModel
+    }
+
+    verticalHeaderDelegate: TableViewSortHeader {
+        highlighted: sortIndex===row
+        sortIndex: root.sortRow
+        sortOrder: root.sortOrder
+        clickable: root.sortable
+        unfoldIcon: MaterialIcons.unfoldMoreVertical
+        onClicked: {
+            if(root.sortRow===row) {
+                if(root.sortOrder===Qt.AscendingOrder)
+                    root.sortOrder = Qt.DescendingOrder
+                else {
+                    root.sortOrder = Qt.AscendingOrder
+                    root.sortRow = -1
+                }
+            }
+            else {
+                root.sortOrder = Qt.AscendingOrder
+                root.sortRow = row
+            }
+        }
     }
 }

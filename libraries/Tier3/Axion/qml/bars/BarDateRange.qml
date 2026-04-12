@@ -4,47 +4,28 @@ import Eco.Tier3.Axion
 RowContainer {
     id: root
 
-    property date fromDate: new Date()
+    property date today: new Date()
+    property date fromDate: today
     readonly property string fromDateValue: Qt.formatDate(fromDate,"yyyy-MM-dd")
-    property date toDate: new Date()
+    property date toDate: today
     readonly property string toDateValue: Qt.formatDate(toDate,"yyyy-MM-dd")
 
     function reset() {
-        root.fromDate = new Date()
-        root.toDate = new Date()
+        root.fromDate = today
+        root.toDate = today
     }
 
-    BasicLabel {
-        text: qsTr("De:")
-        verticalAlignment: Text.AlignVCenter
-        font: Style.textTheme.headline5
-    }
-
-    TextButton {
-        text: DateTimeUtils.formatDate(root.fromDate,Locale.ShortFormat)
+    RawButton {
+        icon.source: MaterialIcons.calendar
+        text: DateTimeUtils.formatDateRange(root.fromDate, root.toDate, Locale.LongFormat)
         onClicked: {
-            DialogManager.showDate({
-                "selectedDate": root.fromDate,
-                "onDateSelected": function(date) {
-                    root.fromDate=date;
-                }
-            });
-        }
-    }
-
-    BasicLabel {
-        text: qsTr("à:")
-        verticalAlignment: Text.AlignVCenter
-        font: Style.textTheme.headline5
-    }
-
-    TextButton {
-        text: DateTimeUtils.formatDate(root.toDate,Locale.ShortFormat)
-        onClicked: {
-            DialogManager.showDate({
+            DialogManager.showDateRange({
                 "selectedDate": root.toDate,
-                "onDateSelected": function(date) {
-                    root.toDate=date;
+                "fromDate": root.fromDate,
+                "toDate": root.toDate,
+                "onDateRangeSelected": function(fromDate, toDate) {
+                    root.fromDate=fromDate;
+                    root.toDate=toDate;
                 }
             });
         }

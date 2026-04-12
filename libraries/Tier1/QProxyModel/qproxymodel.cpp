@@ -47,7 +47,11 @@ QVariant QProxyModel::data(const QModelIndex &index, int role) const
 {
     if(!sourceModel())
         return QVariant();
-    return sourceData(mapToSource(index), role);
+    const QVariant ret =  sourceData(mapToSource(index), role);
+    if(!ret.isValid())
+        return m_defaultValueCache.value(role);
+    m_defaultValueCache.insert(role, QVariant(ret.metaType()));
+    return ret;
 }
 
 bool QProxyModel::setData(const QModelIndex &index, const QVariant &value, int role)
@@ -255,6 +259,14 @@ int QProxyModel::compare(const QModelIndex &source_left, const QModelIndex &sour
 
 void QProxyModel::setSourceModel(QAbstractItemModel *model)
 {
+    if (sourceModel() == model)
+        return;
+
+    if (sourceModel()) {
+        disconnect(sourceModel(), &QAbstractItemModel::rowsInserted, this, &QProxyModel::initRoles);
+        disconnect(sourceModel(), &QAbstractItemModel::modelReset, this, &QProxyModel::initRoles);
+    }
+
     if (model && (model->roleNames().isEmpty())) { // workaround for when a model has no roles and roles are added when the model is populated
         // QTBUG-57971
         connect(model, &QAbstractItemModel::rowsInserted, this, &QProxyModel::initRoles);
@@ -321,6 +333,7 @@ void QProxyModel::invalidate()
     updateRoles();
     QSortFilterProxyModel::invalidate();
     QProxyModel::invalidateSorter();
+    queueEmitInvalidated();
 }
 
 void QProxyModel::queueInvalidateFilter()
@@ -341,8 +354,10 @@ void QProxyModel::queueInvalidateFilter()
 void QProxyModel::invalidateFilter()
 {
     m_invalidateFilterQueued = false;
-    if (m_isActive && !m_invalidateQueued)
+    if (m_isActive && !m_invalidateQueued) {
         QSortFilterProxyModel::invalidateFilter();
+        queueEmitInvalidated();
+    }
 }
 
 void QProxyModel::queueInvalidateSorter()
@@ -363,8 +378,24 @@ void QProxyModel::queueInvalidateSorter()
 void QProxyModel::invalidateSorter()
 {
     m_invalidateSorterQueued = false;
-    if (m_isActive && !m_invalidateQueued)
+    if (m_isActive && !m_invalidateQueued) {
         QSortFilterProxyModel::sort(m_sortColumn);
+        queueEmitInvalidated();
+    }
+}
+
+void QProxyModel::queueEmitInvalidated()
+{
+    if (m_isActive && !m_emitInvalidatedQueued) {
+        m_emitInvalidatedQueued = true;
+        QMetaObject::invokeMethod(this, &QProxyModel::emitInvalidated, Qt::QueuedConnection);
+    }
+}
+
+void QProxyModel::emitInvalidated()
+{
+    m_emitInvalidatedQueued = false;
+    emit this->invalidated();
 }
 
 void QProxyModel::updateFilterPattern()

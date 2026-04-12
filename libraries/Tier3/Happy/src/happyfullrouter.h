@@ -22,8 +22,10 @@ public:
     HappyReply patchObject(const QVariant& data, const QVariant& argValue, const HappyHttpParameters& parameters=HappyHttpParameters(), const HappyHttpHeaders& headers=HappyHttpHeaders()) override;
     HappyReply deleteObject(const QVariant& argValue, const HappyHttpParameters& parameters=HappyHttpParameters(), const HappyHttpHeaders& headers=HappyHttpHeaders()) override;
 
-protected:
+protected slots:
+    void queueSendSocket(const HappyReply& reply, const QVariant& argValue);
     virtual void sendSocket(const HappyReply& reply, const QVariant& argValue);
+    virtual void sendSockets(const QList<QWebSocket*>& sockets, const QString& action, const QVariant& lookupValue, const QVariantMap object);
 };
 
 #endif // HAPPYFULLROUTER_H

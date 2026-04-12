@@ -6,7 +6,6 @@ BasicTableViewHeaderDelegate {
     id: root
 
     display: "N/A"
-    model: null
     row: -1
     column: -1
 
@@ -15,6 +14,7 @@ BasicTableViewHeaderDelegate {
 
     contentItem: BasicCheckBox {
         tristate: true
+        contentItem: null
         checkState: !root.selectionModel.SelectionHelper.hasSelection ? Qt.Unchecked :
                     root.selectionModel.SelectionHelper.count===(root.syncView.rows*root.syncView.columns) ? Qt.Checked : Qt.PartiallyChecked
 

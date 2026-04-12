@@ -25,9 +25,14 @@ function(create_deb_package TARGET)
     elseif(EMSCRIPTEN)
         return ()
     elseif(APPLE)
-        set(deploy_tool_options_arg --hardened-runtime)
+        return ()
+    elseif(UNIX)
+        set(CPACK_GENERATOR "DEB")
+        set(PACKAGE_EXT "deb")
     elseif(WIN32)
-        set(deploy_tool_options_arg --no-compiler-runtime)
+        set(deploy_tool_options_arg "")  # copy compiler runtime DLLs
+        set(CPACK_GENERATOR "ZIP")
+        set(PACKAGE_EXT "zip")
     endif()
 
     # Install the executable into "${CMAKE_INSTALL_PREFIX}/bin".
@@ -54,8 +59,8 @@ function(create_deb_package TARGET)
         set(SANITIZED_PROJECT_VERSION "${CMAKE_PROJECT_VERSION}")
     endif()
 
-    set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}_Deb/${arg_OUTPUT_DIRECTORY_PREFIX}/${TARGET}")
     set(CPACK_PACKAGE_NAME ${TARGET})
+    set(CPACK_PACKAGE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     set(CPACK_PACKAGE_VERSION ${CMAKE_PROJECT_VERSION})
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${CMAKE_PROJECT_DESCRIPTION})
     set(CPACK_PACKAGE_VENDOR "${CMAKE_PROJECT_COMPANY}")
@@ -63,10 +68,15 @@ function(create_deb_package TARGET)
     set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${SANITIZED_PROJECT_VERSION}_${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
     set(CPACK_VERBATIM_VARIABLES ON)
     set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/${QT_DEPLOY_PREFIX}/${TARGET}")
-    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CMAKE_PROJECT_MAINTAINER}")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libstdc++6, libgcc-s1, libxcb-cursor0")
+
+    if(CPACK_GENERATOR STREQUAL "DEB")
+        set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CMAKE_PROJECT_MAINTAINER}")
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libstdc++6, libgcc-s1, libxcb-cursor0")
+    endif()
+
     set(CPACK_OUTPUT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_CPackConfig.cmake")
     set(CPACK_SOURCE_OUTPUT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_CPackSourceConfig.cmake")
+    set(OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}_Deb/${arg_OUTPUT_DIRECTORY_PREFIX}/${CPACK_PACKAGE_FILE_NAME}")
     set(CPACK_INSTALLED_DIRECTORIES "${OUTPUT_DIRECTORY};/")
     include(CPack)
 
@@ -94,28 +104,29 @@ function(create_deb_package TARGET)
 
     message(STATUS "[DEB] After building, you will find a ready-to-run directory at: ${OUTPUT_DIRECTORY}")
 
+    return()
     # ---------------------------
     # Run cpack at build time
     find_program(CPACK_EXEC cpack REQUIRED)
-    set(DEB_FILE_NAME "${CPACK_PACKAGE_NAME}_${SANITIZED_PROJECT_VERSION}_${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}.deb")
-    set(DEB_FILE "${CMAKE_CURRENT_BINARY_DIR}/${DEB_FILE_NAME}")
-    set(OUTPUT_DEB_FILE "${OUTPUT_DIRECTORY}/../${DEB_FILE_NAME}")
+    set(PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}.${PACKAGE_EXT}")
+    set(PACKAGE_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_FILE_NAME}")
+    set(OUTPUT_PACKAGE_FILE "${OUTPUT_DIRECTORY}/../${PACKAGE_FILE_NAME}")
 
     add_custom_command(
-        OUTPUT ${OUTPUT_DEB_FILE}
-        COMMAND "${CPACK_EXEC}" -G DEB --config "${CPACK_OUTPUT_CONFIG_FILE}"
+        OUTPUT "${OUTPUT_PACKAGE_FILE}"
+        COMMAND "${CPACK_EXEC}" -G "${CPACK_GENERATOR}" --config "${CPACK_OUTPUT_CONFIG_FILE}"
         COMMAND ${CMAKE_COMMAND} -E make_directory "${OUTPUT_DIRECTORY}/.."
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${DEB_FILE}" "${OUTPUT_DIRECTORY}/.."
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PACKAGE_FILE}" "${OUTPUT_DIRECTORY}/.."
         DEPENDS "${TARGET}_rundir"
-        COMMENT "[DEB] Creating ${OUTPUT_DEB_FILE} using CPack"
+        COMMENT "[CPACK] Creating ${OUTPUT_PACKAGE_FILE} using CPack"
         VERBATIM
     )
 
     add_custom_target("${TARGET}_deb" ALL
-        DEPENDS "${OUTPUT_DEB_FILE}"
+        DEPENDS "${OUTPUT_PACKAGE_FILE}"
     )
 
-    message(STATUS "[DEB] After build, package will be at ${OUTPUT_DEB_FILE}")
+    message(STATUS "[CPACK] After build, package will be at ${OUTPUT_PACKAGE_FILE}")
 
 endfunction()
 

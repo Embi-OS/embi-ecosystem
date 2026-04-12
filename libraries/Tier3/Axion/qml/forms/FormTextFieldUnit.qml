@@ -66,7 +66,7 @@ BasicFormBackground {
             clip: true
             color: root.warning ? root.colorWarning : root.colorValue
             font: root.font
-            text: root.unitOptions.rounded(root.value)
+            text: root.unitOptions ? root.unitOptions.rounded(root.value) : root.value
 
             onAccepted: root.valueAccepted(text)
             onTextEdited: root.valueEdited(text)

@@ -104,6 +104,6 @@ void BackupImporter::exitWithError(const QString& msg)
     QVariantMap settings;
     settings["message"] = tr("Erreur lors de de l'import");
     settings["infos"] = msg;
-    DialogManager::Get()->showError(settings);
+    DialogManager::Get()->showCritical(settings);
 }
 

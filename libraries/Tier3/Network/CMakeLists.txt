@@ -10,6 +10,8 @@ allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 embi_add_qml_module(${PROJECT_NAME}
     URI Eco.Tier3.Network
     STATIC
+    PRIVATE_QT_LIBRARIES
+        DBus
     LIBRARIES
         Solid
     PLUGINS
@@ -29,4 +31,5 @@ embi_add_qml_module(${PROJECT_NAME}
         LICENSE
     DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/connman
 )

@@ -96,7 +96,12 @@ void GraphSeriesObject::updateChartSeries(QAbstractSeries *abstractSeries)
     abstractSeries->setVisible(m_visible);
 
     if(!m_visible)
+    {
+        abstractSeries->hide();
         return;
+    }
+
+    abstractSeries->show();
 
     switch (m_type) {
         case QAbstractSeries::SeriesTypeLine: {
@@ -161,7 +166,7 @@ void GraphSeriesObject::updateChartSeries(QAbstractSeries *abstractSeries)
 bool GraphSeriesObject::updateMinMax(const QVector3D& point)
 {
     bool ret = false;
-    if(m_graph->getXAxis()->getIsAbleToMinMax())
+    if(m_graph->xAxis()->getIsAbleToMinMax())
     {
         if(getXGlobalMaxRaw().isNull() || point.x()>getXGlobalMaxRaw().x())
         {
@@ -176,7 +181,7 @@ bool GraphSeriesObject::updateMinMax(const QVector3D& point)
         }
     }
 
-    if(m_graph->getYAxis()->getIsAbleToMinMax())
+    if(m_graph->yAxis()->getIsAbleToMinMax())
     {
         if(getYGlobalMaxRaw().isNull() || point.y()>getYGlobalMaxRaw().y())
         {
@@ -211,21 +216,21 @@ bool GraphSeriesObject::processPoint(const QVector3D& point)
 
         bool accepted=false;
 
-        if(!qFuzzyIsNull(m_graph->getXAxis()->getAliasingValue()) &&
-           !qFuzzyIsNull(m_graph->getYAxis()->getAliasingValue()))
+        if(!qFuzzyIsNull(m_graph->xAxis()->getAliasingValue()) &&
+           !qFuzzyIsNull(m_graph->yAxis()->getAliasingValue()))
         {
-            accepted = (deltaX>ABS(m_graph->getXAxis()->getAliasingValue())) ||
-                       (deltaY>ABS(m_graph->getYAxis()->getAliasingValue()));
+            accepted = (deltaX>ABS(m_graph->xAxis()->getAliasingValue())) ||
+                       (deltaY>ABS(m_graph->yAxis()->getAliasingValue()));
         }
-        else if(!qFuzzyIsNull(m_graph->getXAxis()->getAliasingValue()) &&
-                qFuzzyIsNull(m_graph->getYAxis()->getAliasingValue()))
+        else if(!qFuzzyIsNull(m_graph->xAxis()->getAliasingValue()) &&
+                qFuzzyIsNull(m_graph->yAxis()->getAliasingValue()))
         {
-            accepted = (deltaX>ABS(m_graph->getXAxis()->getAliasingValue()));
+            accepted = (deltaX>ABS(m_graph->xAxis()->getAliasingValue()));
         }
-        else if(qFuzzyIsNull(m_graph->getXAxis()->getAliasingValue()) &&
-                !qFuzzyIsNull(m_graph->getYAxis()->getAliasingValue()))
+        else if(qFuzzyIsNull(m_graph->xAxis()->getAliasingValue()) &&
+                !qFuzzyIsNull(m_graph->yAxis()->getAliasingValue()))
         {
-            accepted = (deltaY>ABS(m_graph->getYAxis()->getAliasingValue()));
+            accepted = (deltaY>ABS(m_graph->yAxis()->getAliasingValue()));
         }
         else
         {

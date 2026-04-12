@@ -3,6 +3,7 @@
 
 #include <QDefs>
 #include "qsingleton.h"
+#include "powerbackend.h"
 
 class Power : public QObject,
               public QQmlSingleton<Power>
@@ -11,11 +12,12 @@ class Power : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
+    Q_CONSTANT_PTR_PROPERTY(PowerBackend, backend)
+
     Q_PROPERTY(bool canQuit     READ canQuit        CONSTANT FINAL)
     Q_PROPERTY(bool canRestart  READ canRestart     CONSTANT FINAL)
     Q_PROPERTY(bool canShutdown READ canShutdown    CONSTANT FINAL)
     Q_PROPERTY(bool canReboot   READ canReboot      CONSTANT FINAL)
-    Q_PROPERTY(bool canLaunch   READ canLaunch      CONSTANT FINAL)
     Q_PROPERTY(bool canSuspend  READ canSuspend     CONSTANT FINAL)
     Q_PROPERTY(bool canWake     READ canWake        CONSTANT FINAL)
     Q_PROPERTY(bool canAlwaysOn READ canAlwaysOn    CONSTANT FINAL)
@@ -25,31 +27,28 @@ protected:
     explicit Power(QObject *parent = nullptr);
 
 public:
-    static bool canQuit();
-    static bool canRestart();
-    static bool canShutdown();
-    static bool canReboot();
-    static bool canLaunch();
-    static bool canSuspend();
-    static bool canWake();
-    static bool canAlwaysOn();
+    bool canQuit() const;
+    bool canRestart() const;
+    bool canShutdown() const;
+    bool canReboot() const;
+    bool canSuspend() const;
+    bool canWake() const;
+    bool canAlwaysOn() const;
 
 public slots:
-    static void quit();
-    static void restart();
-    static void shutdown();
-    static void reboot();
-    static void launch(const QString& path);
-    static void suspend(bool deep=false);
-    static void wakeIn(int second);
-    static bool isAlwaysOn();
+    void quit();
+    void restart();
+    void shutdown();
+    void reboot();
+    void suspend(bool deep=false);
+    void wakeIn(int second);
+    bool isAlwaysOn();
 
 signals:
     void aboutToQuit();
     void aboutToRestart();
     void aboutToShutdown();
     void aboutToReboot();
-    void aboutToLaunch(const QString& path);
     void aboutToSuspend(bool deep);
 };
 

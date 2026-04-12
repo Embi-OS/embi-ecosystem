@@ -7,8 +7,8 @@ BasicPane {
     id: root
 
     property AbstractItemModel model
-    property alias itemDelegate: view.itemDelegate
-    property alias view: view
+    readonly property BasicGridView view: view
+    property alias delegate: view.delegate
 
     property alias rowSpacing: view.rowSpacing
     property alias columnSpacing: view.columnSpacing
@@ -22,9 +22,12 @@ BasicPane {
     property alias viewHeader: view.header
     property alias viewHeaderItem: view.headerItem
 
+    property alias selectable: view.selectable
     property bool canRefresh: false
 
     signal refreshTriggered()
+    signal delegateClicked(int index)
+    signal delegateLongPress(int index)
 
     contentItem: BasicGridView {
         id: view
@@ -34,6 +37,9 @@ BasicPane {
         model: root.model
         rowSpacing: 50
         columnSpacing: 50
+
+        onDelegateClicked: (index) => root.delegateClicked(index)
+        onDelegateLongPress: (index) => root.delegateLongPress(index)
 
         Loader {
             id: busyIndicatorLoader

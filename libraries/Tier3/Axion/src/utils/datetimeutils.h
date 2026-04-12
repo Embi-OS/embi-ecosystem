@@ -77,17 +77,20 @@ public:
     Q_INVOKABLE static bool isDateYesterday(const QDateTime& date);
     Q_INVOKABLE static bool isDateBefore(const QDateTime& date1, const QDateTime& date2);
     Q_INVOKABLE static bool isDateAfter(const QDateTime& date1, const QDateTime& date2);
+    Q_INVOKABLE static bool isDateBetween(const QDateTime& date1, const QDateTime& date2, const QDateTime& date3);
 
     Q_INVOKABLE static QDateTime nextValidDateTimeForTime(int h, int m, int s = 0, int ms = 0);
     Q_INVOKABLE static QString formatTime(const QTime& time, QLocale::FormatType format=QLocale::LongFormat);
     Q_INVOKABLE static QString formatDate(const QDate& date, QLocale::FormatType format=QLocale::LongFormat);
     Q_INVOKABLE static QString formatDateTime(const QDateTime& dateTime, QLocale::FormatType format=QLocale::LongFormat);
+    Q_INVOKABLE static QString formatDateTime(const QDateTime& dateTime, const QString& format);
     Q_INVOKABLE static QString formatSecsSinceEpoch(qint64 secs, QLocale::FormatType format=QLocale::LongFormat);
     Q_INVOKABLE static QString formatDuration(quint64 msecs, DurationFormatOptions::Flag options = DurationFormatOptions::DefaultDuration);
     Q_INVOKABLE static QString formatDecimalDuration(quint64 msecs, int decimalPlaces = 2);
     Q_INVOKABLE static QString formatSpelloutDuration(quint64 msecs);
     Q_INVOKABLE static QString formatRelativeDate(const QDate &date, QLocale::FormatType format);
     Q_INVOKABLE static QString formatRelativeDateTime(const QDateTime &dateTime, QLocale::FormatType format);
+    Q_INVOKABLE static QString formatDateRange(const QDate& fromDate, const QDate& toDate, QLocale::FormatType format=QLocale::LongFormat);
 };
 
 #endif // DATETIMEUTILS_H

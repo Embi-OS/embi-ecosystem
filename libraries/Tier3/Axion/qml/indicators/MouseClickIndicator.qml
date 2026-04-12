@@ -22,7 +22,7 @@ Item {
 
     Rectangle {
         id: clickIndicator
-        visible: JS.pointIsValid(mouseEventNotifier.scenePosition) && (mouseEventNotifier.pressed || clickAnimation.running)
+        visible: Utils.pointIsValid(mouseEventNotifier.scenePosition) && (mouseEventNotifier.pressed || clickAnimation.running)
         color: ColorUtils.transparent(root.color, 0.6)
         width: root.size
         height: width

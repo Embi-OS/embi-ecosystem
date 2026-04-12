@@ -12,7 +12,7 @@ class SnackbarManager : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_COMPOSITION_PROPERTY(QObjectListModel, children, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QObjectListModel, children)
 
 private:
     friend QQmlSingleton<SnackbarManager>;
@@ -22,7 +22,7 @@ public slots:
     SnackbarObject* show(const QVariant& settings={});
     SnackbarObject* showInfo(const QVariant& settings={});
     SnackbarObject* showWarning(const QVariant& settings={});
-    SnackbarObject* showError(const QVariant& settings={});
+    SnackbarObject* showCritical(const QVariant& settings={});
     SnackbarObject* showFatal(const QVariant& settings={});
     SnackbarObject* showSuccess(const QVariant& settings={});
 

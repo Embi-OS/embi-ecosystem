@@ -3,15 +3,17 @@
 
 #include <QDefs>
 #include "qsingleton.h"
+#include "localebackend.h"
 
 class QTranslatorLoader;
-
 class LocaleSettings : public QObject,
                        public QQmlSingleton<LocaleSettings>
 {
     Q_OBJECT
     QML_ELEMENT
     QML_SINGLETON
+
+    Q_CONSTANT_PTR_PROPERTY(LocaleBackend, backend)
 
     Q_PROPERTY(bool canSetLocale   READ canSetLocale   CONSTANT FINAL)
     Q_PROPERTY(QString locale      READ getLocale      WRITE setLocale NOTIFY localeChanged FINAL)
@@ -23,7 +25,7 @@ protected:
 public:
     static void init();
 
-    static bool canSetLocale();
+    bool canSetLocale() const;
 
     QString getLocale() const;
 

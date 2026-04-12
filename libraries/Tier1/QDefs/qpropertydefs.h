@@ -18,9 +18,14 @@
 #define _Q_PROPERTY_PTR_DEFAULT_MEMBER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
     VAR_TYPE m_default##Name=__VA_ARGS__;
 
+#define _Q_PROPERTY_READER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
+    RET_TYPE name (void) const { \
+            return m_##name; \
+    }
+
 #define _Q_PROPERTY_GETTER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
     RET_TYPE get##Name (void) const { \
-        return m_##name; \
+            return m_##name; \
     }
 
 #define _Q_PROPERTY_PTR_GETTER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
@@ -31,7 +36,7 @@
     }
 
 #define _Q_ABSTRACT_GETTER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
-    virtual RET_TYPE get##Name (void) const = 0;
+    virtual RET_TYPE name (void) const = 0;
 
 #define _Q_PROPERTY_SETTER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
     bool set##Name (ARG_TYPE name) { \
@@ -174,23 +179,16 @@
 
 #define _Q_CONSTANT_PROPERTY_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
     private: \
-    Q_PROPERTY (PROP_TYPE name READ get##Name PROP_PARAMS) \
-    public:         _Q_PROPERTY_GETTER_IMPL (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    Q_PROPERTY (PROP_TYPE name READ name PROP_PARAMS) \
+    public:         _Q_PROPERTY_READER_IMPL (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
     protected:      _Q_PROPERTY_MEMBER_IMPL (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
     private:
 
 #define _Q_ABSTRACT_PROPERTY_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
     private: \
-    Q_PROPERTY (PROP_TYPE name READ get##Name PROP_PARAMS) \
+    Q_PROPERTY (PROP_TYPE name READ name PROP_PARAMS) \
     public:         _Q_ABSTRACT_GETTER_IMPL (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
     private:
-
-#define _Q_COMPOSITION_PROPERTY_IMPL(name, TYPE, PROP_PARAMS, ...) \
-    private: \
-    Q_PROPERTY (TYPE* name READ name PROP_PARAMS) \
-    public:    TYPE* name (void) const { return m_##name; } \
-    protected:      _Q_PROPERTY_MEMBER_IMPL (name, Name, TYPE*, TYPE*, TYPE*, TYPE*, TYPE*, PROP_PARAMS, __VA_ARGS__) \
-    protected: friend TYPE;
 
 #define _Q_MEMBER_PROPERTY_IMPL(name, TYPE, PROP_PARAMS, ...) \
 private: \
@@ -206,31 +204,29 @@ private: \
 #define Q_CALLABLE_VAR_PROPERTY(TYPE, name, Name, ...)  _Q_CALLABLE_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         FINAL,            __VA_ARGS__)
 #define Q_WRITABLE_VAR_PROPERTY(TYPE, name, Name, ...)  _Q_WRITABLE_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         FINAL,            __VA_ARGS__)
 #define Q_READONLY_VAR_PROPERTY(TYPE, name, Name, ...)  _Q_READONLY_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         FINAL,            __VA_ARGS__)
-#define Q_CONSTANT_VAR_PROPERTY(TYPE, name, Name, ...)  _Q_CONSTANT_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         CONSTANT FINAL,   __VA_ARGS__)
-#define Q_ABSTRACT_VAR_PROPERTY(TYPE, name, Name)       _Q_ABSTRACT_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         CONSTANT FINAL,   {})
+#define Q_CONSTANT_VAR_PROPERTY(TYPE, name, ...)        _Q_CONSTANT_PROPERTY_IMPL     (name, name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         CONSTANT FINAL,   __VA_ARGS__)
+#define Q_ABSTRACT_VAR_PROPERTY(TYPE, name)             _Q_ABSTRACT_PROPERTY_IMPL     (name, name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         CONSTANT FINAL,   {})
 
 #define Q_REQUIRED_FUZ_PROPERTY(TYPE, name, Name, ...)  _Q_WRITABLE_FUZ_PROPERTY_IMPL (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         FINAL REQUIRED,   __VA_ARGS__)
 #define Q_CALLABLE_FUZ_PROPERTY(TYPE, name, Name, ...)  _Q_CALLABLE_FUZ_PROPERTY_IMPL (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         FINAL,            __VA_ARGS__)
 #define Q_WRITABLE_FUZ_PROPERTY(TYPE, name, Name, ...)  _Q_WRITABLE_FUZ_PROPERTY_IMPL (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         FINAL,            __VA_ARGS__)
 #define Q_READONLY_FUZ_PROPERTY(TYPE, name, Name, ...)  _Q_READONLY_FUZ_PROPERTY_IMPL (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         FINAL,            __VA_ARGS__)
-#define Q_CONSTANT_FUZ_PROPERTY(TYPE, name, Name, ...)  _Q_CONSTANT_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         CONSTANT FINAL,   __VA_ARGS__)
-#define Q_ABSTRACT_FUZ_PROPERTY(TYPE, name, Name)       _Q_ABSTRACT_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         CONSTANT FINAL,   {})
+#define Q_CONSTANT_FUZ_PROPERTY(TYPE, name, ...)        _Q_CONSTANT_PROPERTY_IMPL     (name, name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         CONSTANT FINAL,   __VA_ARGS__)
+#define Q_ABSTRACT_FUZ_PROPERTY(TYPE, name)             _Q_ABSTRACT_PROPERTY_IMPL     (name, name, TYPE,     TYPE,      TYPE,         TYPE,         TYPE,         CONSTANT FINAL,   {})
 
 #define Q_REQUIRED_REF_PROPERTY(TYPE, name, Name, ...)  _Q_WRITABLE_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  FINAL REQUIRED,   __VA_ARGS__)
 #define Q_CALLABLE_REF_PROPERTY(TYPE, name, Name, ...)  _Q_CALLABLE_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  FINAL,            __VA_ARGS__)
 #define Q_WRITABLE_REF_PROPERTY(TYPE, name, Name, ...)  _Q_WRITABLE_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  FINAL,            __VA_ARGS__)
 #define Q_READONLY_REF_PROPERTY(TYPE, name, Name, ...)  _Q_READONLY_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  FINAL,            __VA_ARGS__)
-#define Q_CONSTANT_REF_PROPERTY(TYPE, name, Name, ...)  _Q_CONSTANT_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  CONSTANT FINAL,   __VA_ARGS__)
-#define Q_ABSTRACT_REF_PROPERTY(TYPE, name, Name)       _Q_ABSTRACT_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  CONSTANT FINAL,   {})
+#define Q_CONSTANT_REF_PROPERTY(TYPE, name, ...)        _Q_CONSTANT_PROPERTY_IMPL     (name, name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  CONSTANT FINAL,   __VA_ARGS__)
+#define Q_ABSTRACT_REF_PROPERTY(TYPE, name)             _Q_ABSTRACT_PROPERTY_IMPL     (name, name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  CONSTANT FINAL,   {})
 
 #define Q_REQUIRED_PTR_PROPERTY(TYPE, name, Name, ...)  _Q_WRITABLE_PTR_PROPERTY_IMPL (name, Name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        FINAL REQUIRED,   __VA_ARGS__)
 #define Q_CALLABLE_PTR_PROPERTY(TYPE, name, Name, ...)  _Q_CALLABLE_PTR_PROPERTY_IMPL (name, Name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        FINAL,            __VA_ARGS__)
 #define Q_WRITABLE_PTR_PROPERTY(TYPE, name, Name, ...)  _Q_WRITABLE_PTR_PROPERTY_IMPL (name, Name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        FINAL,            __VA_ARGS__)
 #define Q_READONLY_PTR_PROPERTY(TYPE, name, Name, ...)  _Q_READONLY_PTR_PROPERTY_IMPL (name, Name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        FINAL,            __VA_ARGS__)
-#define Q_CONSTANT_PTR_PROPERTY(TYPE, name, Name, ...)  _Q_CONSTANT_PROPERTY_IMPL     (name, Name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        CONSTANT FINAL,   __VA_ARGS__)
-#define Q_ABSTRACT_PTR_PROPERTY(TYPE, name, Name)       _Q_ABSTRACT_PROPERTY_IMPL     (name, Name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        CONSTANT FINAL,   {})
-
-#define Q_COMPOSITION_PROPERTY(TYPE, name, ...)         _Q_COMPOSITION_PROPERTY_IMPL  (name, TYPE, CONSTANT FINAL, __VA_ARGS__)
+#define Q_CONSTANT_PTR_PROPERTY(TYPE, name)             _Q_CONSTANT_PROPERTY_IMPL     (name, name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        CONSTANT FINAL,   nullptr)
+#define Q_ABSTRACT_PTR_PROPERTY(TYPE, name)             _Q_ABSTRACT_PROPERTY_IMPL     (name, name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        CONSTANT FINAL,   {})
 
 #define Q_MEMBER_PROPERTY(TYPE, name, ...)              _Q_MEMBER_PROPERTY_IMPL(name, TYPE, FINAL, __VA_ARGS__)
 

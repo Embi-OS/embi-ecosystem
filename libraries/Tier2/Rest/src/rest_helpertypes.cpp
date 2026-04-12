@@ -54,7 +54,30 @@ QUrlQuery RestHelper::mapToQuery(const QVariantMap &map)
 {
     QUrlQuery query;
     for (auto it = map.constBegin(); it != map.constEnd(); it++)
-        query.addQueryItem(it.key(), it.value().toString());
+    {
+        QString value;
+        const QVariant variant = it.value();
+        switch (variant.metaType().id()) {
+        case QMetaType::QStringList: {
+            value = variant.toStringList().join(",");
+            break;
+        }
+        case QMetaType::QVariantList: {
+            const QVariantList variants = variant.toList();
+            QStringList list;
+            list.reserve(variants.size());
+            for(const QVariant& v: variants)
+                list.append(v.toString());
+            value = list.join(",");
+            break;
+        }
+        default:
+            value = variant.toString();
+            break;
+        }
+
+        query.addQueryItem(it.key(), value);
+    }
 
     return query;
 }
@@ -232,16 +255,15 @@ QString RestHelper::networkOperationToString(QNetworkAccessManager::Operation op
 
 QString RestHelper::parseBody(const QVariant &data, bool compact)
 {
-    switch (data.userType()) {
+    const QVariant variant = qVariantFromJSVariant(data, false);
+    switch (variant.userType()) {
     case QMetaType::QVariantMap:
     case QMetaType::QVariantList: {
-        return QString::fromUtf8(QUtils::Log::variantToJson(data, compact));
+        return QString::fromUtf8(QUtils::Log::variantToJson(variant, compact));
         break;
     }
     default:
-        if(data.userType() == qMetaTypeId<QJSValue>())
-            return parseBody(data.value<QJSValue>().toVariant(), compact);
-        return data.toString();
+        return variant.toString();
         break;
     }
 }

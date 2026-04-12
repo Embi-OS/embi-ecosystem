@@ -1,23 +1,53 @@
+pragma ComponentBehavior: Bound
 import QtQuick
+import Eco.Tier1.Models
 import Eco.Tier3.Axion
 
 BasicPane {
     id: root
 
     font: Style.textTheme.code
-    property alias text: textArea.text
-    property alias textFormat: textArea.textFormat
-    property alias view: view
+    property string text: ""
+    property int textFormat: Text.PlainText
+    property color textColor: ColorUtils.isDarkColor(root.color) ? Style.colorWhite : Style.colorBlack
 
-    contentItem: BasicScrollView {
+    TextListModel {
+        id: model
+        text: root.text
+    }
+
+    contentItem: BasicListView {
         id: view
-        BasicTextArea {
-            id: textArea
-            readOnly: true
+        model: model
+        delegate: Text {
+            required property string display
+            padding: 0
+            width: ListView.view.width
             wrapMode: Text.Wrap
-            textFormat: TextEdit.PlainText
+            text: display
+            textFormat: root.textFormat
             font: root.font
-            relativeBackgroundColor: root.color
+            color: root.textColor
+        }
+
+        ScrollBar.vertical: BasicScrollBar {
+            visible: view.contentHeight>view.height
+        }
+        ScrollBar.horizontal: BasicScrollBar {
+            visible: view.contentWidth>view.width
         }
     }
+
+    // contentItem: BasicScrollView {
+    //     id: view
+    //     BasicTextArea {
+    //         id: textArea
+    //         readOnly: true
+    //         wrapMode: Text.Wrap
+    //         text: root.text
+    //         textFormat: root.textFormat
+    //         font: root.font
+    //         color: root.textColor
+    //     }
+    // }
 }

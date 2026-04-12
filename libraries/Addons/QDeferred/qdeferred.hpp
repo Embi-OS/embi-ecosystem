@@ -26,7 +26,7 @@ public:
 
     // wrapper consumer API (with chaning)
 
-    const QExplicitlySharedDataPointer<QDeferredData<Types...>>sharedData() const;
+    QExplicitlySharedDataPointer<QDeferredData<Types...>>sharedData() const;
 
     // get state method
     QDeferredState state() const;
@@ -81,7 +81,13 @@ public:
         const std::function<void(Types(...args))> &callback,
         const Qt::ConnectionType                  &connection = Q_DEFERRED_DEFAULT_CONNECTION_TYPE);
 
+    // when method specialization
     QDeferred<> when();
+
+    // forward method specialization
+    template<class ...RetTypes>
+    QDeferred<RetTypes...> forward();
+
     bool await(QEventLoop::ProcessEventsFlags flags = QEventLoop::AllEvents);
     QDeferred<Types...> delay(int msec);
 
@@ -106,6 +112,11 @@ public:
     // syntactic sugar for container of deferred objects
     template<template<class> class Container, class ...OtherTypes>
     static bool await(const Container<QDeferred<OtherTypes...>>& deferList, bool doAll=false, QEventLoop::ProcessEventsFlags flags = QEventLoop::AllEvents);
+
+    // Generic sequential runner for any range and any QDeferred-returning task.
+    // gives result, index and size as data
+    template<typename Range, typename Task>
+    static QDeferred<bool, int, int> queue(const Range &items, Task task, const Qt::ConnectionType &connection = Q_DEFERRED_DEFAULT_CONNECTION_TYPE);
 
     // delays the end of deffered task
     template <class ...OtherTypes>
@@ -210,7 +221,7 @@ QDeferred<Types...>::~QDeferred()
 }
 
 template<class ...Types>
-const QExplicitlySharedDataPointer<QDeferredData<Types...>>QDeferred<Types...>::sharedData() const
+QExplicitlySharedDataPointer<QDeferredData<Types...>>QDeferred<Types...>::sharedData() const
 {
     return m_data;
 }
@@ -248,8 +259,18 @@ QDeferred<Types...> QDeferred<Types...>::complete(const std::function<void(bool,
 {
     // check if valid
     Q_ASSERT_X(callback, "Deferred complete method.", "Invalid complete callback argument");
-    m_data->done([callback](Types(...args)){ callback(true, args...); }, connection);
-    m_data->fail([callback](Types(...args)){ callback(false, args...); }, connection);
+
+    // Utiliser shared_ptr pour partager la callback
+    auto sharedCallback = std::make_shared<std::function<void(bool, Types...)>>(callback);
+
+    m_data->done([sharedCallback](Types... args){
+        (*sharedCallback)(true, args...);
+    }, connection);
+
+    m_data->fail([sharedCallback](Types... args){
+        (*sharedCallback)(false, args...);
+    }, connection);
+
     return *this;
 }
 
@@ -376,10 +397,46 @@ QDeferred<Types...> QDeferred<Types...>::progress(const std::function<void(Types
     return *this;
 }
 
+template <std::size_t... I, typename Tuple>
+auto tuple_prefix_impl(Tuple&& t, std::index_sequence<I...>)
+{
+    return std::make_tuple(std::get<I>(std::forward<Tuple>(t))...);
+}
+
+template <std::size_t N, typename Tuple>
+auto tuple_prefix(Tuple&& t)
+{
+    return tuple_prefix_impl(
+        std::forward<Tuple>(t),
+        std::make_index_sequence<N>{}
+        );
+}
+
+template<class ...Types>
+template<class ...RetTypes>
+QDeferred<RetTypes...> QDeferred<Types...>::forward()
+{
+    QDeferred<RetTypes...> forwarded;
+
+    // Si QDeferred ne partage pas l'état en copie, envisagez un shared_ptr.
+    this->complete([forwarded](bool result, auto&&... args) mutable {
+        constexpr std::size_t N = sizeof...(RetTypes);
+        static_assert(N <= sizeof...(Types), "RetTypes must not be larger than Types");
+        auto argsTuple = std::forward_as_tuple(std::forward<Types>(args)...);
+        auto params = tuple_prefix<N>(argsTuple);
+
+        std::apply([&](auto&&... unpacked) {
+            forwarded.end(result, std::forward<decltype(unpacked)>(unpacked)...);
+        }, params);
+    });
+
+    return forwarded;
+}
+
 template<class ...Types>
 QDeferred<> QDeferred<Types...>::when()
 {
-    return QDefer::when(*this);
+    return QDeferred<>::when(*this);
 }
 
 template<class ...Types>
@@ -459,9 +516,9 @@ Deferred as soon as one of the Deferreds is rejected.
 */
 template<class ...Types>
 template<class ...OtherTypes, class... Rest>
-QDefer QDeferred<Types...>::when(QDeferred<OtherTypes...> t, Rest... rest)
+QDeferred<> QDeferred<Types...>::when(QDeferred<OtherTypes...> t, Rest... rest)
 {
-    QDefer retDeferred;
+    QDeferred<> retDeferred;
     // setup necessary variables for expansion
     int    countArgs = sizeof...(Rest) + 1;
     // done callback, resolve if ALL done
@@ -471,7 +528,7 @@ QDefer QDeferred<Types...>::when(QDeferred<OtherTypes...> t, Rest... rest)
         int whenCount = retDeferred.getWhenCount();
         if (whenCount == countArgs)
         {
-            retDeferred.resolve();
+             retDeferred.resolve();
         }
     };
     // fail callback, reject if ONE fails
@@ -551,6 +608,63 @@ template<template<class> class Container, class ...OtherTypes>
 }
 
 template<class ...Types>
+template<typename Range, typename Task>
+QDeferred<bool, int, int> QDeferred<Types...>::queue(const Range &items, Task task, const Qt::ConnectionType &connection)
+{
+    // result, index, size
+    QDeferred<bool, int, int> defer;
+
+    if (items.size()<=0) {
+        defer.resolve(true, 0, 0);
+        return defer;
+    }
+
+    // Capture by value: 'items' and 'task' must be copyable.
+    auto runner = [defer, items, task, connection](auto &&self, int index) mutable {
+        int size = items.size();
+
+        if (index >= size) {
+            defer.resolve(true, size, size);
+            return;
+        }
+
+        auto &&item = items.at(index);
+        auto taskDefer = task(item);
+
+        // We only care about completion, not about the concrete result types.
+        taskDefer.complete([defer, self, index, size](bool result, auto &&...) mutable {
+            defer.notify(result, index, size);
+            self(self, index + 1);
+        }, connection);
+    };
+
+    if (connection == Qt::DirectConnection || connection == Qt::AutoConnection)
+    {
+        runner(runner, 0);
+    }
+    else if (connection == Qt::QueuedConnection)
+    {
+        auto p_currObject   = QDeferredDataBase::getObjectForThread(QThread::currentThread());
+
+        // create object in heap and assign function (event loop takes ownership and deletes it later)
+        QDeferredProxyEvent * p_Evt = new QDeferredProxyEvent;
+        p_Evt->m_eventFunc = [defer, runner]() mutable {
+            runner(runner, 0);
+            // unused, but we need it to keep at least one reference until all callbacks are executed
+            Q_UNUSED(defer)
+        };
+        // post event for object with correct thread affinity
+        QCoreApplication::postEvent(p_currObject, p_Evt, Qt::HighEventPriority);
+    }
+    else
+    {
+        Q_ASSERT_X(false, "QDeferred<Types...>::queue", "Unsupported connection type.");
+    }
+
+    return defer;
+}
+
+template<class ...Types>
 template<class ...OtherTypes>
 QDeferred<OtherTypes...> QDeferred<Types...>::delay(int msec, QDeferred<OtherTypes...> defer)
 {
@@ -575,8 +689,7 @@ QDeferred<OtherTypes...> QDeferred<Types...>::duration(QDeferred<OtherTypes...> 
     QElapsedTimer* timer=new QElapsedTimer;
     timer->start();
 
-    defer
-    .complete([timer](bool result) {
+    defer.when().complete([timer](bool result) {
         if(result)
             deferInfo()<<"Deferred task resolved in"<<timer->nsecsElapsed()/1000000.0<<"ms";
         else

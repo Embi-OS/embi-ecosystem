@@ -63,6 +63,11 @@ while [ $# -gt 0 ]; do
             PROJECT_DESCRIPTION="$2"
             shift
             ;;
+        --project-branch)
+            echo "option: $1"
+            PROJECT_BRANCH="$2"
+            shift
+            ;;
         --emsdk-path|--emscripten-path)
             echo "option: $1"
             EMSCRIPTEN_PATH="$2"

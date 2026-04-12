@@ -7,9 +7,11 @@ StandardObject {
     id: root
 
     highlighted: false
+    color: Style.colorPrimary
 
     delegate: BasicSeparator {
         highlighted: root.highlighted
+        color: root.color
         orientation: Qt.Horizontal
     }
 }

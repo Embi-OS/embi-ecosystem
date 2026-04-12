@@ -8,7 +8,7 @@ Q_ENUM_CLASS(SnackbarSeverities, SnackbarSeverity,
              None,
              Info,
              Warning,
-             Error,
+             Critical,
              Fatal,
              Success,)
 

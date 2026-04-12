@@ -263,7 +263,13 @@ bool NetStatModel::refresh()
 
 bool NetStatModel::refresh()
 {
-    SOLIDLOG_WARNING()<<"NetStatModel: unsupported platform!";
+    if (!m_nets.isEmpty()) {
+        beginResetModel();
+        m_nets.clear();
+        endResetModel();
+    }
+    m_net = NetStat();
+    emit updated();
     return false;
 }
 

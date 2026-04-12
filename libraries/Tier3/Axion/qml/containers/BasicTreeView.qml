@@ -37,20 +37,20 @@ TreeView {
     Component.onCompleted: isCompleted=true
 
     onViewWidthChanged: {
-        forceLayoutThrottled()
+        queueForceLayout()
     }
 
-    SignalTrailingDebouncer {
+    Timer {
         id: forceLayoutThrottler
-        timeout: 0
+        interval: 0
         onTriggered: {
             root.forceLayout()
         }
     }
 
-    function forceLayoutThrottled() {
+    function queueForceLayout() {
         if(isCompleted)
-            forceLayoutThrottler.throttle();
+            forceLayoutThrottler.start();
     }
 
     function defaultColumnWidthProvider(column: int): real {
@@ -93,11 +93,11 @@ TreeView {
 
         onVisibleChanged: {
             if(isReady && visible)
-                root.forceLayoutThrottled()
+                root.queueForceLayout()
         }
         onImplicitHeightChanged: {
             if(isReady && visible)
-                root.forceLayoutThrottled()
+                root.queueForceLayout()
         }
     }
 }

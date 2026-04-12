@@ -66,6 +66,8 @@ public:
     QString prepareIdentifier(const QString &identifier, QSqlDriver::IdentifierType type) const;
 
     SqlRawQuery& sql(const QString& sql);
+    SqlRawQuery& notice(bool notice=true);
+    SqlRawQuery& log(bool log=true);
     SqlRawQuery& trust(bool trust=true);
     SqlRawQuery& forwardOnly(bool forwardOnly=true);
     SqlRawQuery& multiple(bool multiple=true);
@@ -82,6 +84,8 @@ protected:
     QString m_connection;
     QString m_sql;
 
+    bool m_notice;
+    bool m_log;
     bool m_trust;
     bool m_forwardOnly;
     mutable bool m_multiple;
@@ -248,6 +252,36 @@ protected:
     QStringList m_wheres;
 };
 
+class SqlMigrationQuery;
+class SqlAlterTableQuery
+{
+    Q_GADGET
+    QML_VALUE_TYPE(sqlAlterTableQuery)
+    QML_STRUCTURED_VALUE
+
+    Q_MEMBER_PROPERTY(QString, column, {})
+    Q_MEMBER_PROPERTY(QString, to, {})
+    Q_MEMBER_PROPERTY(QString, index, {})
+    Q_MEMBER_PROPERTY(QStringList, fields, {})
+    Q_MEMBER_PROPERTY(SqlColumnTypes::Enum, columnType, SqlColumnTypes::Invalid)
+    Q_MEMBER_PROPERTY(SqlMigrationActions::Enum, action, SqlMigrationActions::None)
+    Q_MEMBER_PROPERTY(bool, ifExists, false)
+    Q_MEMBER_PROPERTY(bool, ifNotExists, false)
+
+public:
+    SqlAlterTableQuery() = default;
+    ~SqlAlterTableQuery() = default;
+    Q_INVOKABLE SqlAlterTableQuery(const SqlAlterTableQuery &other);
+
+    bool operator==(const SqlAlterTableQuery&) const = default;
+    bool operator!=(const SqlAlterTableQuery&) const = default;
+
+protected:
+    friend SqlMigrationQuery;
+    QString build(const SqlMigrationQuery* query) const;
+};
+QDebug operator<<(QDebug dbg, const SqlAlterTableQuery &q);
+
 class SqlMigrationQuery : public SqlRawQuery
 {
 public:
@@ -257,8 +291,6 @@ public:
     SqlMigrationQuery& alter();
     SqlMigrationQuery& drop();
     SqlMigrationQuery& create();
-    SqlMigrationQuery& dropIndex(const QString& name);
-    SqlMigrationQuery& createIndex(const QString& name);
     SqlMigrationQuery& truncate();
     SqlMigrationQuery& copy();
     SqlMigrationQuery& vacuum();
@@ -267,6 +299,12 @@ public:
     SqlMigrationQuery& autoIncrement();
     SqlMigrationQuery& indexList();
     SqlMigrationQuery& tableCreation();
+    SqlMigrationQuery& renameColumn(const QString& column, const QString& into);
+    SqlMigrationQuery& addColumn(const QString& column, SqlColumnTypes::Enum columnType);
+    SqlMigrationQuery& createIndex(const QString& index);
+    SqlMigrationQuery& createUniqueIndex(const QString& index);
+    SqlMigrationQuery& dropIndex(const QString& index);
+    SqlMigrationQuery& actions(const QList<SqlAlterTableQuery>& actions);
 
     SqlMigrationQuery& table(const QString& table);
     SqlMigrationQuery& field(const QString& field);
@@ -283,8 +321,6 @@ protected:
     bool m_alter;
     bool m_drop;
     bool m_create;
-    bool m_dropIndex;
-    bool m_createIndex;
     bool m_truncate;
     bool m_copy;
     bool m_vacuum;
@@ -293,6 +329,9 @@ protected:
     bool m_autoIncrement;
     bool m_indexList;
     bool m_tableCreation;
+    bool m_createIndex;
+    bool m_createUniqueIndex;
+    bool m_dropIndex;
 
     QString m_table;
     QString m_index;
@@ -300,6 +339,9 @@ protected:
     QString m_rename;
     QString m_into;
     QString m_definition;
+    QString m_columnName;
+    SqlColumnType m_columnType;
+    QList<SqlAlterTableQuery> m_actions;
     bool m_ifExists;
     bool m_ifNotExists;
 };
@@ -309,6 +351,7 @@ namespace SqlBuilder
 
 QVariant value(QSqlQuery& query, int row, int field);
 QVariant value(QSqlQuery& query, int row, const QString& field);
+QVariantMap values(const QSqlRecord& record);
 QVariantMap values(QSqlQuery& query, int index);
 QVariantList values(QSqlQuery& query);
 QVariantList values(QSqlQuery& query, int perPage, int page);
@@ -351,12 +394,6 @@ inline SqlMigrationQuery alter(){
 inline SqlMigrationQuery create(){
     return SqlMigrationQuery().create();
 }
-inline SqlMigrationQuery dropIndex(const QString& name){
-    return SqlMigrationQuery().dropIndex(name);
-}
-inline SqlMigrationQuery createIndex(const QString& name){
-    return SqlMigrationQuery().createIndex(name);
-}
 inline SqlMigrationQuery truncate(){
     return SqlMigrationQuery().truncate();
 }
@@ -381,7 +418,12 @@ inline SqlMigrationQuery indexList(){
 inline SqlMigrationQuery tableCreation(){
     return SqlMigrationQuery().tableCreation();
 }
-
+inline SqlMigrationQuery createIndex(const QString& index){
+    return SqlMigrationQuery().createIndex(index);
+}
+inline SqlMigrationQuery dropIndex(const QString& index){
+    return SqlMigrationQuery().dropIndex(index);
+}
 };
 
 #endif // SQLQUERYBUILDER_H

@@ -19,7 +19,7 @@ static inline void stringToJson(QLatin1StringView string, QIODevice *d)
 static inline void stringToJson(QStringView string, QIODevice *d)
 {
     d->write("\"");
-    QUtf8::escapedString(d, string);
+    d->write(QUtf8::escapedString(string));
     d->write("\"");
 }
 static inline void stringToJson(QUtf8StringView string, QIODevice *d)
@@ -122,9 +122,13 @@ static inline void variantValueToJson(const QVariant &value, QIODevice *d)
             d->write("null"); // +INF || -INF || NaN (see RFC4627#section2.4)
         break;
     }
+    case QMetaType::QDateTime: {
+        const QDateTime val = value.toDateTime().toUTC();
+        stringToJson(val.toString(Qt::ISODate), d);
+        break;
+    }
     case QMetaType::Nullptr:
     case QMetaType::QString:
-    case QMetaType::QDateTime:
     default:
         if(value.isNull() || !value.isValid()) {
             d->write("null");

@@ -41,7 +41,7 @@ if [ -d "$B2QT_OUTPUT_DIR" ]; then
     if [ -z "$(ls -A "$B2QT_OUTPUT_DIR")" ]; then
         warn "Boot2Qt output directory is empty: $B2QT_OUTPUT_DIR"
     else
-        ZIP_BASENAME="${SANITIZED_PROJECT_NAME}_${SANITIZED_PROJECT_VERSION}_Boot2Qt.zip"
+        ZIP_BASENAME="${SANITIZED_PROJECT_NAME}_${SANITIZED_PROJECT_VERSION}-${PROJECT_DESCRIPTION}_Boot2Qt.zip"
         ZIP_PATH="$B2QT_ARTIFACT_DIR/$ZIP_BASENAME"
         log "Compressing Boot2Qt outputs → $ZIP_PATH"
         rm -f "$ZIP_PATH"

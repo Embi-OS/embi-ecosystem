@@ -20,16 +20,16 @@ Item {
     readonly property var currentValue: formObject?.currentValue ?? ""
 
     // FormTypes.Switch
-    readonly property bool checked: formObject?.checked ?? false
-    readonly property string leftLabel: formObject?.leftLabel ?? ""
-    readonly property string rightLabel: formObject?.rightLabel ?? ""
+    readonly property bool checked: (formObject as FormSwitchDelegate)?.checked ?? false
+    readonly property string leftLabel: (formObject as FormSwitchDelegate)?.leftLabel ?? ""
+    readonly property string rightLabel: (formObject as FormSwitchDelegate)?.rightLabel ?? ""
     readonly property string currentSwitchLabel: checked ? rightLabel : leftLabel
 
     // FormTypes.ComboBox
-    readonly property string currentComboBoxText: formObject?.currentText ?? ""
+    readonly property string currentComboBoxText: (formObject as FormComboBoxDelegate)?.currentText ?? ""
 
     // FormTypes.TextFieldUnit
-    readonly property string currentUnitDisplay: formObject?.currentDisplay ?? ""
+    readonly property string currentUnitDisplay: (formObject as FormTextFieldUnitDelegate)?.currentDisplay ?? ""
 
     implicitHeight: Style.formSummaryHeight
     implicitWidth: iconLabel.implicitContentWidth

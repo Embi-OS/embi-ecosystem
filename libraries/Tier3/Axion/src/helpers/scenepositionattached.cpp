@@ -1,5 +1,4 @@
 #include "scenepositionattached.h"
-#include <QDebug>
 #include <QQuickItem>
 #include <QQuickWindow>
 
@@ -75,11 +74,6 @@ void ScenePositionAttached::connectAncestors(QQuickItem *item)
 
         ancestor = ancestor->parentItem();
     }
-}
-
-ScenePositionAttached *ScenePositionAttached::qmlAttachedProperties(QObject *object)
-{
-    return new ScenePositionAttached(object);
 }
 
 #include "moc_scenepositionattached.cpp"

@@ -6,8 +6,8 @@ import Eco.Tier3.Axion
 ChartView {
     id: root
 
-    property alias xAxis: xAxis
-    property alias yAxis: yAxis
+    readonly property ValuesAxis xAxis: xAxis
+    readonly property ValuesAxis yAxis: yAxis
 
     required property GraphObject graph
     readonly property GraphAxisObject xAxisObject: graph ? graph.xAxis : null
@@ -45,7 +45,7 @@ ChartView {
     }
 
     function refresh() {
-        throttler.throttle()
+        throttler.start()
     }
 
     Connections {
@@ -56,15 +56,13 @@ ChartView {
         }
     }
 
-    SignalTrailingThrottler {
+    Timer {
         id: throttler
-        timeout: root.refreshInhibitTime
+        interval: root.refreshInhibitTime
         onTriggered: {
             if(root.graph && root.graph.useSeries) {
                 for(var i=0; i<root.graph.series.size; i++) {
                     var seriesObject = root.graph.series.at(i) as GraphSeriesObject;
-                    if(!seriesObject.visible)
-                        continue
                     if(i>=root.count)
                         root.createSeries(seriesObject.type, seriesObject.name, root.xAxis, root.yAxis)
                     var series = root.series(i) as AbstractSeries;

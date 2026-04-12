@@ -2,7 +2,6 @@ import QtQuick
 import Eco.Tier1.Utils
 import Eco.Tier1.Models
 import Eco.Tier2.Rest
-import Eco.Tier2.Solid
 import Eco.Tier3.Axion
 import L02_Clock
 
@@ -13,7 +12,6 @@ BasicPane {
     property string password: "raspberry"
     property string sid: ""
 
-    readonly property string lastGravityUpdate: DateTimeUtils.formatSecsSinceEpoch(statsMapper?.gravity?.last_update)
     readonly property bool loading: statsMapper.loading || dnsMapper.loading || piholeClient.rootClass.loading
 
     Component.onCompleted: Qt.callLater(root.authenticate)
@@ -110,12 +108,16 @@ BasicPane {
         property var sensors
         property double took
 
-        readonly property string localCoreVersion: version?.core?.local?.version??""
-        readonly property string remoteCoreVersion: version?.core?.remote?.version??""
-        readonly property string localFtlVersion: version?.ftl?.local?.version??""
-        readonly property string remoteFtlVersion: version?.ftl?.remote?.version??""
-        readonly property string localWebVersion: version?.web?.local?.version??""
-        readonly property string remoteWebVersion: version?.web?.remote?.version??""
+        readonly property string localCoreVersion: root.nestedValue(version, "core.local.version")
+        readonly property string remoteCoreVersion: root.nestedValue(version, "core.remote.version")
+        readonly property string localFtlVersion: root.nestedValue(version, "ftl.local.version")
+        readonly property string remoteFtlVersion: root.nestedValue(version, "ftl.remote.version")
+        readonly property string localWebVersion: root.nestedValue(version, "web.local.version")
+        readonly property string remoteWebVersion: root.nestedValue(version, "web.remote.version")
+    }
+
+    function nestedValue(value: var, key: string): string {
+        return VariantUtils.getNestedValue(value, key, "")
     }
 
     function reload() {
@@ -143,7 +145,7 @@ BasicPane {
             "details": RestHelper.parseBody(reply, false),
             "diagnose": false
         }
-        SnackbarManager.showError(settings)
+        SnackbarManager.showCritical(settings)
     }
 
     function enable() {
@@ -269,15 +271,14 @@ BasicPane {
             }
         }
 
-        itemDelegate: Rectangle {
+        delegate: Rectangle {
             id: card
             implicitHeight: 100
             implicitWidth: 200
             radius: 10
             color: card.qtObject?.color ?? Style.colorPrimary
 
-            property QtObject model
-            readonly property StandardObject qtObject: model?.qtObject as StandardObject ?? null
+            required property StandardObject qtObject
 
             SvgColorImage {
                 anchors.top: parent.top
@@ -308,29 +309,29 @@ BasicPane {
     StandardObjectModel {
         id: piholeModel
 
-        StandardObject { text: "Total queries";         value: paddMapper.queries?.total;          icon: MaterialIcons.earth;                   color: "#007997" }
-        StandardObject { text: "Queries blocked";       value: paddMapper.queries?.blocked;        icon: MaterialIcons.alertOctagonOutline;     color: "#913225" }
-        StandardObject { text: "Percentage blocked";    value: FormatUtils.realToString(paddMapper.queries?.percent_blocked,1);        icon: MaterialIcons.chartArc; color: "#B1720C" }
+        StandardObject { text: "Total queries";         value: root.nestedValue(statsMapper.queries, "total");          icon: MaterialIcons.earth;                   color: "#007997" }
+        StandardObject { text: "Queries blocked";       value: root.nestedValue(statsMapper.queries, "blocked");        icon: MaterialIcons.alertOctagonOutline;     color: "#913225" }
+        StandardObject { text: "Percentage blocked";    value: FormatUtils.realToString(VariantUtils.getNestedValue(paddMapper.queries, "percent_blocked"),1);        icon: MaterialIcons.chartArc; color: "#B1720C" }
         StandardObject { text: "Domain on Adlists";     value: paddMapper.gravity_size;            icon: MaterialIcons.listBox;          color: "#005C32" }
 
         StandardObject { text: "Status";                value: dnsMapper.blocking==="disabled"&&dnsMapper.timer!=0 ? DateTimeUtils.formatDuration(dnsMapper.timer*1000) : dnsMapper.blocking; icon: dnsMapper.blocking==="enabled"?MaterialIcons.check:MaterialIcons.close; color: dnsMapper.blocking==="enabled"?"#5CA314":"#BD2C19" }
-        StandardObject { text: "Nb. of queries per second";    value: FormatUtils.realToString(statsMapper.queries?.frequency,1); icon: MaterialIcons.sync; color: Style.colorPrimary }
-        StandardObject { text: "Nb. of active clients"; value: paddMapper.active_clients;          icon: MaterialIcons.accountOutline;           color: Style.colorPrimary }
-        StandardObject { text: "Nb. of FTL clients";    value: statsMapper.clients?.total;          icon: MaterialIcons.domain;                  color: Style.colorPrimary }
+        StandardObject { text: "Nb. of queries per second";    value: FormatUtils.realToString(VariantUtils.getNestedValue(paddMapper.queries, "frequency"),1); icon: MaterialIcons.sync; color: Style.colorPrimary }
+        StandardObject { text: "Nb. of active clients"; value: paddMapper.active_clients;                                    icon: MaterialIcons.accountOutline;           color: Style.colorPrimary }
+        StandardObject { text: "Nb. of FTL clients";    value: root.nestedValue(statsMapper.clients, "total");               icon: MaterialIcons.domain;                  color: Style.colorPrimary }
 
-        StandardObject { text: "Type UNKNOWN replies";  value: statsMapper.queries?.replies?.UNKNOWN;     icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type NODATA replies";   value: statsMapper.queries?.replies?.NODATA;      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type NXDOMAIN replies"; value: statsMapper.queries?.replies?.NXDOMAIN;    icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type CNAME replies";    value: statsMapper.queries?.replies?.CNAME;       icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type IP replies";       value: statsMapper.queries?.replies?.IP;          icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type DOMAIN replies";   value: statsMapper.queries?.replies?.DOMAIN;      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type RRNAME replies";   value: statsMapper.queries?.replies?.RRNAME;      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type SERVFAIL replies"; value: statsMapper.queries?.replies?.SERVFAIL;    icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type REFUSED replies";  value: statsMapper.queries?.replies?.REFUSED;     icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type NOTIMP replies";   value: statsMapper.queries?.replies?.NOTIMP;      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type OTHER replies";    value: statsMapper.queries?.replies?.OTHER;       icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type DNSSEC replies";   value: statsMapper.queries?.replies?.DNSSEC;      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type NONE replies";     value: statsMapper.queries?.replies?.NONE;        icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
-        StandardObject { text: "Type BLOB replies";     value: statsMapper.queries?.replies?.BLOB;        icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type UNKNOWN replies";  value: root.nestedValue(statsMapper.queries, "replies.UNKNOWN");     icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type NODATA replies";   value: root.nestedValue(statsMapper.queries, "replies.NODATA");      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type NXDOMAIN replies"; value: root.nestedValue(statsMapper.queries, "replies.NXDOMAIN");    icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type CNAME replies";    value: root.nestedValue(statsMapper.queries, "replies.CNAME");       icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type IP replies";       value: root.nestedValue(statsMapper.queries, "replies.IP");          icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type DOMAIN replies";   value: root.nestedValue(statsMapper.queries, "replies.DOMAIN");      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type RRNAME replies";   value: root.nestedValue(statsMapper.queries, "replies.RRNAME");      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type SERVFAIL replies"; value: root.nestedValue(statsMapper.queries, "replies.SERVFAIL");    icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type REFUSED replies";  value: root.nestedValue(statsMapper.queries, "replies.REFUSED");     icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type NOTIMP replies";   value: root.nestedValue(statsMapper.queries, "replies.NOTIMP");      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type OTHER replies";    value: root.nestedValue(statsMapper.queries, "replies.OTHER");       icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type DNSSEC replies";   value: root.nestedValue(statsMapper.queries, "replies.DNSSEC");      icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type NONE replies";     value: root.nestedValue(statsMapper.queries, "replies.NONE");        icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
+        StandardObject { text: "Type BLOB replies";     value: root.nestedValue(statsMapper.queries, "replies.BLOB");        icon: MaterialIcons.informationOutline;     color: Style.colorPrimary }
     }
 }

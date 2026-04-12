@@ -11,7 +11,7 @@ class SqlPrimaryColumnPreparator : public SqlColumnPreparator
 
 public:
     explicit SqlPrimaryColumnPreparator(QObject* parent = nullptr);
-    explicit SqlPrimaryColumnPreparator(const QString& name, int startValue, QObject* parent = nullptr);
+    explicit SqlPrimaryColumnPreparator(const QString& name, int startValue=0, QObject* parent = nullptr);
 };
 
 #endif // SQLPRIMARYCOLUMNPREPARATOR_H

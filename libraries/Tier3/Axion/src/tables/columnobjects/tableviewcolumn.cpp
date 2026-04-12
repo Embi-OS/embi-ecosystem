@@ -183,7 +183,7 @@ QVariant TableViewColumn::formatValue(const QVariant& value) const
     case TableValueTypes::Time:
         return QLocale().toString(value.toTime(), "hh:mm:ss");
     case TableValueTypes::DateTime:
-        return QLocale().toString(value.toDateTime(), "yyyy-MM-dd hh:mm:ss");
+        return QLocale().toString(value.toDateTime().toLocalTime(), "yyyy-MM-dd hh:mm:ss");
     case TableValueTypes::List:
         return QString::fromUtf8(QUtils::Json::variantToJson(value));
     case TableValueTypes::Map:
@@ -195,7 +195,7 @@ QVariant TableViewColumn::formatValue(const QVariant& value) const
         case QMetaType::QTime:
             return QLocale().toString(value.toTime(), "hh:mm:ss");
         case QMetaType::QDateTime:
-            return QLocale().toString(value.toDateTime(), "yyyy-MM-dd hh:mm:ss");
+            return QLocale().toString(value.toDateTime().toLocalTime(), "yyyy-MM-dd hh:mm:ss");
         case QMetaType::Float:
         case QMetaType::Double:
             return m_decimals<0 ? value.toDouble() : qFuzzyRound(value.toDouble(), m_decimals);

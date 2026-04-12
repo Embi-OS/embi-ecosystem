@@ -16,7 +16,7 @@ QVariantMapper::QVariantMapper(const QString& baseName, QObject *parent, const Q
     m_revertInhibitTimer(this),
     m_updateInhibitTimer(this)
 {
-    Q_ASSERT_X(m_blacklistedMetaObject && m_blacklistedMetaObject->inherits(&QVariantMapper::staticMetaObject), "QVariantMapper::initProperties", "blacklistedMetaObject cannot return type that does not inherits from QVariantMapper");
+    Q_ASSERT_X(m_blacklistedMetaObject && m_blacklistedMetaObject->inherits(&QVariantMapper::staticMetaObject), "QVariantMapper", "blacklistedMetaObject cannot return type that does not inherits from QVariantMapper");
 
     m_selectInhibitTimer.setInterval(0);
     m_selectInhibitTimer.setSingleShot(true);
@@ -91,6 +91,18 @@ bool QVariantMapper::setValue(const QString &key, const QVariant &value)
     return true;
 }
 
+bool QVariantMapper::resetValue(const QString &key)
+{
+    if(!m_mappedKeys.contains(key) && !m_mappedKeys.isEmpty())
+        return false;
+    const QVariant value;
+    if(m_storage.contains(key) && m_storage.value(key,value)==value)
+        return false;
+    m_storage.insert(key,value);
+    emit this->valueChanged(key, value);
+    return true;
+}
+
 bool QVariantMapper::reset()
 {
     if(m_storage.isEmpty())
@@ -153,18 +165,17 @@ QStringList QVariantMapper::keys(const QVariant &value) const
     return m_storage.keys(value);
 }
 
-void QVariantMapper::mapObject(QObject* object)
+void QVariantMapper::mapObject(QObject* object, const QMetaObject* smo)
 {
     if(!object)
         return;
 
-    const QMetaObject smo = QObject::staticMetaObject;
     const QMetaObject* mo = object->metaObject();
-    const int sCount = smo.propertyCount();
+    const int sCount = smo->propertyCount();
     const int count = mo->propertyCount();
 
     // We must iterate in reverse so that properties are stored in order in m_mappedProperties
-    for(int i=count; i<sCount; i--)
+    for(int i=count-1; i>=sCount; i--)
     {
         QMetaProperty mp = mo->property(i);
         const QString &propertyName = mp.name();
@@ -224,6 +235,11 @@ bool QVariantMapper::mapProperty(QObject* object, const QString& property, const
     return true;
 }
 
+void QVariantMapper::initProperties()
+{
+    mapObject(this, m_blacklistedMetaObject);
+}
+
 void QVariantMapper::clearProperties()
 {
     QMetaMethod updateSlot = metaObject()->method(metaObject()->indexOfSlot("onPropertyChanged()"));
@@ -243,22 +259,6 @@ void QVariantMapper::clearProperties()
         QObject::disconnect(object, notifySignal, this, updateSlot);
     }
     m_mappedProperties.clear();
-}
-
-void QVariantMapper::initProperties()
-{
-    const QMetaObject* smo = m_blacklistedMetaObject;
-    const QMetaObject* mo = metaObject();
-    const int sCount = smo->propertyCount();
-    const int count = mo->propertyCount();
-
-    // We must iterate in reverse so that properties are stored in order in m_mappedProperties
-    for(int i=count; i>=sCount; i--)
-    {
-        QMetaProperty mp = mo->property(i);
-        const QString &propertyName = mp.name();
-        mapProperty(this, propertyName);
-    }
 }
 
 void QVariantMapper::refreshProperties()
@@ -508,7 +508,9 @@ bool QVariantMapper::select()
     m_selectTimer.restart();
 
     if(!m_isReady)
+    {
         initProperties();
+    }
     m_isReady = true;
 
     if(m_submitPolicy<QVariantMapperPolicies::Manual && m_isDirty) {
@@ -520,6 +522,9 @@ bool QVariantMapper::select()
     setLoading(true);
 
     bool result = doSelect();
+
+    if(m_alwaysWaitForSelect)
+        result = waitForSelect();
 
     return result;
 }
@@ -603,6 +608,9 @@ bool QVariantMapper::submit()
 
     m_cache = m_storage;
 
+    if(m_alwaysWaitForSubmit)
+        result = waitForSubmit();
+
     return result;
 }
 
@@ -676,6 +684,9 @@ bool QVariantMapper::revert()
 
     bool result = doRevert();
 
+    if(m_alwaysWaitForRevert)
+        result = waitForRevert();
+
     return result;
 }
 
@@ -744,6 +755,9 @@ bool QVariantMapper::update()
     setLoading(true);
 
     bool result = doUpdate();
+
+    if(m_alwaysWaitForUpdate)
+        result = waitForUpdate();
 
     return result;
 }

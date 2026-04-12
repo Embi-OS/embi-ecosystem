@@ -12,11 +12,11 @@ QVariant TableViewDateTimeColumn::data(int row, const TableViewModel& viewModel)
     const QVariant srcVal = sourceData(row, viewModel);
 
     if(!m_format.isEmpty())
-        return QLocale().toString(srcVal.toDateTime(), m_format);
+        return QLocale().toString(srcVal.toDateTime().toLocalTime(), m_format);
 
     switch(srcVal.metaType().id()){
     case QMetaType::QDateTime:
-        return QLocale().toString(srcVal.toDateTime(), m_formatType);
+        return QLocale().toString(srcVal.toDateTime().toLocalTime(), m_formatType);
     case QMetaType::QDate:
         return QLocale().toString(srcVal.toDate(), m_formatType);
     case QMetaType::QTime:

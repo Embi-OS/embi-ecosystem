@@ -6,7 +6,7 @@ import Eco.Tier3.Axion
 PaneTableView {
     id: root
 
-    property alias tableViewModel: tableViewModel
+    readonly property TableViewModel tableViewModel: tableViewModel
     required property VariantListModel sourceModel
     required property TableViewColumnModel columnModel
 
@@ -23,10 +23,10 @@ PaneTableView {
     property alias toDate: dateRange.toDate
     property alias toDateValue: dateRange.toDateValue
 
-    property alias dateRange: dateRange
-    property alias filterMenu: filterMenu
-    property alias densityMenu: densityMenu
-    property alias columnMenu: columnMenu
+    readonly property BarDateRange dateRange: dateRange
+    readonly property TableFilterMenuButton filterMenu: filterMenu
+    readonly property TableDensityMenuButton densityMenu: densityMenu
+    readonly property TableColumnMenuButton columnMenu: columnMenu
 
     canRefresh: true
     onRefreshTriggered: root.sourceModel.select()
@@ -48,7 +48,7 @@ PaneTableView {
         var w = tableViewModel.columnWidth(column)
         if(w >= 0)
             return w;
-        return root.defaultColumnWidthProvider(column)
+        return visible ? root.defaultColumnWidthProvider(column) : undefined
     }
 
     selectionModel: SelectionModel {

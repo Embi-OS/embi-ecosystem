@@ -1,84 +1,57 @@
 #include "displaysettings.h"
+#include "displaybackend.h"
 #include "solid_log.h"
 
-#if defined(Q_OS_BOOT2QT)
-#include "displaycomponentb2qt.h"
-#endif
-#include "abstractdisplaycomponent.h"
-
-static AbstractDisplayComponent* getComponent()
-{
-    static AbstractDisplayComponent* instance = nullptr;
-
-    if(!instance)
-    {
-#if defined(Q_OS_BOOT2QT)
-        instance = new DisplayComponentB2qt();
-#endif
-    }
-
-    return instance;
-}
+#include "displaybackendb2qt.h"
 
 DisplaySettings::DisplaySettings(QObject *parent) :
-    QObject(parent)
+    QObject(parent),
+#if defined(Q_OS_BOOT2QT)
+    m_backend(new DisplayBackendB2Qt(this))
+#else
+    m_backend(nullptr)
+#endif
 {
-    if(!getComponent()) {
-        SOLIDLOG_WARNING()<<"Could not find a display component matching this platform";
+    if(!m_backend) {
+        SOLIDLOG_WARNING()<<"Could not find a displaysettings backend matching this platform";
     }
 }
 
-bool DisplaySettings::canSetBrightness()
+bool DisplaySettings::canSetBrightness() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetBrightness();
+    return m_backend && m_backend->canSetBrightness();
 }
 
-bool DisplaySettings::canSetHighDpi()
+bool DisplaySettings::canSetHighDpi() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetHighDpi();
+    return m_backend && m_backend->canSetHighDpi();
 }
 
-bool DisplaySettings::canSetScaleFactor()
+bool DisplaySettings::canSetScaleFactor() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetScaleFactor();
+    return m_backend && m_backend->canSetScaleFactor();
 }
 
-bool DisplaySettings::canSetRotation()
+bool DisplaySettings::canSetRotation() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetRotation();
+    return m_backend && m_backend->canSetRotation();
 }
 
-bool DisplaySettings::canHideCursor()
+bool DisplaySettings::canHideCursor() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canHideCursor();
+    return m_backend && m_backend->canHideCursor();
 }
 
-bool DisplaySettings::canHideKeyboard()
+bool DisplaySettings::canHideKeyboard() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canHideKeyboard();
+    return m_backend && m_backend->canHideKeyboard();
 }
 
 int DisplaySettings::getBrightness() const
 {
-    if(!canSetScaleFactor())
-    {
-        SOLIDLOG_DEBUG()<<"Cannot get brightness, fallback to default";
+    if(!m_backend)
         return 0;
-    }
-
-    return getComponent()->getBrightness();
+    return m_backend->getBrightness();
 }
 
 void DisplaySettings::setBrightness(int brightness)
@@ -89,19 +62,15 @@ void DisplaySettings::setBrightness(int brightness)
         return;
     }
 
-    if(getComponent()->setBrightness(brightness))
+    if(m_backend->setBrightness(brightness))
         emit this->brightnessChanged();
 }
 
 bool DisplaySettings::getHighDpi() const
 {
-    if(!canSetScaleFactor())
-    {
-        SOLIDLOG_DEBUG()<<"Cannot get high dpi, fallback to default";
+    if(!m_backend)
         return false;
-    }
-
-    return getComponent()->getHighDpi();
+    return m_backend->getHighDpi();
 }
 
 void DisplaySettings::setHighDpi(bool highDpi)
@@ -112,19 +81,15 @@ void DisplaySettings::setHighDpi(bool highDpi)
         return;
     }
 
-    if(getComponent()->setHighDpi(highDpi))
+    if(m_backend->setHighDpi(highDpi))
         emit this->highDpiChanged();
 }
 
 float DisplaySettings::getScaleFactor() const
 {
-    if(!canSetScaleFactor())
-    {
-        SOLIDLOG_DEBUG()<<"Cannot get factor, fallback to default";
-        return 100.0;
-    }
-
-    return getComponent()->getScaleFactor();
+    if(!m_backend)
+        return 0;
+    return m_backend->getScaleFactor();
 }
 
 void DisplaySettings::setScaleFactor(float scaleFactor)
@@ -135,19 +100,15 @@ void DisplaySettings::setScaleFactor(float scaleFactor)
         return;
     }
 
-    if(getComponent()->setScaleFactor(scaleFactor))
+    if(m_backend->setScaleFactor(scaleFactor))
         emit this->scaleFactorChanged();
 }
 
 float DisplaySettings::getRotation() const
 {
-    if(!canSetRotation())
-    {
-        SOLIDLOG_DEBUG()<<"Cannot get rotation, fallback to default";
-        return 0.0;
-    }
-
-    return getComponent()->getRotation();
+    if(!m_backend)
+        return 0;
+    return m_backend->getRotation();
 }
 
 void DisplaySettings::setRotation(float rotation)
@@ -158,19 +119,15 @@ void DisplaySettings::setRotation(float rotation)
         return;
     }
 
-    if(getComponent()->setRotation(rotation))
+    if(m_backend->setRotation(rotation))
         emit this->rotationChanged();
 }
 
 bool DisplaySettings::getHideCursor() const
 {
-    if(!canHideCursor())
-    {
-        SOLIDLOG_DEBUG()<<"Cannot get hideCursor, fallback to default";
+    if(!m_backend)
         return false;
-    }
-
-    return getComponent()->getHideCursor();
+    return m_backend->getHideCursor();
 }
 
 void DisplaySettings::setHideCursor(bool hideCursor)
@@ -181,19 +138,15 @@ void DisplaySettings::setHideCursor(bool hideCursor)
         return;
     }
 
-    if(getComponent()->setHideCursor(hideCursor))
+    if(m_backend->setHideCursor(hideCursor))
         emit this->hideCursorChanged();
 }
 
 bool DisplaySettings::getHideKeyboard() const
 {
-    if(!canHideKeyboard())
-    {
-        SOLIDLOG_DEBUG()<<"Cannot get hideKeyboard, fallback to default";
+    if(!m_backend)
         return false;
-    }
-
-    return getComponent()->getHideKeyboard();
+    return m_backend->getHideKeyboard();
 }
 
 void DisplaySettings::setHideKeyboard(bool hideKeyboard)
@@ -204,8 +157,6 @@ void DisplaySettings::setHideKeyboard(bool hideKeyboard)
         return;
     }
 
-    if(getComponent()->setHideKeyboard(hideKeyboard))
+    if(m_backend->setHideKeyboard(hideKeyboard))
         emit this->hideKeyboardChanged();
 }
-
-

@@ -64,7 +64,7 @@ void QStandardObjectGroup::invalidate()
     int visibleCount=0;
     bool warning=false;
     bool isDirty=false;
-    for(QStandardObject* object: m_objects)
+    for(QStandardObject* object: std::as_const(m_objects))
     {
         if(!object->getVisible())
             continue;
@@ -120,7 +120,7 @@ void QStandardObjectGroup::onObjectDestroyed(QObject* item)
 
 void QStandardObjectGroup::onEnabledWarningChanged(bool enabledHeight)
 {
-    for(QStandardObject* item: m_objects)
+    for(QStandardObject* item: std::as_const(m_objects))
     {
         dereferenceObject(item);
         referenceObject(item);
@@ -130,7 +130,7 @@ void QStandardObjectGroup::onEnabledWarningChanged(bool enabledHeight)
 
 void QStandardObjectGroup::onEnabledDirtyChanged(bool enabledWidth)
 {
-    for(QStandardObject* item: m_objects)
+    for(QStandardObject* item: std::as_const(m_objects))
     {
         dereferenceObject(item);
         referenceObject(item);

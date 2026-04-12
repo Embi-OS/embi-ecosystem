@@ -54,7 +54,7 @@ if [ -d "$WASM_OUTPUT_DIR" ]; then
         has_entries=1
         if [ -d "$item" ]; then
             app_name=$(basename "$item")
-            zip_path="$WASM_ARTIFACT_DIR/A${app_name}_${SANITIZED_PROJECT_VERSION}_Wasm.zip"
+            zip_path="$WASM_ARTIFACT_DIR/A${app_name}_${SANITIZED_PROJECT_VERSION}-${PROJECT_DESCRIPTION}_Wasm.zip"
             rm -f "$zip_path"
             log "Packaging WASM app $app_name → $zip_path"
             run_cmd bash -lc "cd \"$item\" && zip -r -q \"$zip_path\" ."

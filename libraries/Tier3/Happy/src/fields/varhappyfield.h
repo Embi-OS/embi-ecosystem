@@ -7,7 +7,7 @@ class VarHappyField: public AbstractHappyField
     Q_OBJECT
     QML_ELEMENT
 
-    Q_COMPOSITION_PROPERTY(SqlColumnPreparator, sqlColumnPreparator, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(SqlColumnPreparator, sqlColumnPreparator)
 
     Q_WRITABLE_VAR_PROPERTY(SqlColumnTypes::Enum, type, Type, SqlColumnTypes::Invalid)
     Q_WRITABLE_VAR_PROPERTY(int, precision, Precision, 0)

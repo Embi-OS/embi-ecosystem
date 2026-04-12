@@ -9,8 +9,18 @@
 HappyServer::HappyServer(QObject *parent) :
     QObject(parent),
     m_sqlSchemePreparator(new SqlSchemePreparator(this)),
+    m_sqlTablePreparator(new SqlTablePreparator(this)),
+    m_migrations(this),
     m_routers(this)
 {
+    m_sqlTablePreparator->setName(HAPPY_MIGRATIONS_TABLE);
+    m_sqlTablePreparator->columns().append(new SqlPrimaryColumnPreparator("luid"));
+    m_sqlTablePreparator->columns().append(new SqlColumnPreparator("app", SqlColumnTypes::Char, 255));
+    m_sqlTablePreparator->columns().append(new SqlColumnPreparator("name", SqlColumnTypes::Char, 255));
+    m_sqlTablePreparator->columns().append(new SqlColumnPreparator("applied", SqlColumnTypes::DateTime));
+
+    m_sqlSchemePreparator->tables().append(m_sqlTablePreparator);
+
     m_routers.onInserted([this](int index, HappyRouter* router) {
         router->setRegistered(true);
 
@@ -74,6 +84,11 @@ bool HappyServer::init()
     {
         if(HappyCrudRouter* crudRouter = qobject_cast<HappyCrudRouter*>(router))
             m_crudsRouterMap.insert(crudRouter->getTableName(), crudRouter);
+    }
+
+    for(HappyMigration* migration: m_migrations)
+    {
+        migration->run(this);
     }
 
     for(HappyRouter* router: m_routers)
@@ -148,9 +163,16 @@ HappyCrudRouter* HappyServer::crudRouter(const QString& tableName) const
     return m_crudsRouterMap.value(tableName, nullptr);
 }
 
-QList<QWebSocket*> HappyServer::sockets(const QString& path) const
+QList<QWebSocket*> HappyServer::sockets(const QString& path, bool startsWith) const
 {
-    return m_sockets.values(path);
+    if(!startsWith)
+        return m_sockets.values(path);
+    QList<QWebSocket*> sockets;
+    for(auto [key, socket]: m_sockets.asKeyValueRange()) {
+        if(key.startsWith(path))
+            sockets.append(socket);
+    }
+    return sockets;
 }
 
 void HappyServer::onNewSocketConnection()
@@ -202,9 +224,9 @@ void HappyServer::onSocketDisconnected()
     HAPPYLOG_TRACE()<<"Web socket disconnected:"<<socket->requestUrl().path();
 
     const QString path = socket->requestUrl().path();
+    m_sockets.remove(path, socket);
 
     emit this->socketDisconnected(path, socket);
 
-    m_sockets.remove(path, socket);
     socket->deleteLater();
 }

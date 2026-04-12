@@ -214,7 +214,6 @@ int TableViewModel::roleForName(const QString& roleName) const
 
     if(role<0 && !roleName.isEmpty() && !m_roleIds.isEmpty()) {
         TABLELOG_CRITICAL()<<"TableViewModel"<<this<<"does not contains role"<<roleName<<"for"<<sourceModel();
-        qDebug()<<"roleNames are"<<roleNames();
     }
 
     return role;

@@ -9,28 +9,19 @@ class AbstractManagerContainer : public AbstractManager
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_COMPOSITION_PROPERTY(QObjectListModel, managers, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QObjectListModel, managers)
 
 public:
     explicit AbstractManagerContainer(QObject *parent = nullptr);
     explicit AbstractManagerContainer(const QMetaObject* metaObject, QObject *parent = nullptr);
 
     bool init() override;
-    void postInit() override;
-    bool unInit() final override;
+    bool postInit() override;
+    bool unInit() override;
     void reset() final override;
     bool isValid() final override;
 
     bool registerManager(AbstractManager* manager);
-
-protected slots:
-    void postInitManager(int index);
-
-protected:
-    virtual void endInit();
-
-private:
-    QElapsedTimer m_elapsedTimer;
 };
 
 class MainManagerContainer: public AbstractManagerContainer
@@ -42,8 +33,13 @@ class MainManagerContainer: public AbstractManagerContainer
 public:
     explicit MainManagerContainer(QObject *parent = nullptr);
 
-protected:
+    bool init() override;
+    bool postInit() final override;
     void endInit() override;
+    bool unInit() final override;
+
+private:
+    QElapsedTimer m_elapsedTimer;
 };
 
 struct ManagerContainer

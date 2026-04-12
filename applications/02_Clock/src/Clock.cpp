@@ -75,30 +75,20 @@ bool Clock::init()
     return true;
 }
 
-void Clock::postInit()
+bool Clock::postInit()
 {
     RestModel* alarmModel = new RestModel(this);
     alarmModel->setPrimaryField("uuid");
     alarmModel->setBaseName("api/alarm");
     alarmModel->setSelectPolicy(QVariantListModelPolicies::Direct);
     alarmModel->setSubmitPolicy(QVariantListModelPolicies::Disabled);
-
-    connect(alarmModel, &RestModel::selectDone, this, [this, alarmModel](bool result){
-
-        if(!result)
-        {
-            emitInitDone(result);
-            return;
-        }
-
-        for(int i=0; i<alarmModel->size(); i++)
-            m_alarmModel->create(alarmModel->get(i).toMap());
-
-        emitInitDone(result);
-
-    }, Qt::SingleShotConnection);
-
     alarmModel->select();
+    alarmModel->waitForSelect();
+
+    for(int i=0; i<alarmModel->size(); i++)
+        m_alarmModel->create(alarmModel->get(i).toMap());
+
+    return true;
 }
 
 void Clock::snooze()

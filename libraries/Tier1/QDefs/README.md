@@ -1,39 +1,118 @@
-QDefs
-==============
+# QDefs
 
-A set of one-line C++ macros to simplify the creation of reccurent things in Qt projects (like Qt Meta Properties) so that doing them in C++ is not harder than in QML, and requires no boilerplate glue-code.
+QDefs is a header-only grab bag of C++ macros and helpers that remove the repetitive parts of writing Qt / Qt Quick code. It focuses on making QML-friendly APIs as easy to declare in C++ as they are in QML by generating properties, enums, flags, singletons, logging helpers, and utility functions in one line.
 
-(Exemples must be added)
+## Highlights
+- **Zero-boilerplate QML properties** – declare readable, writable, callable, constant, abstract, or fuzzy-compared properties with a single macro call.
+- **Enum, flag, and singleton helpers** – expose `Q_ENUM`, `Q_FLAG`, attached properties, and QML singletons without hand-writing glue code.
+- **Instrumentation macros** – quickly wrap a function call to log its execution time or print formatted log separators.
+- **Utility toolbox** – QVariant navigation, math helpers, hashing shortcuts, filesystem helpers, UUID/QString utilities, etc.
 
-Installation
-------------
-1. clone or download this repository
-2. add `include  (<path/to/QDefs>/QDefs.pri)` in your `.pro`
+## Header overview
 
-### For one-line creation of QML properties
+| Header | Purpose |
+| --- | --- |
+| `qpropertydefs.h` | All `Q_*_PROPERTY` macros (writable/readonly/constant/abstract/callable + `VAR`, `PTR`, `REF`, `ENU`, `FUZ` specialisations). |
+| `qenumdefs.h` / `qflagdefs.h` | `Q_ENUM_CLASS` and `Q_FLAG_CLASS` helpers exposing enums/flags to both C++ and QML (with runtime conversion helpers). |
+| `qsingletondefs.h` | `Q_OBJECT_SINGLETON` and `Q_OBJECT_QML_SINGLETON` macros to materialise per-process or QML singletons. |
+| `qattacheddefs.h` | Helpers to implement attached properties (`Q_OBJECT_ATTACHED`, `Q_OBJECT_CHILD_ATTACHED`). |
+| `qoperatordefs.h` | Generate comparison operators once you wrote `operator==`/`operator<`. |
+| `qtimedefs.h` / `qlogdefs.h` | Execution-time wrappers (`Q_MEASURE_TIME`, `Q_DEBUG_TIME`, `Q_TRACE_TIME`) and logging helpers (`qTrace`, `qNotice`, `qLogLine`). |
+| `qvariantdefs.h` | QVariant conversion helpers (`qVariantFromJSVariant`, nested map navigation/set/remove/take helpers). |
+| `qutildefs.h` | Math helpers (`qFuzzyModulo`, regression, sigma/median), QString/file/path helpers, event-loop utilities, etc. |
+| `qprojectdefs.h` | Defaulted project metadata macros (`PROJECT_VERSION`, `PROJECT_NAME`, …). |
 
-* `Q_WRITABLE_***_PROPERTY` : a macro that takes a type and a name, and creates automatically the member attribute, the public getter and setter, and the Qt signal for notifier, and allow use in QML by exposing a read/write `Q_PROPERTY`.
+Everything ships as headers, so you can cherry-pick only the files you need.
 
-* `Q_READONLY_***_PROPERTY` : another macro that does almost the same as `Q_WRITABLE_PROPERTY` except that the property is not modifiable from the QML side, only C++ can access the setter.
+## Installation
 
-* `Q_CONSTANT_***_PROPERTY` : a simplified version of the previous macros, that exposes a constant property with only a getter, from C++ or QML side.
+### As a Git submodule / source drop
+1. Add the folder `libraries/Tier1/QDefs/` to your project (copy or git submodule).
+2. Add the folder to your include paths and `#include` the headers you need.
 
-* `Q_ABSTRACT_***_PROPERTY` : a simplified version of the previous macros, that exposes a purely virtual constant getter to be override by derrived class.
+### CMake
+```cmake
+add_subdirectory(path/to/QDefs)
+target_link_libraries(MyApp PRIVATE QDefs)
+```
+The library only publishes headers, so linking simply makes the include path available. If you prefer not to add the target, use:
+```cmake
+target_include_directories(MyApp PRIVATE path/to/QDefs)
+```
 
-The `***` can be either `VAR`, `PTR`, `REF`, `ENU` or `FUZ`. The three first are simple macros that you use by simply passing the non-qualified type (`T`) and it'll add the qualifiers for var (none), pointer (`*`), or constant-reference (`const &`) where needed. The fourth one will do the same as `VAR` except it will be casted to `int` in QML -> usefull for properties based on `Q_ENUM_CLASS`. The fifth one will do the same as `VAR` except the comparison in the setter will be donne using `qFuzzyCompare`.
+### qmake / Qt .pro
+```qmake
+include(/absolute/or/relative/path/to/QDefs/QDefs.pri)
+```
+This adds the headers to your include path and lets you `#include <qpropertydefs.h>` (or any other header) directly.
 
-### For simple enum class that can be used in C++ and QML
+## Usage samples
 
-* `Q_ENUM_CLASS` : a macro to declare a "gadget" struct that only contains a `Q_ENUM` and can be exposed as is to QML. It can be used with very similar syntax from both C++ and QML (`<Name>::<Key>` in C++ vs `<Name>.<Key>` in QML/JS).
+### Declare QML-ready properties without boilerplate
+```cpp
+#include <qpropertydefs.h>
 
-### For simple Singleton creation
+class Settings : public QObject
+{
+    Q_OBJECT
+    Q_WRITABLE_VAR_PROPERTY(QString, title, Title, "Untitled");
+    Q_READONLY_VAR_PROPERTY(bool, busy, Busy, false);
+    Q_WRITABLE_FUZ_PROPERTY(float, value, Value, 1.6);
+};
+```
+Macros are available for:
 
-* `Q_OBJECT_SINGLETON` : a macro that make a Q_OBJECT class singleton (constructor must be declared private manually)
+- Access level: `Q_WRITABLE_*`, `Q_READONLY_*`, `Q_CONSTANT_*`, `Q_ABSTRACT_*`, `Q_CALLABLE_*`, and `Q_REQUIRED_*`.
+- Type helpers: `VAR` (value), `PTR`, `REF`, `FUZ` (floating point setter using `qFuzzyCompare`).
+- Extras: automatic notifier signals, `reset` methods, `AboutToChange` hooks for writable variants.
 
-### For simple C++ time measuring
+### Expose enums and flags to QML in one line
+```cpp
+#include <qenumdefs.h>
+#include <qflagdefs.h>
 
-* `Q_MEASURE_TIME` : a macro that wraps arround a method to measure the time it takes to execute
+Q_ENUM_CLASS(ColorModeNS, ColorMode,
+    Normal = 0,
+    Inverted,
+    Night
+)
+
+Q_FLAG_CLASS(UserRoleNS, UserRoles, UserRole,
+    Reader = 0x01,
+    Editor = 0x02,
+    Admin  = 0x04
+)
+```
+Both macros declare the enum/flag, register it with Qt meta-object, and create a QML singleton wrapper so you can write `ColorMode.Normal` or call helper methods (`ColorMode.asString(value)`).
+
+### Singletons and attached properties
+```cpp
+#include <qsingletondefs.h>
+
+class ThemeManager final : public QObject
+{
+    Q_OBJECT
+    Q_OBJECT_QML_SINGLETON(ThemeManager)
+private:
+    explicit ThemeManager(QObject *parent = nullptr) : QObject(parent) {}
+};
+```
+Use `Q_OBJECT_ATTACHED(MyAttached, QObject)` to expose a helper object as QML attached properties. `Q_OBJECT_CHILD_ATTACHED` reuses an already-created child instance instead of allocating one per attachment.
+
+### Timing, logging and utilities
+- Wrap any call with `Q_MEASURE_TIME(blockOrFunctionCall);` to print its duration in milliseconds (`Q_DEBUG_TIME`/`Q_TRACE_TIME` use different log levels).
+- Use `qLogLine("Title")` or `qLogLineMessage("Title", '=')` to print formatted separators aligned to 100 characters.
+- `qVariantGetNestedValue`, `qVariantSetNestedValue`, `qVariantInsertNestedValue`, etc. walk through nested QVariant maps using `"foo.bar.baz"` keys.
+- `qutildefs.h` hosts reusable math helpers (fuzzy compare/modulo, regression, sigma, median), string/path helpers, UUID formatting, event-loop waiting helpers, etc.
+
+## Requirements
+- Qt 6+ for the `QML_NAMED_ELEMENT`/`QML_SINGLETON` helpers (the macros are still usable on Qt 5 if you avoid the Qt 6–only pieces).
+- C++17 (matching Qt’s default minimum in this repository).
 
 ## License
 
-Well, license here is pretty "super-open"
+QDefs follows a very permissive "do-whatever-you-want" license (similar to WTFPL). You are free to use, modify, redistribute, embed, or close-source it without attribution. See `LICENSE` for the exact wording.
+
+## Contributing
+
+Issues and pull requests that add new macro families, documentation, or examples are welcome. If you have an edge case that could be generalised, open an issue describing the code you wish you did not have to write manually.

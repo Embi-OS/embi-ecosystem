@@ -53,6 +53,7 @@ T.Page {
 
         caption: root.comment
         captionFont: Style.textTheme.subtitle1
+        captionMaximumLineCount: 3
     }
 
     property int edge: 0

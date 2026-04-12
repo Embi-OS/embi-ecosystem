@@ -13,7 +13,7 @@ class GraphAxisObject : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, Category, UnitCategories::NoCategory)
+    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, UnitCategories::NoCategory)
     Q_READONLY_VAR_PROPERTY(UnitTypes::Enum, unit, Unit, UnitTypes::NoUnit)
     Q_READONLY_FUZ_PROPERTY(float, lowerBoundRaw, LowerBoundRaw, 0)
     Q_READONLY_FUZ_PROPERTY(float, lowerMarginPct, LowerMarginPct, 0)
@@ -39,8 +39,8 @@ class GraphAxisObject : public QObject
     Q_PROPERTY(float globalMin READ getGlobalMin NOTIFY throttled FINAL)
     Q_PROPERTY(float average READ getAverage NOTIFY throttled FINAL)
 
-    Q_CONSTANT_PTR_PROPERTY(QGenericSignalThrottler, throttler, Throttler, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(QGenericSignalThrottler, boundsThrottler, BoundsThrottler, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QGenericSignalThrottler, throttler)
+    Q_CONSTANT_PTR_PROPERTY(QGenericSignalThrottler, boundsThrottler)
 
 public:
     explicit GraphAxisObject(UnitCategory category, QObject* parent = nullptr);

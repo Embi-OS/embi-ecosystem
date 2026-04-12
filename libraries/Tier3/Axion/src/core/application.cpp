@@ -31,16 +31,14 @@ static QApplication *createQtApplication(int &argc, char **argv, const QString &
     QGuiApplication::setOrganizationDomain(PROJECT_DOMAIN);
     QGuiApplication::setApplicationName(applicationName);
     QGuiApplication::setApplicationDisplayName(PROJECT_COPYRIGHT);
-    QGuiApplication::setApplicationVersion(Version::Get()->getVersion());
+    QGuiApplication::setApplicationVersion(Version::Get()->version());
 
     QQuickStyle::setStyle(QStringLiteral("Material"));
 
-#ifndef Q_OS_WASM
     for (auto it = s_environmentVariable->constBegin(); it != s_environmentVariable->constEnd(); ++it) {
-        qDebug()<<"qputenv"<<it.key()<<it.value();
+        AXIONLOG_INFO()<<"qputenv"<<it.key()<<it.value();
         qputenv(it.key().toUtf8().constData(), it.value());
     }
-#endif
 
     QApplication *app = new QApplication(argc, argv);
 
@@ -108,7 +106,7 @@ int Application::run(QAnyStringView uri, QAnyStringView typeName)
     Q_DEBUG_TIME(m_engine->loadFromModule(uri, typeName);)
 
     if (m_engine->rootObjects().isEmpty()) {
-        AXIONLOG_CRITICAL()<<"Failed to load QML !";
+        AXIONLOG_FATAL()<<"Failed to load QML !";
     }
 
     AXIONLOG_INFO()<<"Launching Application...";
@@ -131,7 +129,7 @@ int Application::run(QAnyStringView uri, QAnyStringView typeName)
 
 void Application::installTranslators()
 {
-    const QVariantMap args = AxionHelper::Get()->getArguments();
+    const QVariantMap args = AxionHelper::Get()->arguments();
     if(args.contains("lang"))
     {
         const QString lang = args.value("lang").toString();

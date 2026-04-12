@@ -12,12 +12,12 @@ class UnitTypeObject : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, Category, UnitCategories::NoCategory)
-    Q_CONSTANT_VAR_PROPERTY(UnitTypes::Enum, type, Type, UnitTypes::NoUnit)
-    Q_CONSTANT_REF_PROPERTY(QString, name, Name, "")
-    Q_CONSTANT_REF_PROPERTY(QString, abbreviation, Abbreviation, "")
-    Q_CONSTANT_FUZ_PROPERTY(double, ratio, Ratio, 1.0)
-    Q_CONSTANT_REF_PROPERTY(QString, display, Display, "")
+    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, UnitCategories::NoCategory)
+    Q_CONSTANT_VAR_PROPERTY(UnitTypes::Enum, type, UnitTypes::NoUnit)
+    Q_CONSTANT_REF_PROPERTY(QString, name, "")
+    Q_CONSTANT_REF_PROPERTY(QString, abbreviation, "")
+    Q_CONSTANT_FUZ_PROPERTY(double, ratio, 1.0)
+    Q_CONSTANT_REF_PROPERTY(QString, display, "")
 
 public:
     explicit UnitTypeObject(UnitCategories::Enum category,
@@ -43,8 +43,8 @@ class UnitCategoryObject : public QObjectListModel
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, Category, UnitCategories::NoCategory)
-    Q_CONSTANT_VAR_PROPERTY(UnitTypes::Enum, defaultType, DefaultType, UnitTypes::NoUnit)
+    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, UnitCategories::NoCategory)
+    Q_CONSTANT_VAR_PROPERTY(UnitTypes::Enum, defaultType, UnitTypes::NoUnit)
 
 public:
     explicit UnitCategoryObject(UnitCategories::Enum category, QObject *parent = nullptr);

@@ -15,8 +15,8 @@ void GraphObject::reset()
 {
     m_series->reset();
 
-    getXAxis()->reset();
-    getYAxis()->reset();
+    m_xAxis->reset();
+    m_yAxis->reset();
 
     resetBounds();
     resetMinMax();
@@ -24,14 +24,14 @@ void GraphObject::reset()
 
 void GraphObject::resetBounds()
 {
-    getXAxis()->resetBounds();
-    getYAxis()->resetBounds();
+    m_xAxis->resetBounds();
+    m_yAxis->resetBounds();
 }
 
 void GraphObject::resetMinMax()
 {
-    getXAxis()->resetMinMax();
-    getYAxis()->resetMinMax();
+    m_xAxis->resetMinMax();
+    m_yAxis->resetMinMax();
 
     m_series->resetMinMax();
 }
@@ -62,8 +62,8 @@ QPointF GraphObject::convertRawPoint(const QPointF& pointRaw) const
 
 GraphConvertFunction GraphObject::getConverterFunction() const
 {
-    const float xRatio = Units::make(getXAxis()->getCategory())->ratio(getXAxis()->getUnit());
-    const float yRatio = Units::make(getYAxis()->getCategory())->ratio(getYAxis()->getUnit());
+    const float xRatio = Units::make(m_xAxis->category())->ratio(m_xAxis->getUnit());
+    const float yRatio = Units::make(m_yAxis->category())->ratio(m_yAxis->getUnit());
 
     GraphConvertFunction f = [xRatio, yRatio](const QPointF& pointRaw) {
         return QPointF(pointRaw.x()*xRatio, pointRaw.y()*yRatio);

@@ -8,7 +8,6 @@ Item {
     property string stackItemName: ""
     property string stackItemSecondaryName: ""
     property StandardObjectModel navModels: StandardObjectModel{}
-    property StandardObjectModel debugModel: StandardObjectModel{}
 
     readonly property BasicStackView stack: StackView.view as BasicStackView
     readonly property int stackStatus: StackView.status
@@ -38,7 +37,6 @@ Item {
     signal aboutToQuit(string buType, var buValue)
     signal quitConfirmed(string buType, var buValue)
     signal navButtonClicked(int barIndex, int naIndex)
-    signal cardButtonClicked(var caValue)
     signal mainButtonClicked(var maValue)
     signal extraButtonClicked(var exValue)
     signal backButtonClicked()
@@ -105,7 +103,7 @@ Item {
             root.stack.popLast()
         }
         else {
-            quitConfirmed(buType, buValue)
+            root.quitConfirmed(buType, buValue)
         }
     }
 
@@ -131,12 +129,6 @@ Item {
     onNavButtonClicked: (barIndex, naIndex) => {
         quitButtonType = `nav.${barIndex}.${naIndex}`;
         quitButtonValue = naIndex;
-        wantToQuit();
-    }
-
-    onCardButtonClicked: (caValue) => {
-        quitButtonType = `card.${caValue}`;
-        quitButtonValue = caValue;
         wantToQuit();
     }
 

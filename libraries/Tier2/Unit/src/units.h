@@ -13,15 +13,15 @@ class Units : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, percentUnitModel, PercentUnitModel, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, torqueUnitModel, TorqueUnitModel, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, torquePerTimeUnitModel, TorquePerTimeUnitModel, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, angularVelocityUnitModel, AngularVelocityUnitModel, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, angleUnitModel, AngleUnitModel, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, timeUnitModel, TimeUnitModel, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, massUnitModel, MassUnitModel, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, forceUnitModel, ForceUnitModel, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, lengthUnitModel, LengthUnitModel, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, percentUnitModel)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, torqueUnitModel)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, torquePerTimeUnitModel)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, angularVelocityUnitModel)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, angleUnitModel)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, timeUnitModel)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, massUnitModel)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, forceUnitModel)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, lengthUnitModel)
 
 protected:
     friend QQmlSingleton<Units>;

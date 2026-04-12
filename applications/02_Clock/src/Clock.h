@@ -10,7 +10,7 @@ class Clock : public AbstractManager
 
     Q_OBJECT_QML_SINGLETON(Clock)
 
-    Q_COMPOSITION_PROPERTY(AlarmModel, alarmModel, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(AlarmModel, alarmModel)
 
     Q_READONLY_VAR_PROPERTY(bool, ringing, Ringing, false)
     Q_READONLY_VAR_PROPERTY(bool, snoozed, Snoozed, false)
@@ -24,7 +24,7 @@ private:
 
 public:
     bool init() final override;
-    void postInit() final override;
+    bool postInit() final override;
 
 public slots:
     void snooze();

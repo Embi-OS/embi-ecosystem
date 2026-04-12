@@ -1011,7 +1011,7 @@ CopyRequest QtFileCopierPrivate::prepareRequest(bool checkPath, const QString &s
 #if defined(Q_OS_WIN32)
     if (fis.isSymLink() && flags & QtFileCopier::FollowLinks) {
 	// replace source with link dest
-	r.source = fis.readLink();
+    r.source = fis.readSymLink();
 	// remove .lnk from dest
 	if (fid.suffix() == "lnk") {
             r.dest.remove(r.dest.length() - 4, 4);

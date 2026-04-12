@@ -319,9 +319,7 @@ bool FormObject::doSubmit()
         }
         else
         {
-            QVariant propertyValue = m_targetMetaProperty.read(m_target);
-            if (propertyValue.userType() == qMetaTypeId<QJSValue>())
-                propertyValue = propertyValue.value<QJSValue>().toVariant();
+            QVariant propertyValue = qVariantFromJSVariant(m_targetMetaProperty.read(m_target));
             result &= qVariantSetNestedValue(propertyValue, properties, formattedValue);
             result &= m_target->setProperty(propertyName.toUtf8(), propertyValue);
         }
@@ -440,9 +438,10 @@ void FormObject::updateMetaProperty()
         connect(m_target,notifySignal,this,updateSlot);
     }
 
-    const QVariant propertyValue = m_targetMetaProperty.read(m_target);
+    const QVariant propertyValue = qVariantFromJSVariant(m_targetMetaProperty.read(m_target));
     const QVariant value = properties.isEmpty() ? propertyValue : qVariantGetNestedValue(propertyValue, properties);
-    setTargetPropertyValue(value);
+
+    setTargetPropertyValue(value.isValid() ? value : m_defaultValue);
 }
 
 void FormObject::onTargetMetaPropertyChanged()
@@ -461,9 +460,10 @@ void FormObject::onTargetMetaPropertyChanged()
         properties.removeFirst();
     }
 
-    const QVariant propertyValue = m_targetMetaProperty.read(m_target);
+    const QVariant propertyValue = qVariantFromJSVariant(m_targetMetaProperty.read(m_target));
     const QVariant value = properties.isEmpty() ? propertyValue : qVariantGetNestedValue(propertyValue, properties);
-    setTargetPropertyValue(value);
+
+    setTargetPropertyValue(value.isValid() ? value : m_defaultValue);
 }
 
 QVariant FormObject::formatValue(const QVariant& value) const
@@ -604,13 +604,13 @@ QString FormObject::valueToText(const QVariant& value) const
     default:
         switch (m_valueType) {
         case FormValueTypes::Date:
-            text = QLocale().toString(value.toDate());
+            text = QLocale().toString(value.toDate(), "yyyy-MM-dd");
             break;
         case FormValueTypes::Time:
-            text = QLocale().toString(value.toTime());
+            text = QLocale().toString(value.toTime(), "hh:mm:ss");
             break;
         case FormValueTypes::DateTime:
-            text = QLocale().toString(value.toDateTime());
+            text = QLocale().toString(value.toDateTime().toLocalTime(), "yyyy-MM-dd hh:mm:ss");
             break;
         case FormValueTypes::List:
             text = QString::fromUtf8(QUtils::Log::variantToJson(value));
@@ -629,7 +629,27 @@ QString FormObject::valueToText(const QVariant& value) const
             text = QLocale().c().toString(value.toDouble());
             break;
         default:
-            text = value.toString();
+            switch (value.userType()) {
+            case QMetaType::QDate:
+                text = QLocale().toString(value.toDate(), "yyyy-MM-dd");
+                break;
+            case QMetaType::QTime:
+                text = QLocale().toString(value.toTime(), "hh:mm:ss");
+                break;
+            case QMetaType::QDateTime:
+                text = QLocale().toString(value.toDateTime().toLocalTime(), "yyyy-MM-dd hh:mm:ss");
+                break;
+            case QMetaType::QStringList:
+            case QMetaType::QVariantList:
+            case QMetaType::QVariantMap:
+            case QMetaType::QVariantHash:
+                text = QString::fromUtf8(QUtils::Log::variantToJson(value));
+                if(text.endsWith('\n'))
+                    text.removeLast();
+                break;
+            default:
+                text = value.toString();
+            }
             break;
         }
     }

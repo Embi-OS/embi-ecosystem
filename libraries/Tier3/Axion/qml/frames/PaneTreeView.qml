@@ -6,8 +6,8 @@ BasicPane {
     id: root
 
     property AbstractItemModel model: null
+    readonly property BasicTreeView view: view
     property alias delegate: view.delegate
-    property alias view: view
 
     property alias boundsBehavior: view.boundsBehavior
     property alias reuseItems: view.reuseItems
@@ -26,7 +26,7 @@ BasicPane {
     property alias rootIndex: view.rootIndex
 
     function forceLayout() {
-        view.forceLayoutThrottled()
+        view.queueForceLayout()
     }
 
     function defaultColumnWidthProvider(column: int): real {

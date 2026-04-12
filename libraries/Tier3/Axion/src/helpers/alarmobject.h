@@ -3,7 +3,6 @@
 
 #include <QDefs>
 #include <QModels>
-#include <QProxyModel>
 
 class AlarmModel : public QObjectListModel
 {

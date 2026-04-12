@@ -15,17 +15,17 @@
         qWarning()<<httpStatus; \
         qWarning().noquote()<<RestHelper::parseBody(reply); \
     }); \
-    reply->onError(this, [](const QString &errorString, int code, RestReplyErrorTypes::Enum type, const QVariant &reply){ \
+    reply->onError([](const QString &errorString, int code, RestReplyErrorTypes::Enum type, const QVariant &reply){ \
         qCritical().noquote()<<errorString; \
         qCritical()<<code; \
         qCritical()<<type; \
         qCritical().noquote()<<RestHelper::parseBody(reply); \
     }); \
-    reply->onSucceeded(this, [](int status, const QVariant& reply) { \
+    reply->onSucceeded([](int status, const QVariant& reply) { \
         qTrace()<<status; \
         qTrace().noquote()<<RestHelper::parseBody(reply, false); \
     }); \
-    reply->onFinished(this, [](int status){ \
+    reply->onFinished([](bool, int status, const QVariant&){ \
         qTrace()<<status; \
     }); \
 
@@ -33,8 +33,8 @@
 { \
     QElapsedTimer* timer=new QElapsedTimer; \
     timer->start(); \
-    reply->onFinished(this, [timer](int status){ \
-        deferTrace()<<"RestReply took"<<timer->nsecsElapsed()/1000000.0<<"ms"; \
+    reply->onFinished([timer](bool, int, const QVariant&){ \
+        qTrace()<<"RestReply took"<<timer->nsecsElapsed()/1000000.0<<"ms"; \
         delete timer; \
     }); \
 } \
@@ -100,7 +100,7 @@ class RestHelper : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_CONSTANT_PTR_PROPERTY(QStandardObjectModel, filterOperatorsModel, FilterOperatorsModel, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QStandardObjectModel, filterOperatorsModel)
 
 protected:
     friend QQmlSingleton<RestHelper>;

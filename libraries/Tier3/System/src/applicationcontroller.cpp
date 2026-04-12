@@ -3,8 +3,8 @@
 
 #include <QUtils>
 #include <QtConcurrentRun>
-#include <QDeferred>
 #include <Axion>
+#include <QStandardPaths>
 
 #include "core/paths.h"
 #include "dialogs/dialogmanager.h"
@@ -19,22 +19,13 @@
 
 ApplicationController::ApplicationController(QObject *parent) :
     QObject(parent),
+#ifdef Q_OS_BOOT2QT
+    m_hasAppController(!QStandardPaths::findExecutable(APPCONTROLLER_CMD).isEmpty())
+#else
     m_hasAppController(false)
+#endif
 {
-    QString program="which";
-    QStringList arguments = QStringList()<<APPCONTROLLER_CMD;
 
-    QProcess process;
-    process.setProgram(program);
-    process.setArguments(arguments);
-    process.start();
-
-    process.waitForFinished(1000);
-
-    QString processOutput = process.readAllStandardOutput();
-
-    if(processOutput.contains(APPCONTROLLER_CMD))
-        m_hasAppController = true;
 }
 
 void ApplicationController::init(bool makeDefault)
@@ -68,6 +59,9 @@ bool ApplicationController::hasAppController()
 
 QString ApplicationController::currentDefault() const
 {
+    if (!m_hasAppController)
+        return QString("Application controller unavailable on this platform");
+
     QFileInfo fileInfo = QFileInfo(B2QT_PREFIX);
     if(!fileInfo.exists())
         return QString("%1 does not exists").arg(B2QT_PREFIX);
@@ -90,74 +84,66 @@ void ApplicationController::update()
 
 void ApplicationController::update(const QString& path)
 {
-    QFileInfo fileInfo = QFileInfo(path);
+    const QFileInfo fileInfo(path);
     if(!fileInfo.exists() || !fileInfo.isFile())
     {
         exitWithError(tr("Le fichier %1 n'existe pas").arg(path));
         return;
     }
-    if(fileInfo.fileName()!=Paths::applicationFileName())
+    if(fileInfo.fileName() != Paths::applicationFileName())
     {
         exitWithError(tr("La mise à jour n'est pas compatible").arg(path));
         return;
     }
 
-    QString localFile = Paths::applicationFilePath();
-    QString newVersionLocalFile = Paths::applicationFilePath()+"_new";
-
-    auto importStep = [path, newVersionLocalFile]() {
+    auto importStep = [this, path]() {
         DialogObject* dialog = DialogManager::Get()->showBusy(tr("Chargement de la mise à jour!"));
 
-        QDefer defer;
-        auto future = QtConcurrent::run([path, newVersionLocalFile](){
+        const QString localFile = Paths::applicationFilePath();
+        const QString newVersionLocalFile = Paths::applicationFilePath() + "_new";
+
+        QtConcurrent::run([path, newVersionLocalFile]() {
             return QUtils::Filesystem::copy(path, newVersionLocalFile, true);
+        }).then(this, [dialog, newVersionLocalFile, localFile](bool copied) {
+            dialog->hide();
+
+            if(!copied) {
+                exitWithError(tr("Erreur lors de l'import de la mise à jour"));
+                return;
+            }
+
+            QFile newVersion(newVersionLocalFile);
+            QFile oldVersion(localFile);
+
+            QString errorMessage;
+            if(!(newVersion.exists() && oldVersion.exists()))
+            {
+                SOLIDLOG_WARNING() << "newVersion or oldVersion does not exits";
+                errorMessage = tr("Il semble manquer un fichier");
+            }
+            else if(!newVersion.setPermissions(QFileDevice::Permissions(0x0755)))
+            {
+                SOLIDLOG_WARNING() << "Can't set permissions to newVersion";
+                errorMessage = tr("Impossible de lire le fichier de mise à jour");
+            }
+            else if(!oldVersion.rename(localFile + "_old"))
+            {
+                SOLIDLOG_WARNING() << "Can't rename oldVersion to" << localFile + "_old";
+                errorMessage = tr("Impossible de remplacer la version actuelle");
+            }
+            else if(!newVersion.rename(localFile))
+            {
+                SOLIDLOG_WARNING() << "Can't rename newVersion to" << localFile;
+                errorMessage = tr("Impossible d'importer la nouvelle version");
+            }
+
+            if(!errorMessage.isEmpty()) {
+                exitWithError(errorMessage);
+                return;
+            }
+
+            AxionHelper::criticalRestart(tr("Import terminé"), tr("Ne mettez pas le système hors tension"));
         });
-
-        future.then([defer](bool result) mutable {
-            defer.end(result);
-        });
-
-        defer.complete([dialog](bool){ dialog->hide(); });
-
-        return defer;
-    };
-
-    auto controlStep = [newVersionLocalFile, localFile]() {
-        QDeferred<QString> defer;
-
-        QFile newVersion(newVersionLocalFile);
-        QFile oldVersion(localFile);
-
-        if(!(newVersion.exists() && oldVersion.exists()))
-        {
-            SOLIDLOG_WARNING()<<"newVersion or oldVersion does not exits";
-            defer.reject(tr("Il semble manquer un fichier"));
-        }
-        else if(!newVersion.setPermissions(QFileDevice::Permission(0x0755)))
-        {
-            SOLIDLOG_WARNING()<<"Can't set permissions to newVersion";
-            defer.reject(tr("Impossible de lire le fichier de mise à jour"));
-        }
-        else if(!oldVersion.rename(localFile+"_old"))
-        {
-            SOLIDLOG_WARNING()<<"Can't rename oldVersion to"<<localFile+"_old";
-            defer.reject(tr("Impossible de remplacer la version actuelle"));
-        }
-        else if(!newVersion.rename(localFile))
-        {
-            SOLIDLOG_WARNING()<<"Can't rename newVersion to"<<localFile;
-            defer.reject(tr("Impossible d'importer la nouvelle version"));
-        }
-        else
-        {
-            defer.resolve("");
-        }
-
-        return defer;
-    };
-
-    auto endStep = []() {
-        AxionHelper::criticalRestart(tr("Import terminé"), tr("Ne mettez pas le système hors tension"));
     };
 
     QVariantMap settings;
@@ -166,12 +152,9 @@ void ApplicationController::update(const QString& path)
     settings["buttonAccept"] = tr("Mettre à jour");
     settings["buttonReject"] = tr("Annuler");
     DialogObject* dialog = DialogManager::Get()->showMessage(settings);
-    dialog->onAccepted([importStep, controlStep, endStep]() mutable {
-        importStep()
-        .fail([](){ exitWithError(tr("Erreur lors de l'import de la mise à jour")); })
-        .then<QString>([controlStep](){ return controlStep(); })
-        .fail([](const QString& message){ exitWithError(message); })
-        .done([endStep](const QString&){ endStep(); });
+
+    dialog->onAccepted([importStep]() {
+        importStep();
     });
 }
 
@@ -195,19 +178,16 @@ void ApplicationController::install()
 
 void ApplicationController::install(const QString& path)
 {
-    QDeferred<int, QString, QString> defer;
-
     DialogObject* dialog = DialogManager::Get()->showBusy(tr("Installation en cours!"));
 
-    auto future = QtConcurrent::run([defer, path]() mutable {
+    auto future = QtConcurrent::run([path]() -> std::tuple<bool, QString, QString> {
 
         const QFileInfo fileInfo = QFileInfo(path);
         if(fileInfo.fileName()==Paths::applicationName())
         {
             const QString infos = tr("Impossible de réinstaller l'applicaiton actuelle");
             const QString traces = tr("Il est préférable d'utiliser la fonction de mise à jour");
-            defer.reject(0, infos, traces);
-            return;
+            return std::tuple<bool, QString, QString>(false, infos, traces);
         }
 
         const QString applicationDirPath = QCoreApplication::applicationDirPath();
@@ -227,30 +207,31 @@ void ApplicationController::install(const QString& path)
         bool result = QUtils::Filesystem::copy(path, installFilePath, true);
         if(!result)
         {
-            defer.reject(0, tr("Erreur lors de l'import de l'application"), QString());
-            return;
+            return std::tuple<bool, QString, QString>(false, tr("Erreur lors de l'import de l'application"), QString());
         }
 
         QFile installFile = QFile(installFilePath);
-        if(!installFile.setPermissions(QFileDevice::Permission(0x0755)))
+        if(!installFile.setPermissions(QFileDevice::Permissions(0x0755)))
         {
-            defer.reject(0, tr("Impossible de changer les permissions de l'application"), QString());
-            return;
+            return std::tuple<bool, QString, QString>(false, tr("Impossible de changer les permissions de l'application"), QString());
         }
 
-        defer.resolve(0, tr("Application %1 installé avec succès").arg(fileInfo.fileName()), installFilePath);
-
+        return std::tuple<bool, QString, QString>(true, tr("Application %1 installé avec succès").arg(fileInfo.fileName()), installFilePath);
     });
 
-    defer.complete([this, dialog](bool result, int, const QString& infos, const QString& traces) {
+    future.then(this, [this, dialog](const std::tuple<bool, QString, QString>& tuple) {
         dialog->hide();
+
+        const bool result = std::get<0>(tuple);
+        const QString infos = std::get<1>(tuple);
+        const QString traces = std::get<2>(tuple);
 
         QVariantMap settings;
         settings["title"] = result ? tr("Installation terminée") : tr("Erreur lors de l'installation");
         settings["message"] = result ? tr("Voulez-vous lancer l'application?") : "";
         settings["infos"] = infos;
         settings["traces"] = traces;
-        settings["severity"] = result ? DialogSeverities::Message : DialogSeverities::Error;
+        settings["severity"] = result ? DialogSeverities::Message : DialogSeverities::Critical;
         settings["buttonAccept"] = result ? tr("Lancer") : tr("Fermer");
         settings["buttonReject"] = result ? tr("Fermer") : "";
         settings["diagnose"] = false;
@@ -278,6 +259,7 @@ void ApplicationController::launch()
 
 void ApplicationController::launch(const QString& path)
 {
+#ifdef Q_OS_BOOT2QT
     QFileInfo fileInfo(path);
     if (fileInfo.isExecutable())
     {
@@ -294,6 +276,10 @@ void ApplicationController::launch(const QString& path)
         SOLIDLOG_WARNING() << "Path does not have execution permission:" << path;
         emit this->errorOccurred(QString("Path does not have execution permission: %1").arg(path));
     }
+#else
+    SOLIDLOG_WARNING() << "Platform is not able to launch:" << path;
+    emit this->errorOccurred(QString("Platform is not able to launch: %1").arg(path));
+#endif
 }
 
 void ApplicationController::makeDefault()
@@ -311,6 +297,7 @@ void ApplicationController::makeDefault()
 
 void ApplicationController::makeDefault(const QString& path)
 {
+#ifdef Q_OS_BOOT2QT
     QFileInfo fileInfo(path);
     if (fileInfo.isExecutable())
     {
@@ -329,13 +316,19 @@ void ApplicationController::makeDefault(const QString& path)
         SOLIDLOG_WARNING() << "Path does not have execution permission:" << path;
         emit this->errorOccurred(QString("Path does not have execution permission: %1").arg(path));
     }
+#else
+    SOLIDLOG_WARNING() << "Platform is not able to make default:" << path;
+    emit this->errorOccurred(QString("Platform is not able to make default: %1").arg(path));
+#endif
 }
 
 void ApplicationController::removeDefault()
 {
+#ifdef Q_OS_BOOT2QT
     SOLIDLOG_INFO()<<"Removing default";
     QProcess *proc = new QProcess(this);
     connect(proc, &QProcess::finished, this, [this, proc](int exitCode, QProcess::ExitStatus exitStatus) {
+        Q_UNUSED(exitStatus)
         if(exitCode != 0)
             emit this->errorOccurred(proc->readAllStandardError());
         emit this->currentDefaultChanged();
@@ -343,4 +336,8 @@ void ApplicationController::removeDefault()
     });
     proc->start(APPCONTROLLER_CMD, {"--remove-default"});
     SOLIDLOG_INFO()<<"Removing default"<<proc;
+#else
+    SOLIDLOG_WARNING() << "Platform is not able to remove default";
+    emit this->errorOccurred(QString("Platform is not able to remove default"));
+#endif
 }

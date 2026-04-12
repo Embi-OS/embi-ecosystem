@@ -21,7 +21,7 @@ Page {
         id: drawer
         edge: Qt.TopEdge
         width: root.width
-        height: root.height-root.header.height
+        height: root.height-20
         interactive: false
     }
 

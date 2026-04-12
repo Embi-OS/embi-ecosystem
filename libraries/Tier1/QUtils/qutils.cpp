@@ -17,7 +17,7 @@ void QUtils::printCoreAffinity(int pid)
     long nproc, i;
 
     if (sched_getaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
-        qCritical()<<"Error while executing sched_getaffinity";
+        QUTILSLOG_CRITICAL()<<"Error while executing sched_getaffinity";
         assert(false);
     }
     nproc = sysconf(_SC_NPROCESSORS_ONLN);
@@ -25,7 +25,7 @@ void QUtils::printCoreAffinity(int pid)
     for (i = 0; i < nproc; i++) {
         affinity.append(QString("%1").arg(CPU_ISSET(i, &mask)));
     }
-    qDebug()<<"Current scheduler affinity is"<<affinity<<"and process is currently running on core:"<<sched_getcpu();
+    QUTILSLOG_DEBUG()<<"Current scheduler affinity is"<<affinity<<"and process is currently running on core:"<<sched_getcpu();
 #endif
 }
 
@@ -38,7 +38,7 @@ void QUtils::resetCoreAffinity(int pid)
         CPU_SET(i, &mask);
     }
     if (sched_setaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
-        qCritical() << "Error while executing sched_setaffinity to reset affinity";
+        QUTILSLOG_CRITICAL() << "Error while executing sched_setaffinity to reset affinity";
         assert(false);
     }
 #endif
@@ -51,7 +51,7 @@ void QUtils::setCoreAffinity(int coreNo, int pid)
     CPU_ZERO(&mask);
     CPU_SET(coreNo, &mask);
     if (sched_setaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
-        qCritical()<<"Error while executing sched_setaffinity to set affinity";
+        QUTILSLOG_CRITICAL()<<"Error while executing sched_setaffinity to set affinity";
         assert(false);
     }
 #endif

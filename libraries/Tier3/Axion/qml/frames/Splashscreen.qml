@@ -10,6 +10,7 @@ BasicPane {
     LogDestModel {
         id: logModel
         limit: 1
+        logLevel: LogDestModel.TraceLevel
         enabled: root.visible
     }
 

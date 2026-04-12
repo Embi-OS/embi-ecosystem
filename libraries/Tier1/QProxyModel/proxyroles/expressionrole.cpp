@@ -45,7 +45,7 @@ void ExpressionRole::updateRoles(const QQmlSortFilterProxyModel& proxyModel)
         const QHash<int,QByteArray> roleNames = m_roleNames;
         m_roleNames.clear();
         m_roleNames.reserve(m_customRoleNames.size());
-        for(const QString& customRoleName: m_customRoleNames)
+        for(const QString& customRoleName: std::as_const(m_customRoleNames))
         {
             const QByteArray roleName = customRoleName.toUtf8();
             m_roleNames[roleNames.key(roleName)] = roleName;

@@ -47,8 +47,8 @@ bool QScanEventNotifier::eventFilter(QObject *obj, QEvent *event)
             else if(m_scan!="")
             {
                 QUTILSLOG_TRACE()<<m_scan;
-                emit this->newScan(m_scan);
                 setLastValue(m_scan);
+                emit this->newScan(m_scan);
                 m_scan.clear();
             }
         }

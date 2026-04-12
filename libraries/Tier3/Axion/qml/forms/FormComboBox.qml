@@ -4,7 +4,7 @@ import Eco.Tier3.Axion
 BasicFormBackground {
     id: root
 
-    signal accepted()
+    signal accepted(string text)
     signal activated(int index)
     signal highlighted(int index)
     signal textEdited(string text)
@@ -22,7 +22,9 @@ BasicFormBackground {
     property alias currentText: comboBox.currentText
     property alias editText: comboBox.editText
     property alias displayText: comboBox.displayText
+    property alias customText: comboBox.customText
     property alias inputMethodHints: comboBox.inputMethodHints
+    property alias acceptableInput: comboBox.acceptableInput
     property alias inputMethodComposing: comboBox.inputMethodComposing
     property alias selectTextByMouse: comboBox.selectTextByMouse
 
@@ -61,7 +63,8 @@ BasicFormBackground {
     placeholder: qsTr("Sélectionner un élément")
     errorMessage: validator ? validator.ExtraValidator.errorMessage : ""
 
-    warning: !authorizeEmpty && (currentIndex<0 || currentIndex>=count)
+    warning: authorizeCustom ? !acceptableInput :
+             !authorizeEmpty ? (currentIndex<0 || currentIndex>=count) : false
     highlighted: comboBoxOpened
 
     BasicComboBox {
@@ -74,8 +77,6 @@ BasicFormBackground {
         topInset: 0
         bottomInset: 0
 
-        displayText: currentIndex === -1 ? "" : currentText
-
         font: root.font
 
         borderWidth: 0
@@ -84,7 +85,7 @@ BasicFormBackground {
         placeholderText: root.placeholder
         placeholderTextColor: ColorUtils.transparent(root.colorValue, 0.4)
 
-        onAccepted: root.accepted()
+        onAccepted: root.accepted(editText)
         onTextEdited: (text) => root.textEdited(text)
         onActivated: (index) => root.activated(index)
         onHighlighted: (index) => root.highlighted(index)

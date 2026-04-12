@@ -32,7 +32,7 @@ FormObjectModel {
         targetProperty: "apiTrailingSlash"
     }
     FormSwitchDelegate {
-        label: qsTr("Désactiver les WebSocket")
-        targetProperty: "apiNoRestSocket"
+        label: qsTr("WebSocket")
+        targetProperty: "apiSocketEnabled"
     }
 }

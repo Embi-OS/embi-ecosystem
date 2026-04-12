@@ -9,9 +9,8 @@ BasicPane {
     color: Style.colorPrimary
     padding: 0
 
-    property alias chartView: chartView
-
     required property GraphObject graph
+    readonly property XYGraphView chartView: chartView
 
     title: ""
     comment: ""

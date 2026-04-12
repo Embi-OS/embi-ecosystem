@@ -101,6 +101,8 @@ Q_SIGNALS:
     void countChanged(int count);
     void emptyChanged(bool empty);
 
+    void invalidated();
+
 protected Q_SLOTS:
     void resetInternalData() override;
     void countInvalidate();
@@ -112,6 +114,9 @@ protected Q_SLOTS:
     void updateSortRole();
     virtual void updateRoles();
     void initRoles();
+
+    void queueEmitInvalidated();
+    void emitInvalidated();
 
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const override;
@@ -125,9 +130,12 @@ protected:
     bool m_invalidateQueued = false;
     bool m_invalidateFilterQueued = false;
     bool m_invalidateSorterQueued = false;
+    bool m_emitInvalidatedQueued = false;
 
 private:
     int m_count=0;
+
+    mutable QHash<int, QVariant> m_defaultValueCache;
 };
 
 #endif // QPROXYMODEL_H

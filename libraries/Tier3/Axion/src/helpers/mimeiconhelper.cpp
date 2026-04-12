@@ -215,10 +215,12 @@ void MetaDataCache::registerStandardMimetypes()
     for (const QString & path: QStandardPaths::standardLocations (QStandardPaths::DownloadLocation)) {
         registerSpecialFolderIconForPath (path, "folder-downloads");
     }
+#if defined(Q_OS_LINUX)
     for (const QString & path: QStandardPaths::standardLocations (QStandardPaths::HomeLocation)) {
         const QString trashPath = QString("%1/.local/share/Trash").arg(path);
         registerSpecialFolderIconForPath (trashPath, "folder-trash");
     }
+#endif
     registerSpecialFolderIconForPath (QCoreApplication::applicationDirPath(), "folder-local");
     registerSpecialFolderIconForPath (":/", "drive-qrc");
 

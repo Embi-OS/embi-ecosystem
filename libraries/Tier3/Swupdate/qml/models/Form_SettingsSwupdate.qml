@@ -42,13 +42,6 @@ FormObjectModel {
         label: "mongoose_enabled"
         targetProperty: "mongoose_enabled"
     }
-    FormTextFieldDelegate {
-        visible: mongooseEnabled.checked
-        label: "mongoose_port"
-        validator: SocketPortValidator{}
-        valueType: FormValueTypes.Integer
-        targetProperty: "mongoose_port"
-    }
 
     FormTextFieldDelegate {
         visible: suricattaService.currentValue==="general"

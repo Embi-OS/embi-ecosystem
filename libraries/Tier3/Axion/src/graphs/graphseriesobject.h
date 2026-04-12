@@ -38,7 +38,7 @@ class GraphSeriesObject : public QObject
 
     Q_WRITABLE_VAR_PROPERTY(int, maxPlottedPoints, MaxPlottedPoints, 0)
 
-    Q_CONSTANT_PTR_PROPERTY(QGenericSignalThrottler, throttler, Throttler, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QGenericSignalThrottler, throttler)
 
     Q_WRITABLE_REF_PROPERTY(QVector<QVector3D>, pointsRaw, PointsRaw, {})
     Q_READONLY_REF_PROPERTY(QVector<QVector3D>, points, Points, {})

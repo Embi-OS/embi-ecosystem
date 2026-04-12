@@ -11,13 +11,13 @@ class Version : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_CONSTANT_REF_PROPERTY(QVersionNumber, globalVersion, GlobalVersion, {})
-    Q_CONSTANT_REF_PROPERTY(QString, versionSuffix, VersionSuffix, "Unreleased")
-    Q_CONSTANT_REF_PROPERTY(QString, company, Company, "N/A")
-    Q_CONSTANT_REF_PROPERTY(QString, website, Website, "N/A")
-    Q_CONSTANT_REF_PROPERTY(QString, maintainer, Maintainer, "N/A")
-    Q_CONSTANT_REF_PROPERTY(QString, copyright, Copyright, "N/A")
-    Q_CONSTANT_REF_PROPERTY(QString, version, Version, {})
+    Q_CONSTANT_REF_PROPERTY(QVersionNumber, globalVersion, {})
+    Q_CONSTANT_REF_PROPERTY(QString, versionSuffix, "Unreleased")
+    Q_CONSTANT_REF_PROPERTY(QString, company, "N/A")
+    Q_CONSTANT_REF_PROPERTY(QString, website, "N/A")
+    Q_CONSTANT_REF_PROPERTY(QString, maintainer, "N/A")
+    Q_CONSTANT_REF_PROPERTY(QString, copyright, "N/A")
+    Q_CONSTANT_REF_PROPERTY(QString, version, {})
 
     Q_WRITABLE_REF_PROPERTY(QString, productName, ProductName, "N/A")
 
@@ -29,6 +29,7 @@ public:
     Q_INVOKABLE void dumpInfos() const;
     Q_INVOKABLE QString about() const;
     Q_INVOKABLE QString aboutQt() const;
+    Q_INVOKABLE QString contact() const;
     Q_INVOKABLE static QString versionToString(const QVersionNumber& version);
 };
 

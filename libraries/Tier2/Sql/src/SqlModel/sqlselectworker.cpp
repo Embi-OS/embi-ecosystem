@@ -22,8 +22,8 @@ bool SqlSelectWorker::doRun()
     const QStringList omit = m_omit;
     const QStringList expand = m_expand;
     const QList<SqlJoinQuery> joins = m_joins;
-    const int limit = m_limit;
-    const int offset = m_offset;
+    const int limit = m_page<=0 ? m_limit : m_perPage;
+    const int offset = m_page<=0 ? m_offset : (m_page-1)*m_perPage;
     const int perPage = m_perPage;
     const int page = m_page;
 
@@ -70,40 +70,44 @@ bool SqlSelectWorker::doRun()
         }
 
         QSqlQuery sqlReply = SqlBuilder::select(columns).from(tableName).join(joins).where(filters, filterInverted).orderBy(sorters).limit(limit).offset(offset)
-                                        .connection(connection).exec();
+                                        .connection(connection).forwardOnly().trust().exec();
 
-        const QVariantList list = SqlBuilder::values(sqlReply, perPage, page);
+        QVariantList data = SqlBuilder::values(sqlReply, perPage, page);
+        qsizetype size = data.size();
 
-        QVariant reply;
-        if(page<=0)
+        long long total = size;
+        long long pageNb = 1;
+        long long pageCount = 1;
+        if((perPage>=0 && page>=0) ||
+            (limit>=0 && offset>=0))
         {
-            reply = list;
-        }
-        else
-        {
-            long long size = sqlReply.size();
-            if(size<0) {
-                QSqlQuery reply = SqlBuilder::select("*").aggregate(SqlAggregateTypes::Count).from(tableName).where(filters, filterInverted)
-                                             .connection(connection).exec();
-                if(reply.seek(0)) {
-                    size = reply.record().value(0).toLongLong();
-                    if(offset>0)
-                        size = size - offset;
-                    if(limit>0)
-                        size = qBound(0, size, limit);
-                }
+            QSqlQuery reply = SqlBuilder::select("*").aggregate(SqlAggregateTypes::Count).from(tableName).where(filters, filterInverted)
+                                         .connection(connection).forwardOnly().trust().exec();
+            if(reply.seek(0))
+            {
+                total = reply.record().value(0).toLongLong();
             }
 
-            QVariantMap map;
-            map.insert("data", list);
-            map.insert("count", size);
-            map.insert("page_count", std::ceil((double)size/perPage));
-            map.insert("previous", "");
-            map.insert("next", "");
-            reply = map;
+            if(perPage>=0 || page>=0)
+            {
+                pageNb = page;
+                pageCount = (perPage*total<=0) ? 1 : std::ceil((double)total/perPage);
+            }
+            else if(limit>=0 || offset>=0)
+            {
+                pageNb = (limit<=0) ? 1 : (offset/limit) + 1;
+                pageCount = (limit<=0) ? 1 : std::ceil((double)total/limit);
+            }
         }
 
-        defer.end(!sqlReply.lastError().isValid(), 0, sqlReply.lastError(), reply);
+        QVariantMap map;
+        map.insert("data", std::move(data));
+        map.insert("page", pageNb);
+        map.insert("page_size", size);
+        map.insert("page_count", pageCount);
+        map.insert("total", total);
+
+        defer.end(!sqlReply.lastError().isValid(), 0, sqlReply.lastError(), map);
         return !sqlReply.lastError().isValid();
     };
 

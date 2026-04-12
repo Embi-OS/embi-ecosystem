@@ -33,8 +33,8 @@ RestReply* RestReply::onFinished(const QObject *scope, FinishedFunction handler,
     if(!handler)
         return this;
 
-    connect(this, &RestReply::finished, scope, [xHandler = std::move(handler)](int httpStatus){
-        xHandler(httpStatus);
+    connect(this, &RestReply::finished, scope, [xHandler = std::move(handler)](bool result, int httpStatus, const QVariant& reply){
+        xHandler(result, httpStatus, reply);
     }, connection);
 
     return this;
@@ -413,6 +413,8 @@ void RestReply::onParseFinished(const QVariant& data, int status, long long cont
     setContentLength(contentLength);
     setStatus(status);
 
+    bool result = false;
+
     // check "http errors", because they can have data, but only if json is valid
     if (restParseError.code==0 && status>=300 && data.isValid()) // first: status code error + valid data
     {
@@ -454,13 +456,14 @@ void RestReply::onParseFinished(const QVariant& data, int status, long long cont
     }
     else // no errors, succeeded!
     {
+        result = true;
         resetErrorString();
         resetError();
         resetErrorType();
         emit this->succeeded(status, data);
     }
 
-    emit this->finished(status);
+    emit this->finished(result, status, data);
 
     RESTLOG_DEBUG()<<"Emit this->finished took"<<m_elapsed.nsecsElapsed()/1000000.0<<"ms";
     m_elapsed.restart();

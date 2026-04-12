@@ -34,9 +34,17 @@ QVariant VarHappyField::formatRead(const QVariant& value, bool* ok) const
         return data;
     }
     case SqlColumnTypes::DateTime:
-        return value.toDateTime().toLocalTime();
+        return value.toDateTime();
     case SqlColumnTypes::Boolean:
         return value.toBool();
+    case SqlColumnTypes::SmallInt:
+    case SqlColumnTypes::Integer:
+    case SqlColumnTypes::BigInt:
+        return value.toLongLong(ok);
+    case SqlColumnTypes::Float:
+        return value.toFloat(ok);
+    case SqlColumnTypes::DoublePrecision:
+        return value.toDouble(ok);
     default:
         break;
     }
@@ -59,6 +67,14 @@ QVariant VarHappyField::formatWrite(const QVariant& value, bool* ok) const
         }
     case SqlColumnTypes::Boolean:
         return value.toBool();
+    case SqlColumnTypes::SmallInt:
+    case SqlColumnTypes::Integer:
+    case SqlColumnTypes::BigInt:
+        return value.toLongLong(ok);
+    case SqlColumnTypes::Float:
+        return value.toFloat(ok);
+    case SqlColumnTypes::DoublePrecision:
+        return value.toDouble(ok);
     default:
         break;
     }

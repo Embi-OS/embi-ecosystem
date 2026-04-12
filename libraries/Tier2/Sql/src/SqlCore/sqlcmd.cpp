@@ -212,7 +212,7 @@ QString Sql::prepareIdentifier(const QString &identifier, QSqlDriver::Identifier
 
 QVariant Sql::formatValue(const QVariant& value, SqlColumnTypes::Enum type, bool* ok)
 {
-    if(value.typeId()==QMetaType::QVariantList)
+    if(value.typeId()==QMetaType::QVariantList || value.typeId()==QMetaType::QStringList)
     {
         const QVariantList values = value.toList();
         QVariantList retVal;
@@ -275,22 +275,7 @@ QString Sql::formatValue(QVariant value, const QSqlDriver *driver, bool trimStri
     if(value.isNull())
         return QString("NULL");
 
-    if(driver->dbmsType()==QSqlDriver::MySqlServer && value.typeId()==QMetaType::QDateTime)
-    {
-        if (QDateTime dt = value.toDateTime().toUTC(); dt.isValid()) {
-            // TODO: QTBUG-135135
-            // MySQL format doesn't like the "Z" at the end, but does allow
-            // "+00:00" starting in version 8.0.19. However, if we got here,
-            // it's because the MySQL server is too old for prepared queries
-            // in the first place, so it won't understand timezones either.
-            return u'\'' +
-                dt.date().toString(Qt::ISODate) +
-                u'T' +
-                dt.time().toString(Qt::ISODate) +
-                u'\'';
-        }
-    }
-    else if(value.typeId()==QMetaType::QVariantList)
+    if(value.typeId()==QMetaType::QVariantList || value.typeId()==QMetaType::QStringList)
     {
         const QVariantList values = value.toList();
         QStringList whereVal;

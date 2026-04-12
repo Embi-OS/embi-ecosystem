@@ -6,6 +6,7 @@ import Eco.Tier3.Axion
 FormObject {
     id: root
 
+    ignorePolicies: true
     formType: FormTypes.None
     defaultValue: ""
 

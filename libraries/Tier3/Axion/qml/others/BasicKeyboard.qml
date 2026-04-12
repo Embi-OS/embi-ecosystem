@@ -68,33 +68,57 @@ InputPanel {
         value: inputPanelTransition.running
     }
 
+    // VirtualKeyboardSettings
     Binding {
         target: VirtualKeyboardSettings
         property: "activeLocales"
         value: root.activeLocales
     }
-
     Binding {
         target: VirtualKeyboardSettings
         property: "visibleFunctionKeys"
         value: root.visibleFunctionKeys
     }
-
     Binding {
         target: VirtualKeyboardSettings
         property: "closeOnReturn"
         value: root.closeOnReturn
     }
-
     Binding {
         target: VirtualKeyboardSettings
         property: "handwritingModeDisabled"
         value: root.handwritingModeDisabled
     }
-
     Binding {
         target: VirtualKeyboardSettings
         property: "inputMethodHints"
         value: root.inputMethodHints
+    }
+
+    // VirtualKeyboardHelper
+    Binding {
+        target: VirtualKeyboardHelper
+        property: "width"
+        value: root.width
+    }
+    Binding {
+        target: VirtualKeyboardHelper
+        property: "height"
+        value: root.height
+    }
+    Binding {
+        target: VirtualKeyboardHelper
+        property: "visible"
+        value: root.visible
+    }
+    Binding {
+        target: VirtualKeyboardHelper
+        property: "active"
+        value: root.active
+    }
+    Binding {
+        target: VirtualKeyboardHelper
+        property: "animating"
+        value: inputPanelTransition.running
     }
 }

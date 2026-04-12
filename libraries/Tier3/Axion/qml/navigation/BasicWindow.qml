@@ -62,15 +62,12 @@ Window {
                                           contentRotation===180 ? root.height :
                                           contentRotation===270 ? root.width : root.height
 
-    readonly property double keyboardWidth: contentWidth
-
-    readonly property double keyboardHeight: !InputMethod ? 0 :
-                                           contentRotation===0 ? InputMethod.keyboardRectangle.height :
-                                           contentRotation===90 ? InputMethod.keyboardRectangle.width :
-                                           contentRotation===180 ? InputMethod.keyboardRectangle.height :
-                                           contentRotation===270 ? InputMethod.keyboardRectangle.width : InputMethod.keyboardRectangle.height
-
     signal applicationLoaded()
+    signal applicationError()
+
+    onApplicationError: {
+        Log.fatal("Axion Window failed to load application...")
+    }
 
     contentItem.rotation: contentRotation
     Overlay.overlay.anchors.fill: overlayPosition
@@ -116,6 +113,7 @@ Window {
 
         delay: 0
         asynchronous: true
+        onError: root.applicationError()
         onLoaded: {
             root.applicationLoaded();
             splashScreenLoader.active = false;

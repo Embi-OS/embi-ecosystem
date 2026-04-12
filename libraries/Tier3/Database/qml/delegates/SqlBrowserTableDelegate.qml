@@ -21,6 +21,7 @@ DelegateChooser {
             backgroundBorderWidth: Style.contentRectangleBorderWidth/2
 
             contentItem: BasicCheckBox {
+                contentItem: null
                 enabled: root.editable
                 checked: boolDelegate.display
                 onCheckedChanged: boolDelegate.model.edit = checked
@@ -105,7 +106,7 @@ DelegateChooser {
     }
 
     DelegateChoice {
-        BasicTableViewDelegate {
+        TableViewLabelDelegate {
             required property string display
             text: display
         }

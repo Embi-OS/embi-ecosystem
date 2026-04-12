@@ -45,7 +45,7 @@ BasicItemDelegate {
 
         RawButton {
             Layout.alignment: Qt.AlignVCenter
-            visible: !root.checkable
+            visible: root.enabled && !root.checkable
             color: Style.colorPrimaryLight
             icon.source: MaterialIcons.folderOpenOutline
             onClicked: root.folderClicked()
@@ -53,7 +53,7 @@ BasicItemDelegate {
 
         RawButton {
             Layout.alignment: Qt.AlignVCenter
-            visible: root.canEject && !root.checkable
+            visible: root.enabled && root.canEject && !root.checkable
             color: Style.colorPrimaryLight
             icon.source: MaterialIcons.ejectOutline
             onClicked: root.ejectClicked()

@@ -32,7 +32,7 @@ DelegateChooser {
 
     DelegateChoice {
         roleValue: TableViewColumnDelegates.Color
-        BasicTableViewDelegate {
+        TableViewLabelDelegate {
             required property color display
             required property font column_font
             readonly property bool isRowCurrent: TableView.view.currentRow===row
@@ -46,7 +46,7 @@ DelegateChooser {
     }
 
     DelegateChoice {
-        BasicTableViewDelegate {
+        TableViewLabelDelegate {
             required property string display
             required property color columnColor
             required property font column_font

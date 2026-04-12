@@ -21,6 +21,7 @@ class HappyHttpParameters
     Q_MEMBER_PROPERTY(int, page, -1)
     Q_MEMBER_PROPERTY(bool, flat, false)
     Q_MEMBER_PROPERTY(bool, raw, false)
+    Q_MEMBER_PROPERTY(bool, merge, false)
 
 public:
     ~HappyHttpParameters() = default;
@@ -32,6 +33,7 @@ public:
     void fromQueryItems(const QList<std::pair<QString, QString>>& queryItems);
 
     Q_INVOKABLE QString toString() const;
+    Q_INVOKABLE bool isEmpty() const;
 
     QVariant parseFilter(const QString& value);
     QVariantMap parseFilters(const QString& key, const QString& value);
@@ -40,6 +42,9 @@ public:
     HappyHttpParameters& operator=(const HappyHttpParameters &other) = default;
     bool operator==(const HappyHttpParameters&) const = default;
     bool operator!=(const HappyHttpParameters&) const = default;
+
+private:
+    bool m_isEmpty;
 };
 
 #endif // HAPPYHTTPPARAMETERS_H

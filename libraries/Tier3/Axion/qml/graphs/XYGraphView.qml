@@ -5,9 +5,9 @@ import Eco.Tier3.Axion
 BasicXYGraphView {
     id: root
 
-    property alias zoomControl: zoomControl
-    property alias background: backgroundCanvas
-    property alias foreground: foregroundCanvas
+    readonly property XYGraphViewZoom zoomControl: zoomControl
+    readonly property XYGraphViewCanvas background: backgroundCanvas
+    readonly property XYGraphViewCanvas foreground: foregroundCanvas
 
     property bool zoomEnabled: false
     property bool canvasEnabled: false

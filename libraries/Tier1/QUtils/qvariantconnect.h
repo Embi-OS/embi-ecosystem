@@ -7,6 +7,22 @@
 
 namespace QUtils {
 
+template <typename Func>
+auto slotToLambda(const typename QtPrivate::FunctionPointer<Func>::Object *context, Func slot)
+{
+    typedef QtPrivate::FunctionPointer<Func> SlotType;
+    auto execution =
+        [=,
+         context = const_cast<typename SlotType::Object *>(context)]
+        (auto&&... args)
+        -> auto
+    {
+        return (context->*slot)(std::forward<decltype(args)>(args)...);
+    };
+
+    return execution;
+}
+
 template <typename L, int N> struct List_Select { typedef typename List_Select<typename L::Cdr, N - 1>::Value Value; };
 template <typename L> struct List_Select<L,0> { typedef typename L::Car Value; };
 

@@ -60,6 +60,11 @@ class QVariantListModel: public QAbstractListModel,
     Q_WRITABLE_VAR_PROPERTY(int, revertInhibitTime, RevertInhibitTime, 0)
     Q_WRITABLE_VAR_PROPERTY(int, updateInhibitTime, UpdateInhibitTime, 0)
 
+    Q_WRITABLE_VAR_PROPERTY(bool, alwaysWaitForSelect, AlwaysWaitForSelect, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, alwaysWaitForSubmit, AlwaysWaitForSubmit, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, alwaysWaitForRevert, AlwaysWaitForRevert, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, alwaysWaitForUpdate, AlwaysWaitForUpdate, false)
+
     Q_READONLY_VAR_PROPERTY(bool, isDirty, IsDirty, false)
     Q_READONLY_VAR_PROPERTY(bool, selecting, Selecting, false)
     Q_READONLY_VAR_PROPERTY(bool, submiting, Submiting, false)
@@ -158,7 +163,7 @@ public slots:
     virtual bool waitForRevert(int timeout=-1);
 
     void queueUpdate();
-    void update();
+    bool update();
     virtual bool waitForUpdate(int timeout=-1);
 
     bool cancel();

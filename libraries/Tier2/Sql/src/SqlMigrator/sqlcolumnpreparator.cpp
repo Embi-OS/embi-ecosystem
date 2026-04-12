@@ -7,10 +7,11 @@ SqlColumnPreparator::SqlColumnPreparator(QObject* parent) :
 
 }
 
-SqlColumnPreparator::SqlColumnPreparator(const QString& name, SqlColumnTypes::Enum type, SqlColumnOption options, const QVariant& defaultValue, QObject* parent) :
+SqlColumnPreparator::SqlColumnPreparator(const QString& name, SqlColumnTypes::Enum type, int precision, SqlColumnOption options, const QVariant& defaultValue, QObject* parent) :
     QObject(parent),
     m_name(name),
     m_type(type),
+    m_precision(precision),
     m_options(options),
     m_defaultValue(defaultValue)
 {
@@ -76,31 +77,7 @@ QString SqlColumnPreparator::generateType(const QSqlDriver *driver) const
     if(!driver)
         return QString();
 
-    QHash<SqlColumnTypes::Enum, QString> typeMap;
-
-    typeMap.insert(SqlColumnTypes::Char,             QString("CHAR(%1)").arg(getPrecision()));
-    typeMap.insert(SqlColumnTypes::VarChar,          QString("VARCHAR(%1)").arg(getPrecision()));
-    typeMap.insert(SqlColumnTypes::Binary,           QString("BINARY(%1)").arg(getPrecision()));
-    typeMap.insert(SqlColumnTypes::VarBinary,        QString("VARBINARY(%1)").arg(getPrecision()));
-    typeMap.insert(SqlColumnTypes::TinyText,                ("TINYTEXT"));
-    typeMap.insert(SqlColumnTypes::Text,                    ("TEXT"));
-    typeMap.insert(SqlColumnTypes::MediumText,              ("MEDIUMTEXT"));
-    typeMap.insert(SqlColumnTypes::LongText,                ("LONGTEXT"));
-    typeMap.insert(SqlColumnTypes::Json,                    ("JSON"));
-    typeMap.insert(SqlColumnTypes::Uuid,                    ("CHAR(36)"));
-    typeMap.insert(SqlColumnTypes::Blob,                    ("BLOB"));
-    typeMap.insert(SqlColumnTypes::Boolean,                 ("BOOLEAN"));
-    typeMap.insert(SqlColumnTypes::SmallInt,                ("SMALLINT"));
-    typeMap.insert(SqlColumnTypes::Integer,                 ("INTEGER"));
-    typeMap.insert(SqlColumnTypes::BigInt,                  ("BIGINT"));
-    typeMap.insert(SqlColumnTypes::Float,                   ("FLOAT"));
-    typeMap.insert(SqlColumnTypes::DoublePrecision,         ("DOUBLE PRECISION"));
-    typeMap.insert(SqlColumnTypes::Date,                    ("DATE"));
-    typeMap.insert(SqlColumnTypes::Time,                    ("TIME"));
-    typeMap.insert(SqlColumnTypes::DateTime,                ("DATETIME"));
-    typeMap.insert(SqlColumnTypes::Timestamp,               ("TIMESTAMP"));
-
-    return typeMap.value(getType());
+    return SqlHelper::sqlTypeGenerated(getType(), getPrecision());
 }
 
 QString SqlColumnPreparator::generateOptions(const QSqlDriver *driver) const

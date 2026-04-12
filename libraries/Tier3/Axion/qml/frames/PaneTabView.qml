@@ -8,7 +8,7 @@ BasicPane {
     id: root
 
     navigationLocked: currentItem?.navigationLocked ?? false
-    navigationEnabled: loader.ready && (currentItem?.navigationEnabled ?? true)
+    navigationEnabled: !loader.loading && (currentItem?.navigationEnabled ?? true)
 
     property alias proxyModel: proxyModel
     readonly property int currentIndex: proxyModel.count>0 ? proxyModel.mapToSource(tabBar.currentIndex) : -1

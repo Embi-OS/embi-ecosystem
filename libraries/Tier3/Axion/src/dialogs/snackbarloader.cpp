@@ -31,31 +31,34 @@ void SnackbarLoader::onActiveChanged(bool active)
             m_snackbar.clear();
         }
 
-        SnackbarObject* dialog = SnackbarManager::Get()->show(m_settings);
-        dialog->setSeverity(m_severity);
-        dialog->setTitle(m_title);
-        dialog->setCaption(m_caption);
-        dialog->setDetails(m_details);
-        dialog->setButton(m_button);
-        dialog->setClosable(m_closable);
-        dialog->setTimeout(0);
-        dialog->setProgress(m_progress);
-        dialog->setDiagnose(m_diagnose);
+        SnackbarObject* snackbar = SnackbarManager::Get()->show(m_settings);
+        snackbar->setSeverity(m_severity);
+        snackbar->setTitle(m_title);
+        snackbar->setCaption(m_caption);
+        snackbar->setDetails(m_details);
+        snackbar->setButton(m_button);
+        snackbar->setClosable(m_closable);
+        snackbar->setTimeout(0);
+        snackbar->setProgress(m_progress);
+        snackbar->setDiagnose(m_diagnose);
 
-        connect(this, &SnackbarLoader::settingsChanged, dialog, &SnackbarObject::setSettings);
-        connect(this, &SnackbarLoader::severityChanged, dialog, &SnackbarObject::setSeverity);
-        connect(this, &SnackbarLoader::titleChanged, dialog, &SnackbarObject::setTitle);
-        connect(this, &SnackbarLoader::captionChanged, dialog, &SnackbarObject::setCaption);
-        connect(this, &SnackbarLoader::detailsChanged, dialog, &SnackbarObject::setDetails);
-        connect(this, &SnackbarLoader::buttonChanged, dialog, &SnackbarObject::setButton);
-        connect(this, &SnackbarLoader::closableChanged, dialog, &SnackbarObject::setClosable);
-        connect(this, &SnackbarLoader::progressChanged, dialog, &SnackbarObject::setProgress);
-        connect(this, &SnackbarLoader::diagnoseChanged, dialog, &SnackbarObject::setDiagnose);
+        connect(this, &SnackbarLoader::settingsChanged, snackbar, &SnackbarObject::setSettings);
+        connect(this, &SnackbarLoader::severityChanged, snackbar, &SnackbarObject::setSeverity);
+        connect(this, &SnackbarLoader::titleChanged, snackbar, &SnackbarObject::setTitle);
+        connect(this, &SnackbarLoader::captionChanged, snackbar, &SnackbarObject::setCaption);
+        connect(this, &SnackbarLoader::detailsChanged, snackbar, &SnackbarObject::setDetails);
+        connect(this, &SnackbarLoader::buttonChanged, snackbar, &SnackbarObject::setButton);
+        connect(this, &SnackbarLoader::closableChanged, snackbar, &SnackbarObject::setClosable);
+        connect(this, &SnackbarLoader::progressChanged, snackbar, &SnackbarObject::setProgress);
+        connect(this, &SnackbarLoader::diagnoseChanged, snackbar, &SnackbarObject::setDiagnose);
 
-        connect(dialog, &SnackbarObject::closed, this, &SnackbarLoader::closed);
-        connect(dialog, &SnackbarObject::accepted, this, &SnackbarLoader::accepted);
+        connect(snackbar, &SnackbarObject::closed, this, &SnackbarLoader::closed);
+        connect(snackbar, &SnackbarObject::accepted, this, &SnackbarLoader::accepted);
 
-        m_snackbar = dialog;
+        connect(snackbar, &SnackbarObject::closed, this, &SnackbarLoader::resetActive);
+        connect(snackbar, &SnackbarObject::accepted, this, &SnackbarLoader::resetActive);
+
+        m_snackbar = snackbar;
     }
     else
     {

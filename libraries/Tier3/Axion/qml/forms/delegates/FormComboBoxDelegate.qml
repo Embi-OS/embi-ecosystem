@@ -17,20 +17,28 @@ FormObject {
     property bool isSorted: false
     property string emptyText: "N/A"
     property bool mandatory: true
+    property bool customizable: false
+    readonly property int optionsCount: root.options.ModelHelper.count
     readonly property int currentIndex: root.options.ModelHelper.contentIsEmpty ? -1 : root.options.ModelHelper.indexOf(root.valueRole,root.currentValue,root.isSorted)
     readonly property string currentText: root.currentIndex>=0 ? root.options.ModelHelper.getProperty(root.currentIndex, root.textRole) : ""
+    readonly property string editText: (root.currentIndex<0 && root.customizable) ? (root.currentValue || "") : ""
 
-    warning: mandatory && currentIndex<0
+    warning: customizable ? !acceptableInput :
+             mandatory ? (currentIndex<0 || currentIndex>=optionsCount) : false
 
     delegate: FormComboBox {
         fitLabel: root.fitLabel
         labelWidthRatio: root.labelWidthRatio
         editable: root.editable
         authorizeEmpty: !root.mandatory
+        authorizeCustom: root.customizable
         emptyText: root.emptyText
+        editText: root.editText
+        customText: root.editText
 
         enabled: root.enabled
-        warning: root.warning || !authorizeEmpty && (currentIndex<0 || currentIndex>=count)
+        warning: root.warning || (authorizeCustom ? !acceptableInput :
+                                 !authorizeEmpty ? (currentIndex<0 || currentIndex>=count) : false)
 
         validator: root.validator
         label: root.label
@@ -42,6 +50,7 @@ FormObject {
         currentIndex: root.currentIndex
 
         onTextEdited: (text) => root.validateValue(text)
+        onAccepted: (text) => root.changeValue(text)
         onActivated: root.changeValue(currentValue)
     }
 }

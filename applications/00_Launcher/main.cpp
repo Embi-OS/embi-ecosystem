@@ -9,8 +9,5 @@ int main(int argc, char *argv[])
     ApplicationController::init(false);
     LocaleSettings::init();
 
-    AxionHelper::onRestartAccepted(Power::restart);
-    AxionHelper::onRebootAccepted(Power::reboot);
-
     return app->run("L00_Launcher", "AW00_Launcher");
 }

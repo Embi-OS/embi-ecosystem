@@ -1,33 +1,21 @@
 #include "localesettings.h"
+#include "localebackend.h"
 #include "solid_log.h"
 
 #include "qtranslatorloader.h"
-
-#if defined(Q_OS_BOOT2QT) || defined(LINUX_DBUS) || defined(Q_OS_LINUX)
-#include "localesettingscomponentdbus.h"
-#endif
-#include "abstractlocalecomponent.h"
-
-static AbstractLocaleComponent* getComponent()
-{
-    static AbstractLocaleComponent* instance = nullptr;
-
-    if(!instance)
-    {
-#if defined(Q_OS_BOOT2QT) || defined(LINUX_DBUS) || defined(Q_OS_LINUX)
-        instance = new LocaleSettingsComponentDBus();
-#endif
-    }
-
-    return instance;
-}
+#include "localebackenddbus.h"
 
 LocaleSettings::LocaleSettings(QObject *parent) :
     QObject(parent),
+#if defined(Q_OS_BOOT2QT) || defined(Q_OS_LINUX)
+    m_backend(new LocaleBackendDbus(this)),
+#else
+    m_backend(nullptr),
+#endif
     m_translator(new QTranslatorLoader(this))
 {
-    if(!getComponent()) {
-        SOLIDLOG_WARNING()<<"Could not find a localesettings component matching this platform";
+    if (!m_backend) {
+        SOLIDLOG_WARNING() << "Could not find a localesettings backend matching this platform";
     }
 
     m_translator->componentComplete();
@@ -41,22 +29,20 @@ void LocaleSettings::init()
     LocaleSettings::Get();
 }
 
-bool LocaleSettings::canSetLocale()
+bool LocaleSettings::canSetLocale() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetLocale();
+    return m_backend && m_backend->canSetLocale();
 }
 
 QString LocaleSettings::getLocale() const
 {
-    if(!canSetLocale())
+    if(!m_backend)
     {
         SOLIDLOG_DEBUG()<<"Cannot get locale, fallback to default";
         return QLocale::system().name();
     }
 
-    return QLocale(getComponent()->getLocale()).name();
+    return QLocale(m_backend->getLocale()).name();
 }
 
 bool LocaleSettings::setLocale(const QString& locale)
@@ -67,7 +53,7 @@ bool LocaleSettings::setLocale(const QString& locale)
         return false;
     }
 
-    if(!getComponent()->setLocale(locale))
+    if(!m_backend->setLocale(locale))
         return false;
 
     QLocale::setDefault(QLocale(locale));

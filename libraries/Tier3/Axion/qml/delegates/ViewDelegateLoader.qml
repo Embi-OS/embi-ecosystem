@@ -1,5 +1,4 @@
 import QtQuick
-import Eco.Tier1.Utils
 import Eco.Tier3.Axion
 
 Item {
@@ -32,6 +31,11 @@ Item {
     Component.onCompleted: queueInvalidate()
 
     signal loaded()
+    signal error()
+
+    onError: {
+        AxionHelper.warningNavigation(("Unable to load %1").arg(root.delegate));
+    }
 
     function setSource(source: url, properties: var): var {
         return loader.setSource(source, properties)
@@ -40,22 +44,22 @@ Item {
     function queueInvalidate() {
         loader.active = false
         if(delayed)
-            throttler.throttle()
+            throttler.start()
         else
             invalidate()
     }
 
     function invalidate() {
-        throttler.cancel()
+        throttler.stop()
         loader.asynchronous = root.asynchronous
         loader.source = root.source
         loader.sourceComponent = root.delegate
         loader.active = root.active
     }
 
-    SignalTrailingDebouncer {
+    Timer {
         id: throttler
-        timeout: 0
+        interval: 0
         onTriggered: root.invalidate()
     }
 
@@ -68,6 +72,9 @@ Item {
         onStatusChanged: {
             if (status===Loader.Ready) {
                 root.loaded()
+            }
+            if (status===Loader.Error) {
+                root.error()
             }
         }
     }

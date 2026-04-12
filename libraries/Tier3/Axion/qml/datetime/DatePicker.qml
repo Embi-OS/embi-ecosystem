@@ -20,6 +20,8 @@ Item {
     property alias from: calendar.from
     property alias to: calendar.to
     property alias date: calendar.selectedDate
+    property alias fromDate: calendar.fromDate
+    property alias toDate: calendar.toDate
 
     readonly property int selectedDay: root.date.getDate()
     readonly property int selectedMonth: root.date.getMonth()
@@ -27,6 +29,7 @@ Item {
 
     property alias dayOfWeekVisible: calendar.dayOfWeekVisible
     property alias weekNumberVisible: calendar.weekNumberVisible
+    property alias rangeMode: calendar.rangeMode
 
     signal dayClicked(date date)
 
@@ -83,7 +86,6 @@ Item {
             selectedDate: root.today
 
             onDayClicked: (date) => {
-                root.date = date;
                 root.dayClicked(date);
             }
         }
@@ -105,7 +107,6 @@ Item {
             from: root.from
             to: root.to
             onAccepted: (date) => {
-                root.date = date;
                 root.dayClicked(date);
             }
         }

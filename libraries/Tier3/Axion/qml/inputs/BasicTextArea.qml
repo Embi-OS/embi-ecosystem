@@ -12,12 +12,10 @@ T.TextArea {
 
     padding: 0
     verticalAlignment: TextInput.AlignTop
-    color: ColorUtils.isDarkColor(relativeBackgroundColor) ? Style.colorWhite : Style.colorBlack
+    color: Style.colorWhite
 
     selectionColor: Style.colorAccent
     selectedTextColor: root.color
-
-    property color relativeBackgroundColor: "black"
 
     focus: true
 

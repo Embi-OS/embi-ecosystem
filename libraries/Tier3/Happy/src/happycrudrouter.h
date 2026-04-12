@@ -11,12 +11,13 @@ class HappyCrudRouter : public HappyRouter
     Q_OBJECT
     QML_ELEMENT
 
-    Q_COMPOSITION_PROPERTY(SqlTablePreparator, sqlTablePreparator, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(SqlTablePreparator, sqlTablePreparator)
 
     Q_WRITABLE_REF_PROPERTY(QString, connection, Connection, SqlDefaultConnection)
     Q_WRITABLE_REF_PROPERTY(QString, tableName, TableName, {})
     Q_WRITABLE_REF_PROPERTY(QString, lookupField, LookupField, {})
     Q_READONLY_REF_PROPERTY(QString, primaryField, PrimaryField, {})
+    Q_WRITABLE_VAR_PROPERTY(SqlMigrationModes::Enum, migrationMode, MigrationMode, SqlMigrationModes::FullAuto)
 
     // Specify sql
     Q_WRITABLE_REF_PROPERTY(QList<SqlJoinQuery>, joins, Joins, {})
@@ -35,10 +36,10 @@ public:
 
     Q_INVOKABLE AbstractHappyField* field(const QString& name) const;
     Q_INVOKABLE QVariant primaryFieldFromLookup(const QVariant& lookupValue) const;
-    Q_INVOKABLE QVariant fieldFromLookup(const QString& field, const QVariant& lookupValue) const;
-    Q_INVOKABLE QVariant fieldFromPrimary(const QString& field, const QVariant& primaryValue) const;
+    Q_INVOKABLE QVariant fieldFromLookup(const QString& field, const QVariant& lookupValue, bool formatted=false) const;
+    Q_INVOKABLE QVariant fieldFromPrimary(const QString& field, const QVariant& primaryValue, bool formatted=false) const;
 
-    QStringList parseColumns(const QStringList& fields, const QStringList& omit) const;
+    QStringList parseColumns(const QStringList& fields, const QStringList& omits, QStringList* sqlFields=nullptr) const;
     QVariantMap parseFilters(const QVariantMap& filters) const;
 
     void preReadFields(const QSqlRecord& baseRec, const HappyHttpParameters& parameters=HappyHttpParameters(), const QStringList& columns=QStringList());
@@ -53,6 +54,7 @@ public:
     QVariantList readFields(QSqlQuery&& query, const QStringList& columns=QStringList(), qsizetype* total=nullptr) const;
     QVariantMap readFields(const QSqlRecord& record, const QStringList& columns=QStringList()) const;
     QVariantMap writeFields(const QVariantMap& object, bool creation) const;
+    QVariantMap mergeFields(const QVariantMap& object, const QVariant& primaryValue) const;
 
     QVariantList getValues(const HappyHttpParameters& parameters=HappyHttpParameters());
     QVariantMap getValues(const QVariant& argValue, const HappyHttpParameters& parameters=HappyHttpParameters());

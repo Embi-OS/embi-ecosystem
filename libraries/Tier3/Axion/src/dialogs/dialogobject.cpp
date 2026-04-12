@@ -162,6 +162,16 @@ QMetaObject::Connection DialogObject::onDateSelected(std::function<void(const QD
     }, connection);
 }
 
+QMetaObject::Connection DialogObject::onDateRangeSelected(std::function<void(const QDate& fromDate, const QDate& toDate)> callback, const Qt::ConnectionType &connection)
+{
+    if(!callback)
+        return {};
+
+    return connect(this, &DialogObject::dateRangeSelected, this, [callback](const QDate& fromDate, const QDate& toDate){
+        callback(fromDate, toDate);
+    }, connection);
+}
+
 QMetaObject::Connection DialogObject::onTimeSelected(std::function<void(const QTime& time)> callback, const Qt::ConnectionType &connection)
 {
     if(!callback)
@@ -198,6 +208,16 @@ QMetaObject::Connection DialogObject::onInputApplied(std::function<void(const QS
         return {};
 
     return connect(this, &DialogObject::inputApplied, this, [callback](const QString& value){
+        callback(value);
+    }, connection);
+}
+
+QMetaObject::Connection DialogObject::onSelectAccepted(std::function<void(const QVariant& value)> callback, const Qt::ConnectionType &connection)
+{
+    if(!callback)
+        return {};
+
+    return connect(this, &DialogObject::selectAccepted, this, [callback](const QVariant& value){
         callback(value);
     }, connection);
 }

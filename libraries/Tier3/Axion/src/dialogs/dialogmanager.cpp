@@ -37,12 +37,12 @@ DialogObject* DialogManager::show(const QVariant& settings)
     return dialog;
 }
 
-DialogObject* DialogManager::showError(const QVariant& settings)
+DialogObject* DialogManager::showCritical(const QVariant& settings)
 {
     DialogObject* dialog = show(settings);
 
     dialog->setType(DialogTypes::Action);
-    dialog->setSeverity(DialogSeverities::Error);
+    dialog->setSeverity(DialogSeverities::Critical);
 
     if(dialog->getTitle().isEmpty())
         dialog->setTitle(tr("Erreur"));
@@ -238,6 +238,21 @@ DialogObject* DialogManager::showDate(const QVariant& settings)
     return dialog;
 }
 
+DialogObject* DialogManager::showDateRange(const QVariant& settings)
+{
+    DialogObject* dialog = show(settings);
+
+    dialog->setType(DialogTypes::DateRange);
+    dialog->setSeverity(DialogSeverities::Message);
+
+    if(dialog->getButtonAccept().isEmpty())
+        dialog->setButtonAccept(tr("Valider"));
+    if(dialog->getButtonReject().isEmpty())
+        dialog->setButtonReject(tr("Annuler"));
+
+    return dialog;
+}
+
 DialogObject* DialogManager::showTime(const QVariant& settings)
 {
     DialogObject* dialog = show(settings);
@@ -287,6 +302,25 @@ DialogObject* DialogManager::showInput(const QVariant& settings)
         dialog->setTitle(tr("Formulaire"));
     if(dialog->getMessage().isEmpty())
         dialog->setMessage(tr("Remplisser le formulaire"));
+    if(dialog->getButtonAccept().isEmpty())
+        dialog->setButtonAccept(tr("Valider"));
+    if(dialog->getButtonReject().isEmpty())
+        dialog->setButtonReject(tr("Annuler"));
+
+    return dialog;
+}
+
+DialogObject* DialogManager::showSelect(const QVariant& settings)
+{
+    DialogObject* dialog = show(settings);
+
+    dialog->setType(DialogTypes::Select);
+    dialog->setSeverity(DialogSeverities::Message);
+
+    if(dialog->getTitle().isEmpty())
+        dialog->setTitle(tr("Formulaire"));
+    if(dialog->getMessage().isEmpty())
+        dialog->setMessage(tr("Sélectionner un élément"));
     if(dialog->getButtonAccept().isEmpty())
         dialog->setButtonAccept(tr("Valider"));
     if(dialog->getButtonReject().isEmpty())
@@ -350,7 +384,7 @@ void DialogManager::diagnose(DialogSeverities::Enum severity, QString log) const
 
         switch(severity) {
         case DialogSeverities::Fatal:
-        case DialogSeverities::Error:
+        case DialogSeverities::Critical:
             POPUPLOG_CRITICAL()<<severity<<log;
             break;
         case DialogSeverities::Warning:

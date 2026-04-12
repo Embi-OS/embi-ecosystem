@@ -17,9 +17,6 @@ public:
 
 public slots:
     void invalidate() final override;
-
-private:
-    QRegularExpressionValidator *m_schemeValidator;
 };
 
 #endif // URLVALIDATOR_H

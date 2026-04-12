@@ -54,6 +54,7 @@ signals:
     void pathSelected(const QString& path);
     void inputAccepted(const QString& value);
     void inputApplied(const QString& value);
+    void selectAccepted(const QVariant& value);
     void formValidated(const QVariantMap& formValues);
     void alarmValidated(const QVariantMap& alarmMap);
 

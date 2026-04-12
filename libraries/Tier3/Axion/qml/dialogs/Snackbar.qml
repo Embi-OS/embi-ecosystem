@@ -48,13 +48,13 @@ T.Control {
 
     readonly property color color: severity===SnackbarSeverities.Info ? Style.colorInfo :
                                    severity===SnackbarSeverities.Warning ? Style.colorWarning :
-                                   severity===SnackbarSeverities.Error ? Style.colorError :
+                                   severity===SnackbarSeverities.Critical ? Style.colorError :
                                    severity===SnackbarSeverities.Fatal ? Style.colorFatal :
                                    severity===SnackbarSeverities.Success ? Style.colorSuccess : ColorUtils.blend(Style.colorPrimary, Style.colorWhite, 0.8)
 
     readonly property string icon: severity===SnackbarSeverities.Info ? MaterialIcons.informationOutline :
                                    severity===SnackbarSeverities.Warning ? MaterialIcons.alertOutline :
-                                   severity===SnackbarSeverities.Error ? MaterialIcons.alertCircleOutline :
+                                   severity===SnackbarSeverities.Critical ? MaterialIcons.alertCircleOutline :
                                    severity===SnackbarSeverities.Fatal ? MaterialIcons.alertOctagonOutline :
                                    severity===SnackbarSeverities.Success ? MaterialIcons.checkCircleOutline : MaterialIcons.messageOutline
 

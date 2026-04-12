@@ -46,6 +46,7 @@ Rectangle {
         text: root.title
         font: Style.textTheme.title2
         color: root.labelColor
+        elide: Text.ElideRight
         maximumLineCount: 1
     }
 
@@ -61,6 +62,7 @@ Rectangle {
         text: root.infos
         font: Style.textTheme.body2
         color: root.labelColor
+        elide: Text.ElideRight
         maximumLineCount: 1
     }
 

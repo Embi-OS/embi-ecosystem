@@ -93,7 +93,7 @@ void RestBrowser::execute()
         setNetworkMessage(QString("%1 (%2)").arg(errorString).arg(code));
         processReply(reply);
     });
-    reply->onFinished(this, [this, timer, reply](int status) {
+    reply->onFinished(this, [this, timer, reply](bool, int status, const QVariant&) {
         QTimer::singleShot(2000, this, &RestBrowser::zeroBars);
         setNetworkCode(QString::number(status));
         setNetworkDebug(QString("Query took: %1 [ms] for %2").arg(timer->nsecsElapsed()/1000000.0,2).arg(bytes(reply->getContentLength())));

@@ -10,7 +10,7 @@ class QCheckableProxyModel : public QIdentityProxyModel
     Q_OBJECT
     QML_NAMED_ELEMENT(CheckableProxyModel)
 
-    Q_COMPOSITION_PROPERTY(QItemSelectionModel, selection, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QItemSelectionModel, selection)
 
     Q_PROPERTY(int count READ count NOTIFY countChanged FINAL)
     Q_PROPERTY(int length READ count NOTIFY countChanged FINAL)

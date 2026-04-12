@@ -62,7 +62,7 @@ float GraphAxisObject::convertRawValue(float valueRaw) const
 
 GraphAxisConvertFunction GraphAxisObject::getConverterFunction() const
 {
-    float ratio = Units::make(getCategory())->ratio(getUnit());
+    float ratio = Units::make(m_category)->ratio(getUnit());
 
     GraphAxisConvertFunction f = [ratio](float valueRaw) {
         return valueRaw*ratio;
@@ -73,7 +73,7 @@ GraphAxisConvertFunction GraphAxisObject::getConverterFunction() const
 
 QString GraphAxisObject::getUnitLabel() const
 {
-    return Units::make(getCategory())->abbreviation(getUnit());
+    return Units::make(m_category)->abbreviation(getUnit());
 }
 
 float GraphAxisObject::getLowerBound() const

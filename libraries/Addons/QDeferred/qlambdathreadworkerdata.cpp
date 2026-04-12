@@ -1,8 +1,11 @@
 #include "qlambdathreadworkerdata.h"
 #include <QCoreApplication>
+
+#ifdef Q_OS_LINUX
 #include <sstream>
 #include <sys/syscall.h>
 #include <unistd.h>
+#endif
 
 // QDEFTHREADWORKERDATAEVENT -------------------------------------------------
 

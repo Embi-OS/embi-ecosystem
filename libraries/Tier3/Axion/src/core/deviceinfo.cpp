@@ -3,9 +3,6 @@
 
 #include <QInputDevice>
 #include <QGuiApplication>
-#include <QCryptographicHash>
-#include <QProcess>
-#include <QtGlobal>
 #include <QStorageInfo>
 
 DeviceInfo::DeviceInfo(QObject *parent) :
@@ -161,16 +158,6 @@ bool DeviceInfo::isWindowsPhone()
 #endif
 }
 
-bool DeviceInfo::isWindows8()
-{
-#ifdef Q_OS_WIN
-    return QSysInfo::windowsVersion() == QSysInfo::WV_WINDOWS8 ||
-           QSysInfo::windowsVersion() == QSysInfo::WV_WINDOWS8_1;
-#else
-    return false;
-#endif
-}
-
 bool DeviceInfo::hasTouchScreen()
 {
     const auto devices = QInputDevice::devices();
@@ -276,47 +263,14 @@ QString DeviceInfo::deviceName()
     return QSysInfo::prettyProductName() + " " + QSysInfo::currentCpuArchitecture();
 }
 
-QString DeviceInfo::deviceId()
+QString DeviceInfo::deviceHostName()
 {
-#if defined(Q_OS_MACX)
-    io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(kIOMasterPortDefault, "IOService:/");
-    CFStringRef uuidCf = (CFStringRef) IORegistryEntryCreateCFProperty(ioRegistryRoot, CFSTR(kIOPlatformUUIDKey), kCFAllocatorDefault, 0);
-    IOObjectRelease(ioRegistryRoot);
-    char buf[128];
-    CFStringGetCString(uuidCf, buf, sizeof(buf), kCFStringEncodingMacRoman);
-    CFRelease(uuidCf);
-    return QString::fromUtf8( QByteArray(buf, sizeof(buf)) );
-#elif defined(Q_OS_LINUX) || defined(Q_OS_WIN32)
-    static QString cg_hostId;
-    if(!cg_hostId.isEmpty())
-        return cg_hostId;
-
-    QProcess prc;
-#ifdef Q_OS_WIN
-    prc.setProgram(QStringLiteral("wmic"));
-    prc.setArguments({QStringLiteral("csproduct"), QStringLiteral("get"), QStringLiteral("UUID")});
-#else
-    prc.setProgram(QStringLiteral("hostid"));
-#endif
-    prc.start();
-    prc.waitForStarted();
-    prc.waitForReadyRead();
-    prc.waitForFinished();
-
-    cg_hostId = QString::fromUtf8(prc.readAll());
-    cg_hostId = cg_hostId.remove(QStringLiteral("UUID")).trimmed();
-    if(cg_hostId.isEmpty())
-        cg_hostId = QStringLiteral("noid");
-    return cg_hostId;
-#else
-    return QStringLiteral("noid");
-#endif
+    return QSysInfo::machineHostName();
 }
 
-QString DeviceInfo::deviceShortId()
+QString DeviceInfo::deviceId()
 {
-    QString hash = QString::fromUtf8(QCryptographicHash::hash(deviceId().toUtf8(), QCryptographicHash::Md5).toHex());
-    return hash.remove(QStringLiteral("-")).left(8);
+    return QSysInfo::machineUniqueId();
 }
 
 QString DeviceInfo::storageName()

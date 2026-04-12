@@ -1,4 +1,5 @@
 ﻿#include "formatutils.h"
+#include <QUtils>
 
 FormatUtils::FormatUtils(QObject *parent) :
     QObject(parent)
@@ -70,4 +71,29 @@ QString FormatUtils::intToString(qint64 n, int size, char fill) const
 {
     QString string = QLocale::c().toString(n);
     return string.rightJustified(size, fill, false);
+}
+
+QByteArray FormatUtils::variantToLog(const QVariant& variant, bool compact) const
+{
+    return QUtils::Log::variantToLog(qVariantFromJSVariant(variant), compact);
+}
+
+QByteArray FormatUtils::variantToJson(const QVariant& variant, bool compact) const
+{
+    return QUtils::Json::variantToJson(qVariantFromJSVariant(variant), compact);
+}
+
+QVariant FormatUtils::jsonToVariant(const QByteArray& json)
+{
+    return QUtils::Json::jsonToVariant(json);
+}
+
+QByteArray FormatUtils::variantToCbor(const QVariant& variant, int opt) const
+{
+    return QUtils::Cbor::variantToCbor(qVariantFromJSVariant(variant), opt);
+}
+
+QVariant FormatUtils::cborToVariant(const QByteArray& cbor)
+{
+    return QUtils::Cbor::cborToVariant(cbor);
 }

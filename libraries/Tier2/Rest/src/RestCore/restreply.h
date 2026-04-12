@@ -10,7 +10,7 @@ class RestReply : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_COMPOSITION_PROPERTY(QNetworkReply, networkReply, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QNetworkReply, networkReply)
 
     Q_WRITABLE_VAR_PROPERTY(bool, autoDelete, AutoDelete, true)
     Q_WRITABLE_VAR_PROPERTY(bool, autoParse, AutoParse, true)
@@ -25,7 +25,7 @@ class RestReply : public QObject
     Q_READONLY_VAR_PROPERTY(RestReplyErrorTypes::Enum, errorType, ErrorType, RestReplyErrorTypes::NoError)
 
 public:
-    typedef std::function<void(int)> FinishedFunction;
+    typedef std::function<void(bool, int, const QVariant&)> FinishedFunction;
     typedef std::function<void(int, const QVariant&)> CompletedFunction;
     typedef std::function<void()> CanceledFunction;
     typedef std::function<void(const QString&, int, RestReplyErrorTypes::Enum, const QVariant&)> ErrorFunction;
@@ -76,7 +76,7 @@ public slots:
     int waitForFinished(int timeout=-1, QEventLoop::ProcessEventsFlags flags = QEventLoop::AllEvents);
 
 signals:
-    void finished(int httpStatus);
+    void finished(bool result, int httpStatus, const QVariant &reply);
 
     void succeeded(int httpStatus, const QVariant &reply);
     void failed(int httpStatus, const QVariant &reply);

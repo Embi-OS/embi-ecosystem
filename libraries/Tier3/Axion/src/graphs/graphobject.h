@@ -13,10 +13,10 @@ class GraphObject : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_CONSTANT_PTR_PROPERTY(GraphAxisObject, xAxis, XAxis, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(GraphAxisObject, yAxis, YAxis, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(GraphSeriesObject, mainSeries, MainSeries, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(GraphSeriesModel, series, Series, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(GraphAxisObject, xAxis)
+    Q_CONSTANT_PTR_PROPERTY(GraphAxisObject, yAxis)
+    Q_CONSTANT_PTR_PROPERTY(GraphSeriesObject, mainSeries)
+    Q_CONSTANT_PTR_PROPERTY(GraphSeriesModel, series)
     Q_WRITABLE_VAR_PROPERTY(bool, useSeries, UseSeries, true)
 
 public:

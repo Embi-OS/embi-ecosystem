@@ -40,4 +40,6 @@ embi_add_application(${PROJECT_NAME}
         ${ALL_IMG_FILES}
     DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+    OUTPUT_DIRECTORY_PREFIX
+        /samples
 )

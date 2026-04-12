@@ -11,6 +11,8 @@ class ExtraAnchorsAttached : public QObject
     QML_UNCREATABLE("Attached")
     QML_NAMED_ELEMENT(ExtraAnchors)
     
+    Q_OBJECT_ATTACHED(ExtraAnchorsAttached, QObject)
+
     /// side dock
     Q_WRITABLE_PTR_PROPERTY(QQuickItem, topDock, TopDock, nullptr)
     Q_WRITABLE_PTR_PROPERTY(QQuickItem, leftDock, LeftDock, nullptr)
@@ -26,9 +28,6 @@ class ExtraAnchorsAttached : public QObject
     Q_WRITABLE_PTR_PROPERTY(QQuickItem, topRightCorner, TopRightCorner, nullptr)
     Q_WRITABLE_PTR_PROPERTY(QQuickItem, bottomLeftCorner, BottomLeftCorner, nullptr)
     Q_WRITABLE_PTR_PROPERTY(QQuickItem, bottomRightCorner, BottomRightCorner, nullptr)
-
-public:
-    static ExtraAnchorsAttached* qmlAttachedProperties(QObject* object);
 
 private:
     explicit ExtraAnchorsAttached(QObject* parent=nullptr);

@@ -22,6 +22,7 @@ BasicTableViewDelegate {
         id: checkBox
         tristate: false
         padding: 0
+        contentItem: null
 
         onCanceled: root.canceled()
         onClicked: root.clicked()

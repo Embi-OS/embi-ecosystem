@@ -1,7 +1,7 @@
 #include "localemodel.h"
 
 bool localeLessThan(const LocaleObject* left, const LocaleObject* right) {
-    return left->getName() < right->getName();
+    return left->name() < right->name();
 }
 
 LocaleObject::LocaleObject(const QLocale& locale, QObject *parent) :
@@ -39,8 +39,8 @@ QModelIndex LocaleModel::indexForTerritory(const QString &territory) const
 {
     for(LocaleObject* locale: modelIterator<LocaleObject>())
     {
-        if (locale->getTerritory() == territory ||
-            locale->getLanguage() == territory)
+        if (locale->territory() == territory ||
+            locale->language() == territory)
         {
             return index(indexOf(locale));
         }

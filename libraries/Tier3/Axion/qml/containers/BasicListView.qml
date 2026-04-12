@@ -1,5 +1,4 @@
 import QtQuick
-import Eco.Tier1.Utils
 import Eco.Tier3.Axion
 
 ListView {
@@ -23,9 +22,9 @@ ListView {
     readonly property double horizontalScrollerHeight: Math.max(horizontalScrollBarHeight, horizontalScrollIndicatorHeight)
     readonly property double viewHeight: root.height - horizontalScrollerHeight
 
-    SignalTrailingDebouncer {
+    Timer {
         id: gotoIndexThrottler
-        timeout: 16
+        interval: 16
         onTriggered: root.gotoIndexNow(index, mode)
         property int index: -1
         property int mode: ListView.Center
@@ -37,7 +36,7 @@ ListView {
 
         gotoIndexThrottler.index=index;
         gotoIndexThrottler.mode=mode;
-        gotoIndexThrottler.throttle();
+        gotoIndexThrottler.start();
     }
 
     function gotoIndexNow(index: int, mode: int) {
@@ -59,9 +58,9 @@ ListView {
         anim.running = true;
     }
 
-    SignalTrailingDebouncer {
+    Timer {
         id: gotoSubItemThrottler
-        timeout: 16
+        interval: 16
         onTriggered: root.gotoSubItemNow(item, mode)
         property Item item: null
         property int mode: ListView.Center
@@ -73,7 +72,7 @@ ListView {
 
         gotoSubItemThrottler.item=item;
         gotoSubItemThrottler.mode=mode;
-        gotoSubItemThrottler.throttle();
+        gotoSubItemThrottler.start();
     }
 
     function gotoSubItemNow(item: Item, mode: int) {

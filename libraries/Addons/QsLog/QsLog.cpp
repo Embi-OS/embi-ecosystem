@@ -208,9 +208,8 @@ void Logger::init(const QString& path)
         fileDest->setIncludeColor(false);
         QsLogging::Logger::instance().addDestination(fileDest);
     }
-#else
-    QsLogging::Logger::instance().setLoggingLevel(QsLogging::NoticeLevel);
 #endif
+    QsLogging::Logger::instance().setLoggingLevel(QsLogging::NoticeLevel);
     QsLogging::Logger::instance().addDestination(consoleDest);
 
     qInfo()<<"Creating logger instance !!!";

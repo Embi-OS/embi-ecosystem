@@ -47,6 +47,11 @@ class QVariantMapper: public QObject,
     Q_WRITABLE_VAR_PROPERTY(int, revertInhibitTime, RevertInhibitTime, 0)
     Q_WRITABLE_VAR_PROPERTY(int, updateInhibitTime, UpdateInhibitTime, 0)
 
+    Q_WRITABLE_VAR_PROPERTY(bool, alwaysWaitForSelect, AlwaysWaitForSelect, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, alwaysWaitForSubmit, AlwaysWaitForSubmit, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, alwaysWaitForRevert, AlwaysWaitForRevert, false)
+    Q_WRITABLE_VAR_PROPERTY(bool, alwaysWaitForUpdate, AlwaysWaitForUpdate, false)
+
     Q_READONLY_VAR_PROPERTY(bool, isDirty, IsDirty, false)
     Q_READONLY_VAR_PROPERTY(bool, selecting, Selecting, false)
     Q_READONLY_VAR_PROPERTY(bool, submiting, Submiting, false)
@@ -77,6 +82,7 @@ public:
 
     Q_INVOKABLE QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
     Q_INVOKABLE bool setValue(const QString &key, const QVariant &value);
+    Q_INVOKABLE bool resetValue(const QString &key);
     Q_INVOKABLE bool reset();
     Q_INVOKABLE bool clear();
     Q_INVOKABLE QVariantMap values(QStringList keys = QStringList()) const;
@@ -86,7 +92,7 @@ public:
     Q_INVOKABLE QStringList keys(const QVariant &value) const;
     Q_INVOKABLE void alter(const QVariantMap &update);
 
-    Q_INVOKABLE void mapObject(QObject* object);
+    void mapObject(QObject* object, const QMetaObject* smo = &QObject::staticMetaObject);
     Q_INVOKABLE bool mapProperty(QObject* object, const QString& property, const QString& aliasName="");
 
     const QVariantMap& getStorage() const;
@@ -128,8 +134,8 @@ signals:
     void updateDone(bool result);
 
 protected slots:
+    virtual void initProperties();
     void clearProperties();
-    void initProperties();
     void refreshProperties();
 
     void onPropertyChanged();

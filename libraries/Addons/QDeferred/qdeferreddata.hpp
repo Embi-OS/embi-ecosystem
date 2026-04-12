@@ -28,7 +28,6 @@ public:
     explicit QDeferredProxyObject();
 
     bool event(QEvent* ev);
-
 };
 
 class QDeferredProxyEvent : public QEvent
@@ -37,13 +36,13 @@ public:
     explicit QDeferredProxyEvent();
 
     std::function<void()> m_eventFunc;
-
 };
 
 // have all template classes derive from common base class which to contains the static members
 // forward declaration to be able to make friend
 template<class ...Types>
 class QDeferred;
+
 // base class
 class QDeferredDataBase {
 
@@ -190,7 +189,7 @@ private:
     std::function<void(std::function<void(Types(&...args))>)> m_finishedFunction;
     QHash< QThread *, DeferredAllCallbacks * > m_callbacksMap;
     QDeferredState m_state;
-    QRecursiveMutex m_mutex;
+    mutable QRecursiveMutex m_mutex;
     QList<QMetaObject::Connection> m_connectionList;
     // methods
     DeferredAllCallbacks * getCallbacksForThread();
@@ -220,18 +219,36 @@ QDeferredData<Types...>::~QDeferredData()
     m_callbacksMap.clear();
 }
 
+// template<class ...Types>
+// QDeferredData<Types...>::QDeferredData(const QDeferredData &other) : QSharedData(other),
+//     m_whenCount(other.m_whenCount),
+//     m_whenResult(other.m_whenResult),
+//     m_callbacksMap(other.m_callbacksMap),
+//     m_state(other.m_state),
+//     m_mutex(other.m_mutex),
+//     m_connectionList(other.m_connectionList),
+//     m_finishedFunction(other.m_finishedFunction),
+//     m_blockingEventLoop(other.m_blockingEventLoop)
+// {
+//     // nothing to do here
+// }
+
 template<class ...Types>
-QDeferredData<Types...>::QDeferredData(const QDeferredData &other) : QSharedData(other),
-    m_whenCount(other.m_whenCount),
-    m_whenResult(other.m_whenResult),
-    m_callbacksMap(other.m_callbacksMap),
-    m_state(other.m_state),
-    m_mutex(other.m_mutex),
-    m_connectionList(other.m_connectionList),
-    m_finishedFunction(other.m_finishedFunction),
-    m_blockingEventLoop(other.m_blockingEventLoop)
+QDeferredData<Types...>::QDeferredData(const QDeferredData &other) :
+    QSharedData(other),
+    m_mutex() // Nouveau mutex pour l'instance actuelle
 {
-    // nothing to do here
+    // On verrouille l'original AVANT de lire quoi que ce soit
+    QMutexLocker locker(&other.m_mutex);
+
+    // Maintenant on copie tout en étant protégé
+    m_whenCount        = other.m_whenCount;
+    m_whenResult       = other.m_whenResult;
+    m_state            = other.m_state;
+    m_finishedFunction = other.m_finishedFunction;
+    m_blockingEventLoop = other.m_blockingEventLoop;
+    m_connectionList   = other.m_connectionList;
+    m_callbacksMap     = other.m_callbacksMap;
 }
 
 template<class ...Types>
@@ -316,6 +333,10 @@ void QDeferredData<Types...>::resolve(QDeferred<Types...> ref, Types(&...args))
     {
         m_blockingEventLoop->quit();
     }
+
+    // Keep shared data alive without capturing raw 'this'
+    auto dataPtr = ref.sharedData();
+
     // for each thread where there are callbacks to be called
     QHashIterator< QThread *, DeferredAllCallbacks *> i(m_callbacksMap);
     while (i.hasNext())
@@ -342,10 +363,10 @@ void QDeferredData<Types...>::resolve(QDeferred<Types...> ref, Types(&...args))
             {
                 // create object in heap and assign function (event loop takes ownership and deletes it later)
                 QDeferredProxyEvent * p_Evt = new QDeferredProxyEvent;
-                p_Evt->m_eventFunc = [ref, this, currCallback]() mutable {
-                    Q_ASSERT(m_finishedFunction);
+                p_Evt->m_eventFunc = [ref, dataPtr, currCallback]() mutable {
+                    Q_ASSERT(dataPtr->m_finishedFunction);
                     // call in thread with arguments
-                    m_finishedFunction(currCallback);
+                    dataPtr->m_finishedFunction(currCallback);
                     // unused, but we need it to keep at least one reference until all callbacks are executed
                     Q_UNUSED(ref)
                 };
@@ -373,9 +394,11 @@ void QDeferredData<Types...>::resolve(QDeferred<Types...> ref, Types(&...args))
             {
                 // create object in heap and assign function (event loop takes ownership and deletes it later)
                 QDeferredProxyEvent* p_Evt = new QDeferredProxyEvent;
-                p_Evt->m_eventFunc = [ref, this, currCallback]() mutable {
+                p_Evt->m_eventFunc = [ref, dataPtr, currCallback]() mutable {
                     // call in thread
                     currCallback();
+                    // unused, but we need it to keep at least one reference until all callbacks are executed
+                    Q_UNUSED(dataPtr)
                     // unused, but we need it to keep at least one reference until all callbacks are executed
                     Q_UNUSED(ref)
                 };
@@ -419,6 +442,10 @@ void QDeferredData<Types...>::reject(QDeferred<Types...> ref, Types(&...args))
     {
         m_blockingEventLoop->quit();
     }
+
+    // Keep shared data alive without capturing raw 'this'
+    auto dataPtr = ref.sharedData();
+
     // for each thread where there are callbacks to be called
     QHashIterator< QThread*, DeferredAllCallbacks*> i(m_callbacksMap);
     while (i.hasNext())
@@ -445,10 +472,10 @@ void QDeferredData<Types...>::reject(QDeferred<Types...> ref, Types(&...args))
             {
                 // create object in heap and assign function (event loop takes ownership and deletes it later)
                 QDeferredProxyEvent* p_Evt = new QDeferredProxyEvent;
-                p_Evt->m_eventFunc = [ref, this, currCallback]() mutable {
-                    Q_ASSERT(m_finishedFunction);
+                p_Evt->m_eventFunc = [ref, dataPtr, currCallback]() mutable {
+                    Q_ASSERT(dataPtr->m_finishedFunction);
                     // call in thread with arguments
-                    m_finishedFunction(currCallback);
+                    dataPtr->m_finishedFunction(currCallback);
                     // unused, but we need it to keep at least one reference until all callbacks are executed
                     Q_UNUSED(ref)
                 };
@@ -476,9 +503,11 @@ void QDeferredData<Types...>::reject(QDeferred<Types...> ref, Types(&...args))
             {
                 // create object in heap and assign function (event loop takes ownership and deletes it later)
                 QDeferredProxyEvent* p_Evt = new QDeferredProxyEvent;
-                p_Evt->m_eventFunc = [ref, this, currCallback]() mutable {
+                p_Evt->m_eventFunc = [ref, dataPtr, currCallback]() mutable {
                     // call in thread
                     currCallback();
+                    // unused, but we need it to keep at least one reference until all callbacks are executed
+                    Q_UNUSED(dataPtr)
                     // unused, but we need it to keep at least one reference until all callbacks are executed
                     Q_UNUSED(ref)
                 };
@@ -520,6 +549,10 @@ void QDeferredData<Types...>::rejectZero(QDeferred<Types...> ref)
     {
         m_blockingEventLoop->quit();
     }
+
+    // Keep shared data alive without capturing raw 'this'
+    auto dataPtr = ref.sharedData();
+
     // for each thread where there are callbacks to be called
     QHashIterator< QThread*, DeferredAllCallbacks*> i(m_callbacksMap);
     while (i.hasNext())
@@ -545,9 +578,11 @@ void QDeferredData<Types...>::rejectZero(QDeferred<Types...> ref)
             {
                 // create object in heap and assign function (event loop takes ownership and deletes it later)
                 QDeferredProxyEvent* p_Evt = new QDeferredProxyEvent;
-                p_Evt->m_eventFunc = [ref, this, currCallback]() mutable {
+                p_Evt->m_eventFunc = [ref, dataPtr, currCallback]() mutable {
                     // call in thread
                     currCallback();
+                    // unused, but we need it to keep at least one reference until all callbacks are executed
+                    Q_UNUSED(dataPtr)
                     // unused, but we need it to keep at least one reference until all callbacks are executed
                     Q_UNUSED(ref)
                 };
@@ -584,6 +619,9 @@ void QDeferredData<Types...>::notify(QDeferred<Types...> ref, Types(&...args))
     // (with the last agruments that were given to the last notify call, e.g. "3, 3, 3", instead of "1, 2, 3")
     auto funcCacheArgs = std::bind(GCC_DEF_FIX::finishedFunctionTemplate<Types...>, std::placeholders::_1, args...);
 
+    // Keep shared data alive without capturing raw 'this'
+    auto dataPtr = ref.sharedData();
+
     // for each thread where there are callbacks to be called
     QHashIterator< QThread*, DeferredAllCallbacks*> i(m_callbacksMap);
     while (i.hasNext())
@@ -608,9 +646,11 @@ void QDeferredData<Types...>::notify(QDeferred<Types...> ref, Types(&...args))
             {
                 // create object in heap and assign function (event loop takes ownership and deletes it later)
                 QDeferredProxyEvent* p_Evt = new QDeferredProxyEvent;
-                p_Evt->m_eventFunc = [ref, this, funcCacheArgs, currCallback]() mutable {
+                p_Evt->m_eventFunc = [ref, dataPtr, funcCacheArgs, currCallback]() mutable {
                     // call in thread
                     funcCacheArgs(currCallback);
+                    // unused, but we need it to keep at least one reference until all callbacks are executed
+                    Q_UNUSED(dataPtr)
                     // unused, but we need it to keep at least one reference until all callbacks are executed
                     Q_UNUSED(ref)
                 };
@@ -676,7 +716,7 @@ typename QDeferredData<Types...>::DeferredAllCallbacks * QDeferredData<Types...>
         QDeferredProxyObject * p_obj = QDeferredDataBase::getObjectForThread(p_currThd);
         // wait until object destroyed to remove callbacks struct
         // NOTE : need to disconnect these connections to avoid memory leaks due to lambda memory allocations
-        m_connectionList.append(QObject::connect(p_obj, &QObject::destroyed, [&, p_currThd]() {
+        m_connectionList.append(QObject::connect(p_obj, &QObject::destroyed, [this, p_currThd]() {
             // delete callbacks when thread gets deleted
             auto p_callbacksToDel = m_callbacksMap.take(p_currThd);
             // NOTE : m_connectionList.append not necessary here because conneciton will auto delete when p_currThd gets deleted

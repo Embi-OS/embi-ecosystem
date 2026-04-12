@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Eco.Tier1.Models
 import Eco.Tier3.Axion
@@ -6,8 +7,8 @@ BasicPane {
     id: root
 
     property AbstractItemModel model
+    readonly property BasicListView view: view
     property alias delegate: view.delegate
-    property alias view: view
 
     property alias viewWidth: view.viewWidth
     property alias viewHeight: view.viewHeight

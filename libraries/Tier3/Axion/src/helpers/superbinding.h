@@ -3,7 +3,6 @@
 
 #include <QDefs>
 
-#include <QJSValue>
 #include <QQmlProperty>
 #include <QQmlParserStatus>
 #include <QQmlPropertyValueSource>

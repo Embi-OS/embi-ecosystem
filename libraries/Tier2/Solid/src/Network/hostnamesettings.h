@@ -3,8 +3,7 @@
 
 #include <QDefs>
 #include "qsingleton.h"
-
-class QTranslatorLoader;
+#include "hostnamebackend.h"
 
 class HostnameSettings : public QObject,
                          public QQmlSingleton<HostnameSettings>
@@ -12,6 +11,8 @@ class HostnameSettings : public QObject,
     Q_OBJECT
     QML_ELEMENT
     QML_SINGLETON
+
+    Q_CONSTANT_PTR_PROPERTY(HostnameBackend, backend)
 
     Q_PROPERTY(bool canSetHostname READ canSetHostname   CONSTANT FINAL)
     Q_PROPERTY(QString hostname    READ getHostname      WRITE setHostname NOTIFY hostnameChanged FINAL)
@@ -32,7 +33,7 @@ protected:
     explicit HostnameSettings(QObject *parent = nullptr);
 
 public:
-    static bool canSetHostname();
+    bool canSetHostname() const;
 
     QString getHostname() const;
     QString getStaticHostname() const;

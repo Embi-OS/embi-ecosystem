@@ -40,7 +40,7 @@ PaneTreeView {
             targetProperty: "ntp"
         }
         FormTextFieldDelegate {
-            visible: TimedateSettings.canSetServerName
+            visible: TimedateSettings.canSetNtpServer
             enabled: ntp.checked
             label: qsTr("Serveur NTP")
             placeholder: qsTr("Seulement si NTP activé")

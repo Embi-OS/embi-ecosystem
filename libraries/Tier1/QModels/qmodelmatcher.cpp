@@ -1,4 +1,5 @@
 #include "qmodelmatcher.h"
+#include "qmodels_log.h"
 
 QModelMatcher::QModelMatcher(QObject* parent):
     QObject(parent)
@@ -25,6 +26,7 @@ void QModelMatcher::classBegin()
 
 void QModelMatcher::componentComplete()
 {
+    updateMethod();
     invalidate();
 }
 
@@ -77,11 +79,18 @@ void QModelMatcher::invalidate()
 
     if(m_sourceModel && m_sourceModel->rowCount()>0)
     {
-        m_indexes = m_sourceModel->match(m_sourceModel->index(m_startRow, m_startColumn, m_parentIndex),
-                                         m_role,
-                                         m_value,
-                                         m_hits,
-                                         m_flags);
+        if(m_method.isValid() && !m_methodParameterRoles.isEmpty())
+        {
+            m_indexes = methodMatch(m_sourceModel->index(m_startRow, m_startColumn, m_parentIndex),
+                                    m_hits,
+                                    m_flags);
+        }
+        else if(m_role>=0)
+        {
+            m_indexes = roleMatch(m_sourceModel->index(m_startRow, m_startColumn, m_parentIndex),
+                                  m_hits,
+                                  m_flags);
+        }
     }
 
     emit indexesChanged(m_indexes);
@@ -97,11 +106,30 @@ const QModelIndexList& QModelMatcher::getIndexes() const
 
 void QModelMatcher::updateRoles()
 {
-    if(!m_sourceModel)
+    if(!m_sourceModel || m_sourceModel->roleNames().isEmpty())
         return;
 
     int role = m_sourceModel->roleNames().key(m_roleName.toUtf8(), -1);
     setRole(role);
+    if(m_role<0 && !m_roleName.isEmpty())
+    {
+        QMODELSLOG_WARNING()<<m_roleName<<"is not a valid roleName for"<<m_sourceModel;
+    }
+    else if(m_role>=0)
+    {
+        return;
+    }
+
+    m_methodParameterRoles.clear();
+    for(const QByteArray& parameterName: std::as_const(m_methodParameterNames))
+    {
+        int role = m_sourceModel->roleNames().key(parameterName, -1);
+        if(role>=0)
+            m_methodParameterRoles << role;
+        else {
+            QMODELSLOG_WARNING()<<parameterName<<"is not a valid roleName for"<<m_sourceModel;
+        }
+    }
 }
 
 void QModelMatcher::initRoles()
@@ -152,7 +180,20 @@ void QModelMatcher::onModelDataChanged(const QModelIndex &topLeft, const QModelI
         return;
     }
 
-    if(!roles.isEmpty() && !roles.contains(m_role))
+    if(!roles.isEmpty() && m_method.isValid() && !m_methodParameterRoles.isEmpty())
+    {
+        bool roleMatch=false;
+        for(int methodParameterRole: std::as_const(m_methodParameterRoles))
+        {
+            if(roles.contains(methodParameterRole)) {
+                roleMatch = true;
+                break;
+            }
+        }
+        if(!roleMatch)
+            return;
+    }
+    else if(m_role>=0 && !roles.isEmpty() && !roles.contains(m_role))
     {
         return;
     }
@@ -208,4 +249,112 @@ void QModelMatcher::onModelColumnsRemoved(const QModelIndex& parent, int first, 
     {
         queueInvalidate();
     }
+}
+
+bool QModelMatcher::methodMatch(const QModelIndex &idx) const
+{
+    bool ret;
+    std::vector<void*> argv;
+    argv.push_back(&ret);
+
+    QVariantList params;
+    for(int i=0; i<m_methodParameterRoles.size(); i++)
+    {
+        const int parameterRole = m_methodParameterRoles.at(i);
+        const QMetaType parameterType = m_methodParameterTypes.at(i);
+        QVariant param = m_sourceModel->data(idx, parameterRole);
+        if(parameterType.id()!=QMetaType::QVariant && !param.canConvert(parameterType)) {
+            QMODELSLOG_WARNING()<<"Unable to convert param type"<<param.metaType()<<"to"<<parameterType;
+            return false;
+        }
+        else if(parameterType.id()!=QMetaType::QVariant) {
+            param.convert(parameterType);
+        }
+
+        params.append(param);
+    }
+
+    for(QVariant& param: params)
+        argv.push_back(param.data());
+
+    QMetaObject::metacall(const_cast<QModelMatcher*>(this), QMetaObject::InvokeMetaMethod, m_method.methodIndex(), argv.data());
+
+    return ret;
+}
+
+QModelIndexList QModelMatcher::methodMatch(const QModelIndex &start, int hits, Qt::MatchFlags flags) const
+{
+    QModelIndexList result;
+    bool recurse = flags.testAnyFlag(Qt::MatchRecursive);
+    bool wrap = flags.testAnyFlag(Qt::MatchWrap);
+    bool allHits = (hits == -1);
+    const int column = start.column();
+    QModelIndex p = m_sourceModel->parent(start);
+    int from = start.row();
+    int to = m_sourceModel->rowCount(p);
+    // iterates twice if wrapping
+    for (int i = 0; (wrap && i < 2) || (!wrap && i < 1); ++i) {
+        for (int r = from; (r < to) && (allHits || result.size() < hits); ++r) {
+            QModelIndex idx = m_sourceModel->index(r, column, p);
+            if (!idx.isValid())
+                continue;
+            // QMetaMethod based matching
+            if (methodMatch(idx))
+                result.append(idx);
+            if (recurse) {
+                const auto parent = column != 0 ? idx.sibling(idx.row(), 0) : idx;
+                if (m_sourceModel->hasChildren(parent)) { // search the hierarchy
+                    result += methodMatch(m_sourceModel->index(0, column, parent),
+                                          (allHits ? -1 : hits - result.size()), flags);
+                }
+            }
+        }
+        // prepare for the next iteration
+        from = 0;
+        to = start.row();
+    }
+    return result;
+}
+
+QModelIndexList QModelMatcher::roleMatch(const QModelIndex &start, int hits, Qt::MatchFlags flags) const
+{
+    return m_sourceModel->match(start,
+                                m_role,
+                                m_value,
+                                hits,
+                                flags);
+}
+
+void QModelMatcher::updateMethod()
+{
+    const auto *metaObj = metaObject();
+    for (int idx = metaObj->methodOffset(); idx < metaObj->methodCount(); idx++) {
+        // Once we find the method signature, break the loop
+        QMetaMethod method = metaObj->method(idx);
+        if (method.name() == "match") {
+            m_method = method;
+            break;
+        }
+    }
+
+    if (!m_method.isValid()) {
+        return;
+    }
+
+    if (m_method.parameterCount() < 1) {
+        QMODELSLOG_WARNING()<<"ModelMatcher match method requires at least one parameter";
+        return;
+    }
+
+    if (m_method.returnMetaType().id()!=QMetaType::Bool) {
+        QMODELSLOG_WARNING()<<"ModelMatcher match method return must be boolean";
+        return;
+    }
+
+    m_methodParameterNames = m_method.parameterNames();
+    m_methodParameterTypes.clear();
+    for(int i=0; i<m_method.parameterCount(); i++)
+        m_methodParameterTypes << m_method.parameterMetaType(i);
+
+    updateRoles();
 }

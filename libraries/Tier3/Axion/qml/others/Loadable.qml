@@ -7,6 +7,7 @@ Item {
     visible: loader.status===Loader.Ready
 
     signal loaded()
+    signal error()
     property bool active: true
     property int delay: 0
 
@@ -27,6 +28,11 @@ Item {
         active: false
 
         onStatusChanged: {
+            if (status===Loader.Error) {
+                root.error()
+                return;
+            }
+
             if (status!==Loader.Ready)
                 return;
 

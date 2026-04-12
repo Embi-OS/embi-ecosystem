@@ -132,28 +132,30 @@ bool SqlModel::runSelectWorker(QSWorker* worker)
         setCode(status);
         resetError();
         resetMessage();
-        if(m_pagination && m_pagination->getEnabled())
+        if(reply.canConvert<QVariantMap>())
         {
             QVariantMap result = reply.toMap();
             QVariantList storage = result.value("data").toList();
 
-            int count = storage.size();
-            int total = result.value("count").toInt();
-            int pageCount = result.value("page_count").toInt();
-            QString previous = result.value("previous").toString();
-            QString next = result.value("next").toString();
+            if(m_pagination)
+            {
+                m_pagination->setTotal(result.value("total").toInt());
+                m_pagination->setCount(result.value("page_size").toInt());
+                m_pagination->setPageCount(result.value("page_count").toInt());
+                m_pagination->setPrevious(result.value("previous").toString());
+                m_pagination->setNext(result.value("next").toString());
+            }
 
-            m_pagination->setCount(count);
-            m_pagination->setTotal(total);
-            m_pagination->setPageCount(pageCount);
-            m_pagination->setPrevious(previous);
-            m_pagination->setNext(next);
+            setStorage(std::move(storage));
+        }
+        else if(reply.canConvert<QVariantList>())
+        {
+            QVariantList storage = reply.toList();
             setStorage(std::move(storage));
         }
         else
         {
-            QVariantList storage = reply.toList();
-            setStorage(std::move(storage));
+            setStorage(QVariantList());
         }
         SQLLOG_TRACE()<<this<<m_baseName<<"Select succeeded";
     });

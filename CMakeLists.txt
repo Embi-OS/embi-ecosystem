@@ -14,7 +14,7 @@ set(QT_CREATOR_SKIP_MAINTENANCE_TOOL_PROVIDER ON)
 
 # Only set if DEFAULT_PROJECT_VERSION is not defined
 if(NOT DEFINED DEFAULT_PROJECT_VERSION)
-    set(DEFAULT_PROJECT_VERSION 1.0.0)  # default version
+    set(DEFAULT_PROJECT_VERSION 0.0.0)  # default version
 endif()
 
 # Only set if DEFAULT_PROJECT_DESCRIPTION is not defined
@@ -27,6 +27,9 @@ project(Embi-Ecosystem
     DESCRIPTION "${DEFAULT_PROJECT_DESCRIPTION}"
     LANGUAGES CXX)
 set(CMAKE_PROJECT_COMPANY "Embi-OS")
+set(CMAKE_PROJECT_COMPANY_ADDRESS "Switzerland")
+set(CMAKE_PROJECT_COMPANY_ZIPCODE "")
+set(CMAKE_PROJECT_COMPANY_CONTACT "")
 set(CMAKE_PROJECT_WEBSITE "github.com/Embi-OS")
 set(CMAKE_PROJECT_DOMAIN "embi.os")
 set(CMAKE_PROJECT_COPYRIGHT "")
@@ -107,7 +110,6 @@ elseif(EMSCRIPTEN)
     # optimization
     if(ENABLE_OPTIMIZATION)
         message(STATUS "Build with optimization")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g2") # smaller footprint but dangerous
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Oz") # smaller footprint but dangerous
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
     endif()
@@ -129,6 +131,12 @@ else()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}")
     set(QT_DEPLOY_PREFIX "/Embi")
 
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # AddressSanitizer
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
 endif()
 # ──────────────────────
 
@@ -161,6 +169,9 @@ add_definitions(
     -DPROJECT_DESCRIPTION="${CMAKE_PROJECT_DESCRIPTION}"
     -DPROJECT_NAME="${CMAKE_PROJECT_NAME}"
     -DPROJECT_COMPANY="${CMAKE_PROJECT_COMPANY}"
+    -DPROJECT_COMPANY_ADDRESS="${CMAKE_PROJECT_COMPANY_ADDRESS}"
+    -DPROJECT_COMPANY_ZIPCODE="${CMAKE_PROJECT_COMPANY_ZIPCODE}"
+    -DPROJECT_COMPANY_CONTACT="${CMAKE_PROJECT_COMPANY_CONTACT}"
     -DPROJECT_WEBSITE="${CMAKE_PROJECT_WEBSITE}"
     -DPROJECT_DOMAIN="${CMAKE_PROJECT_DOMAIN}"
     -DPROJECT_MAINTAINER="${CMAKE_PROJECT_MAINTAINER}"

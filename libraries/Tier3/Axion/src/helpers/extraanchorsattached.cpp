@@ -52,11 +52,6 @@ ExtraAnchorsAttached::ExtraAnchorsAttached(QObject* parent):
     });
 }
 
-ExtraAnchorsAttached* ExtraAnchorsAttached::qmlAttachedProperties (QObject * object)
-{
-    return new ExtraAnchorsAttached(object);
-}
-
 void ExtraAnchorsAttached::defineAnchorLine(QQuickItem* otherItem, const Sides side)
 {
     static const QVariant UNDEFINED;

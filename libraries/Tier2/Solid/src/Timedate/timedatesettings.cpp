@@ -1,32 +1,23 @@
 #include "timedatesettings.h"
+#include "timedatebackend.h"
 #include "solid_log.h"
 
-#if defined(Q_OS_BOOT2QT) || defined(LINUX_DBUS) || defined(Q_OS_LINUX)
-#include "timedatecomponentdbus.h"
-#endif
-#include "abstracttimedatecomponent.h"
+#include <QProcess>
 
-static AbstractTimedateComponent* getComponent()
-{
-    static AbstractTimedateComponent* instance = nullptr;
-
-    if(!instance)
-    {
-#if defined(Q_OS_BOOT2QT) || defined(LINUX_DBUS) || defined(Q_OS_LINUX)
-        instance = new TimedateComponentDBus();
-#endif
-    }
-
-    return instance;
-}
+#include "timedatebackenddbus.h"
 
 TimedateSettings::TimedateSettings(QObject *parent) :
     QObject(parent),
+#if defined(Q_OS_BOOT2QT) || defined(Q_OS_LINUX)
+    m_backend(new TimedateBackendDbus(this)),
+#else
+    m_backend(nullptr),
+#endif
     m_timer(new QTimer(this)),
     m_systemDateTimeCaller(new QTimer(this))
 {
-    if(!getComponent()) {
-        SOLIDLOG_WARNING()<<"Could not find a timedate component matching this platform";
+    if (!m_backend) {
+        SOLIDLOG_WARNING() << "Could not find a timedate backend matching this platform";
     }
 
     m_timer->setSingleShot(true);
@@ -41,38 +32,30 @@ TimedateSettings::TimedateSettings(QObject *parent) :
     timerSync->start();
     connect(timerSync, &QTimer::timeout, this, &TimedateSettings::syncRtc);
 
-    sync();
+    syncRtc();
 }
 
-bool TimedateSettings::canSetTimezone()
+bool TimedateSettings::canSetTimezone() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetTimezone();
+    return m_backend && m_backend->canSetTimezone();
 }
 
-bool TimedateSettings::canSetNtp()
+bool TimedateSettings::canSetNtp() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetNtp();
+    return m_backend && m_backend->canSetNtp();
 }
 
-bool TimedateSettings::canSetSystemDateTime()
+bool TimedateSettings::canSetSystemDateTime() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetSystemDateTime();
+    return m_backend && m_backend->canSetSystemDateTime();
 }
 
-bool TimedateSettings::canSetNtpServer()
+bool TimedateSettings::canSetNtpServer() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSetNtpServer();
+    return m_backend && m_backend->canSetNtpServer();
 }
 
-bool TimedateSettings::canReadRTC()
+bool TimedateSettings::canReadRTC() const
 {
 #ifdef Q_OS_BOOT2QT
     return true;
@@ -83,7 +66,13 @@ bool TimedateSettings::canReadRTC()
 
 QString TimedateSettings::getTimezone() const
 {
-    return QTimeZone::systemTimeZoneId();
+    if(!m_backend)
+    {
+        SOLIDLOG_DEBUG()<<"Cannot get timezone, fallback to default";
+        return QTimeZone::systemTimeZoneId();
+    }
+
+    return m_backend->getTimezone();
 }
 
 void TimedateSettings::setTimezone(const QString& timezone)
@@ -94,19 +83,19 @@ void TimedateSettings::setTimezone(const QString& timezone)
         return;
     }
 
-    if(getComponent()->setTimezone(timezone))
+    if(m_backend->setTimezone(timezone))
         emit this->timezoneChanged();
 }
 
 bool TimedateSettings::getNtp() const
 {
-    if(!canSetNtp())
+    if(!m_backend)
     {
         SOLIDLOG_DEBUG()<<"Cannot get ntp, fallback to default";
         return false;
     }
 
-    return getComponent()->getNtp();
+    return m_backend->getNtp();
 }
 
 void TimedateSettings::setNtp(const bool ntp)
@@ -117,7 +106,7 @@ void TimedateSettings::setNtp(const bool ntp)
         return;
     }
 
-    if(getComponent()->setNtp(ntp))
+    if(m_backend->setNtp(ntp))
         emit this->ntpChanged();
 }
 
@@ -138,24 +127,24 @@ QTime TimedateSettings::getSystemTime() const
 
 QString TimedateSettings::getNtpServer() const
 {
-    if(!canSetNtpServer())
+    if(!m_backend)
     {
-        SOLIDLOG_DEBUG()<<"Cannot get ntp server, fallback to default";
+        SOLIDLOG_DEBUG()<<"Cannot get ntp, fallback to default";
         return QString();
     }
 
-    return getComponent()->getNtpServer();
+    return m_backend->getNtpServer();
 }
 
 void TimedateSettings::setNtpServer(const QString& ntpServer)
 {
-    if(!canSetNtp())
+    if(!canSetNtpServer())
     {
         SOLIDLOG_WARNING()<<"Cannot set ntpServer";
         return;
     }
 
-    if(getComponent()->setNtpServer(ntpServer))
+    if(m_backend->setNtpServer(ntpServer))
         emit this->ntpServerChanged();
 
     syncNtp();
@@ -163,13 +152,13 @@ void TimedateSettings::setNtpServer(const QString& ntpServer)
 
 QString TimedateSettings::getServerName() const
 {
-    if(!canSetNtpServer())
+    if(!m_backend)
     {
-        SOLIDLOG_DEBUG()<<"Cannot get ntp server, fallback to default";
+        SOLIDLOG_DEBUG()<<"Cannot get server name, fallback to default";
         return QString();
     }
 
-    return getComponent()->getServerName();
+    return m_backend->getServerName();
 }
 
 void TimedateSettings::setSystemDateTime(const QDateTime& systemDateTime)
@@ -180,7 +169,7 @@ void TimedateSettings::setSystemDateTime(const QDateTime& systemDateTime)
         return;
     }
 
-    if(getComponent()->setSystemTime(systemDateTime))
+    if(m_backend->setSystemTime(systemDateTime))
     {
         refreshDateTime();
     }
@@ -212,7 +201,7 @@ void TimedateSettings::setSystemTime(const QTime& systemTime)
 
 QString TimedateSettings::timedateCtl()
 {
-    QString program="timedatectl";
+    const QString program = "timedatectl";
 
     QProcess process;
     process.setProgram(program);
@@ -236,8 +225,8 @@ QString TimedateSettings::timedateCtl()
 
 QString TimedateSettings::timesyncStatus()
 {
-    QString program="timedatectl";
-    QStringList arguments = QStringList()<<"timesync-status";
+    const QString program = "timedatectl";
+    const QStringList arguments = QStringList()<<"timesync-status";
 
     QProcess process;
     process.setProgram(program);
@@ -262,7 +251,7 @@ QString TimedateSettings::timesyncStatus()
 
 bool TimedateSettings::syncNtp()
 {
-    const QString program="systemctl";
+    const QString program = "systemctl";
     const QStringList arguments = QStringList()<<"restart"<<"systemd-timesyncd";
 
     QProcess *proc = new QProcess(this);
@@ -296,8 +285,8 @@ bool TimedateSettings::syncRtc()
     bool result = true;
     if(canReadRTC() && !getNtp())
     {
-        QString program="hwclock";
-        QStringList arguments = QStringList()<<"-s";
+        const QString program = "hwclock";
+        const QStringList arguments = QStringList()<<"-s";
 
         QProcess process;
         process.setProgram(program);
@@ -325,8 +314,8 @@ bool TimedateSettings::syncRtc()
     }
     if(canReadRTC() && getNtp())
     {
-        QString program="hwclock";
-        QStringList arguments = QStringList()<<"-w";
+        const QString program = "hwclock";
+        const QStringList arguments = QStringList()<<"-w";
 
         QProcess process;
         process.setProgram(program);

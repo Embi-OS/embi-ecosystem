@@ -1,5 +1,4 @@
 ﻿#include "colorutils.h"
-#include <QFontDatabase>
 #include <QUtils>
 
 ColorUtils::ColorUtils(QObject *parent) :

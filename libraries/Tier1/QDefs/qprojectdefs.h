@@ -31,6 +31,18 @@
 #define PROJECT_COMPANY ""
 #endif
 
+#ifndef PROJECT_COMPANY_ADDRESS
+#define PROJECT_COMPANY_ADDRESS ""
+#endif
+
+#ifndef PROJECT_COMPANY_ZIPCODE
+#define PROJECT_COMPANY_ZIPCODE ""
+#endif
+
+#ifndef PROJECT_COMPANY_CONTACT
+#define PROJECT_COMPANY_CONTACT ""
+#endif
+
 #ifndef PROJECT_WEBSITE
 #define PROJECT_WEBSITE ""
 #endif

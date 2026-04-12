@@ -127,7 +127,7 @@ void QCheckableProxyModel::setSelectedRows(QList<int> rows)
     m_isUpdatingFromProperty=true;
 
     m_selection->clearSelection();
-    for(int row: rows)
+    for(int row: std::as_const(rows))
         selectRow(row);
 
     m_isUpdatingFromProperty=false;
@@ -165,7 +165,7 @@ void QCheckableProxyModel::setSelectedColumns(QList<int> columns)
     m_isUpdatingFromProperty=true;
 
     m_selection->clearSelection();
-    for(int column: columns)
+    for(int column: std::as_const(columns))
         selectColumn(column);
 
     m_isUpdatingFromProperty=false;

@@ -15,13 +15,11 @@ T.Control {
     horizontalPadding: 8
     spacing: 5
 
-    property double inset: 1
-    topInset: inset
-    bottomInset: inset
-    leftInset: inset
-    rightInset: inset
+    topInset: 0
+    bottomInset: 0
+    leftInset: 1
+    rightInset: 1
 
-    required property var model
     required property string display
     required property int row
     required property int column

@@ -12,6 +12,7 @@ class SqlTablePreparator : public QObject
     Q_WRITABLE_REF_PROPERTY(QString, name, Name, "")
     Q_WRITABLE_REF_PROPERTY(QVariantList, defaultEntries, DefaultEntries, {})
     Q_WRITABLE_REF_PROPERTY(QVariantList, basicEntries, BasicEntries, {})
+    Q_WRITABLE_VAR_PROPERTY(SqlMigrationModes::Enum, migrationMode, MigrationMode, SqlMigrationModes::FullAuto)
     Q_CONSTANT_OLP_PROPERTY(SqlColumnPreparator, columns)
     Q_CONSTANT_OLP_PROPERTY(SqlIndexPreparator, indexes)
     Q_DEFAULT_PROPERTY(columns)
@@ -28,6 +29,7 @@ public:
     bool init(const QString& connectionName);
 
     bool create();
+    bool dropIndexes(bool dropUniqueIndex=false);
     bool createIndexes();
     bool drop();
     bool update();

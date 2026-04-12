@@ -6,7 +6,7 @@ BasicPane {
     id: root
 
     navigationLocked: currentItem?.navigationLocked ?? false
-    navigationEnabled: loader.ready && (currentItem?.navigationEnabled ?? true)
+    navigationEnabled: !loader.loading && (currentItem?.navigationEnabled ?? true)
 
     required property StepMachine stepMachine
     readonly property StepElement currentStep: stepMachine?.currentStep ?? null

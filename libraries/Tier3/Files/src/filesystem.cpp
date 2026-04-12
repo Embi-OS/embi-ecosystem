@@ -132,7 +132,7 @@ void Filesystem::createFile(const QString& sourcePath)
         if(result)
             SnackbarManager::Get()->showSuccess(tr("Fichier %1 créé").arg(input));
         else
-            SnackbarManager::Get()->showError(tr("Impossible de créer le fichier %1").arg(input));
+            SnackbarManager::Get()->showCritical(tr("Impossible de créer le fichier %1").arg(input));
     });
 }
 
@@ -148,19 +148,9 @@ void Filesystem::createDir(const QString& sourcePath)
         if(result)
             SnackbarManager::Get()->showSuccess(tr("Dossier %1 créé").arg(input));
         else
-            SnackbarManager::Get()->showError(tr("Impossible de créer le dossier %1").arg(input));
+            SnackbarManager::Get()->showCritical(tr("Impossible de créer le dossier %1").arg(input));
     });
 }
-
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
-#include <sys/mount.h>
-#else
-#include <sys/vfs.h>
-#endif
-#include <sys/stat.h>
-#ifdef __NetBSD__
-#include <sys/statvfs.h>
-#endif
 
 int Filesystem::size(const QString& path)
 {
@@ -169,19 +159,23 @@ int Filesystem::size(const QString& path)
 
 QString Filesystem::sizeInfo(const QString& path)
 {
-#ifdef __NetBSD__
-    struct statvfs info;
-    statvfs(path.toLocal8Bit(), &info);
-#else
-    struct statfs info;
-    statfs(path.toLocal8Bit(), &info);
-#endif
-    if(info.f_blocks == 0) return "";
+    QStorageInfo storage(path);
 
-    qint64 used = (qint64) (info.f_blocks - info.f_bavail)*info.f_bsize;
-    qint64 total = (qint64) info.f_blocks*info.f_bsize;
-    int percent = (info.f_blocks - info.f_bavail)*100/info.f_blocks;
-    return QString("%1 / %2 (%3%)").arg(bytes(used), bytes(total)).arg(percent);
+    if (!storage.isValid() || !storage.isReady())
+        return "";
+
+    qint64 total = storage.bytesTotal();
+    qint64 free  = storage.bytesAvailable();
+    qint64 used  = total - free;
+
+    if (total == 0)
+        return "";
+
+    int percent = static_cast<int>((used * 100) / total);
+
+    return QString("%1 / %2 (%3%)")
+        .arg(bytes(used), bytes(total))
+        .arg(percent);
 }
 
 QString Filesystem::parentDir(const QString& path)

@@ -12,10 +12,10 @@ class RestManager : public AbstractManager
 
     Q_OBJECT_QML_SINGLETON(RestManager)
 
-    Q_COMPOSITION_PROPERTY(RestClient, client, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(RestClient, client)
 
     Q_WRITABLE_VAR_PROPERTY(RestDataModes::Enum, apiDataMode, ApiDataMode, RestDataModes::Json)
-    Q_WRITABLE_REF_PROPERTY(QString, apiBaseUrl, ApiBaseUrl, "http://localhost")
+    Q_WRITABLE_REF_PROPERTY(QString, apiBaseUrl, ApiBaseUrl, "localhost")
     Q_WRITABLE_VAR_PROPERTY(int, apiPort, ApiPort, 32768)
     Q_WRITABLE_VAR_PROPERTY(bool, apiTrailingSlash, ApiTrailingSlash, true)
     Q_WRITABLE_VAR_PROPERTY(bool, apiSocketEnabled, ApiSocketEnabled, true)

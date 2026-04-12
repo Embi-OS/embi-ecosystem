@@ -7,7 +7,7 @@ import Eco.Tier3.Axion
 RawButton {
     id: root
 
-    property alias menu: menu
+    readonly property BasicMenu menu: menu
     required property PaneTableView tableView
     property double cellHeight: densityStandard.value
 

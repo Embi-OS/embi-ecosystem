@@ -8,6 +8,8 @@ QtObject {
     property var locale: Qt.locale()
 
     property date selectedDate: new Date()
+    property date fromDate: selectedDate
+    property date toDate: selectedDate
     property int month: selectedDate.getMonth()
     property int year: selectedDate.getFullYear()
     property alias from: calendarModel.from
@@ -15,6 +17,7 @@ QtObject {
 
     property bool dayOfWeekVisible: false
     property bool weekNumberVisible: false
+    property bool rangeMode: false
 
     readonly property CalendarModel calendarModel: CalendarModel {
         id: calendarModel

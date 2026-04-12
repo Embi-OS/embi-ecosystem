@@ -163,10 +163,7 @@ RestRequestBuilder &RestRequestBuilder::setAttributes(const RestAttributeHash &a
 
 RestRequestBuilder &RestRequestBuilder::setBody(const QVariant &body)
 {
-    if(body.userType() == qMetaTypeId<QJSValue>())
-        m_body = body.value<QJSValue>().toVariant();
-    else
-        m_body = body;
+    m_body = qVariantFromJSVariant(body, false);
     m_postQuery.clear();
     return *this;
 }

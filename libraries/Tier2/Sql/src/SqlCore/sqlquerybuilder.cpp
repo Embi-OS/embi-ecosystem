@@ -21,6 +21,14 @@ QVariant SqlBuilder::value(QSqlQuery& query, int row, const QString& field)
     return query.record().value(field);
 }
 
+QVariantMap SqlBuilder::values(const QSqlRecord& record)
+{
+    QVariantMap map;
+    for(int i = 0; i < record.count(); ++i)
+        map.insert(record.fieldName(i), record.value(i));
+    return map;
+}
+
 QVariantMap SqlBuilder::values(QSqlQuery& query, int index)
 {
     QVariantMap map;
@@ -331,6 +339,8 @@ QString SqlCondition::build() const
 
 SqlRawQuery::SqlRawQuery():
     m_connection(SqlDefaultConnection),
+    m_notice(false),
+    m_log(false),
     m_trust(false),
     m_forwardOnly(false),
     m_multiple(false)
@@ -351,6 +361,18 @@ QString SqlRawQuery::prepareIdentifier(const QString &identifier, QSqlDriver::Id
 SqlRawQuery& SqlRawQuery::sql(const QString& sql)
 {
     m_sql = sql;
+    return *this;
+}
+
+SqlRawQuery& SqlRawQuery::notice(bool notice)
+{
+    m_notice = notice;
+    return *this;
+}
+
+SqlRawQuery& SqlRawQuery::log(bool log)
+{
+    m_log = log;
     return *this;
 }
 
@@ -397,6 +419,13 @@ QSqlQuery SqlRawQuery::exec(bool* result) const
 {
     const QString sql = build();
 
+    if(m_notice) {
+        SQLLOG_NOTICE().noquote()<<sql;
+    }
+    else if(m_log) {
+        SQLLOG_INFO().noquote()<<sql;
+    }
+
     return exec(sql, m_forwardOnly, m_multiple, m_connection, result);
 }
 
@@ -405,6 +434,13 @@ QDeferred<QSqlError, QVariant> SqlRawQuery::defer() const
     QDeferred<QSqlError, QVariant> defer;
 
     const QString sql = build();
+
+    if(m_notice) {
+        SQLLOG_NOTICE().noquote()<<sql;
+    }
+    else if(m_log) {
+        SQLLOG_INFO().noquote()<<sql;
+    }
 
     QFuture<QSqlError> future = QtConcurrent::run([defer](const QString& sql, bool forwardOnly, bool multiple, const QString& connection) mutable {
         bool result=false;
@@ -419,6 +455,13 @@ QDeferred<QSqlError, QVariant> SqlRawQuery::defer() const
 QFuture<QSqlError> SqlRawQuery::future() const
 {
     const QString sql = build();
+
+    if(m_notice) {
+        SQLLOG_NOTICE().noquote()<<sql;
+    }
+    else if(m_log) {
+        SQLLOG_INFO().noquote()<<sql;
+    }
 
     QFuture<QSqlError> future = QtConcurrent::run([](const QString& sql, bool forwardOnly, bool multiple, const QString& connection) {
         bool result=false;
@@ -1125,6 +1168,127 @@ QString SqlDeleteQuery::build() const
 }
 
 //──────────────────────────────────────────────────────────────────────
+// SqlAlterTableQuery
+//──────────────────────────────────────────────────────────────────────
+
+SqlAlterTableQuery::SqlAlterTableQuery(const SqlAlterTableQuery &other):
+    column(other.column),
+    to(other.to),
+    index(other.index),
+    fields(other.fields),
+    columnType(other.columnType),
+    action(other.action),
+    ifExists(other.ifExists),
+    ifNotExists(other.ifNotExists)
+{
+
+}
+
+QString SqlAlterTableQuery::build(const SqlMigrationQuery* query) const
+{
+    QString sql;
+
+    switch (action) {
+    case SqlMigrationActions::Rename:
+        sql = Sql::concat(sql, "RENAME TO");
+        sql = Sql::concat(sql, query->prepareIdentifier(to, QSqlDriver::TableName));
+        break;
+    case SqlMigrationActions::RenameColumn:
+        sql = Sql::concat(sql, "RENAME COLUMN");
+        if(ifExists)
+            sql = Sql::concat(sql, "IF EXISTS");
+        sql = Sql::concat(sql, query->prepareIdentifier(column, QSqlDriver::FieldName));
+        sql = Sql::concat(sql, "TO");
+        sql = Sql::concat(sql, query->prepareIdentifier(to, QSqlDriver::FieldName));
+        break;
+    case SqlMigrationActions::AddColumn:
+        sql = Sql::concat(sql, "ADD COLUMN");
+        if(ifNotExists)
+            sql = Sql::concat(sql, "IF NOT EXISTS");
+        sql = Sql::concat(sql, query->prepareIdentifier(column, QSqlDriver::FieldName));
+        sql = Sql::concat(sql, SqlHelper::sqlTypeGenerated(columnType, 0));
+        break;
+    case SqlMigrationActions::DropColumn:
+        sql = Sql::concat(sql, "DROP COLUMN");
+        if(ifExists)
+            sql = Sql::concat(sql, "IF EXISTS");
+        sql = Sql::concat(sql, query->prepareIdentifier(column, QSqlDriver::FieldName));
+        break;
+    case SqlMigrationActions::AddIndex:
+        sql = Sql::concat(sql, "ADD INDEX");
+        if(ifNotExists)
+            sql = Sql::concat(sql, "IF NOT EXISTS");
+        sql = Sql::concat(sql, query->prepareIdentifier(index, QSqlDriver::FieldName));
+        if(!fields.isEmpty()) {
+            QStringList preparedFileds;
+            preparedFileds.reserve(fields.size());
+            for (const QString& field : fields) {
+                preparedFileds << query->prepareIdentifier(field, QSqlDriver::FieldName);
+            }
+            sql = Sql::concat(sql, QString("(%1)").arg(preparedFileds.join(',')));
+        }
+        break;
+    case SqlMigrationActions::DropIndex:
+        sql = Sql::concat(sql, "DROP INDEX");
+        if(ifExists)
+            sql = Sql::concat(sql, "IF EXISTS");
+        sql = Sql::concat(sql, query->prepareIdentifier(index, QSqlDriver::FieldName));
+        break;
+    case SqlMigrationActions::AddUniqueIndex:
+        sql = Sql::concat(sql, "ADD UNIQUE INDEX");
+        sql = Sql::concat(sql, query->prepareIdentifier(index, QSqlDriver::FieldName));
+        if(!fields.isEmpty()) {
+            QStringList preparedFileds;
+            preparedFileds.reserve(fields.size());
+            for (const QString& field : fields) {
+                preparedFileds << query->prepareIdentifier(field, QSqlDriver::FieldName);
+            }
+            sql = Sql::concat(sql, QString("(%1)").arg(preparedFileds.join(',')));
+        }
+        break;
+    default:
+        break;
+    }
+
+    return sql;
+}
+
+QDebug operator<<(QDebug dbg, const SqlAlterTableQuery &q)
+{
+    QDebugStateSaver saver(dbg);
+    dbg.nospace();
+
+    dbg << "SqlAlterTableQuery{";
+
+    dbg << "action=" << SqlMigrationActions::asString(q.action);
+
+    if (!q.column.isEmpty())
+        dbg << ", column=" << q.column;
+
+    if (!q.to.isEmpty())
+        dbg << ", to=" << q.to;
+
+    if (!q.index.isEmpty())
+        dbg << ", index=" << q.index;
+
+    if (!q.fields.isEmpty())
+        dbg << ", fields=[" << q.fields.join(',') << "]";
+
+    if (q.columnType != SqlColumnTypes::Invalid)
+        dbg << ", columnType=" << SqlColumnTypes::asString(q.columnType);
+
+    if (q.ifExists)
+        dbg << ", ifExists=true";
+
+    if (q.ifNotExists)
+        dbg << ", ifNotExists=true";
+
+    dbg << "}";
+
+    return dbg;
+}
+
+//──────────────────────────────────────────────────────────────────────
 // SqlMigrationQuery
 //──────────────────────────────────────────────────────────────────────
 
@@ -1133,8 +1297,6 @@ SqlMigrationQuery::SqlMigrationQuery():
     m_alter(false),
     m_drop(false),
     m_create(false),
-    m_dropIndex(false),
-    m_createIndex(false),
     m_truncate(false),
     m_copy(false),
     m_vacuum(false),
@@ -1143,6 +1305,9 @@ SqlMigrationQuery::SqlMigrationQuery():
     m_autoIncrement(false),
     m_indexList(false),
     m_tableCreation(false),
+    m_createIndex(false),
+    m_createUniqueIndex(false),
+    m_dropIndex(false),
     m_ifExists(false),
     m_ifNotExists(false)
 {
@@ -1164,20 +1329,6 @@ SqlMigrationQuery& SqlMigrationQuery::drop()
 SqlMigrationQuery& SqlMigrationQuery::create()
 {
     m_create = true;
-    return *this;
-}
-
-SqlMigrationQuery& SqlMigrationQuery::dropIndex(const QString& name)
-{
-    m_dropIndex = true;
-    m_index = name;
-    return *this;
-}
-
-SqlMigrationQuery& SqlMigrationQuery::createIndex(const QString& name)
-{
-    m_createIndex = true;
-    m_index = name;
     return *this;
 }
 
@@ -1226,6 +1377,53 @@ SqlMigrationQuery& SqlMigrationQuery::indexList()
 SqlMigrationQuery& SqlMigrationQuery::tableCreation()
 {
     m_tableCreation = true;
+    return *this;
+}
+
+SqlMigrationQuery& SqlMigrationQuery::renameColumn(const QString& column, const QString& into)
+{
+    SqlAlterTableQuery action;
+    action.action = SqlMigrationActions::RenameColumn;
+    action.column = column;
+    action.to = into;
+    m_actions << action;
+    return *this;
+}
+
+SqlMigrationQuery& SqlMigrationQuery::addColumn(const QString& column, SqlColumnTypes::Enum columnType)
+{
+    SqlAlterTableQuery action;
+    action.action = SqlMigrationActions::AddColumn;
+    action.column = column;
+    action.columnType = columnType;
+    m_actions << action;
+    return *this;
+}
+
+SqlMigrationQuery& SqlMigrationQuery::createIndex(const QString& index)
+{
+    m_createIndex = true;
+    m_index = index;
+    return *this;
+}
+
+SqlMigrationQuery& SqlMigrationQuery::createUniqueIndex(const QString& index)
+{
+    m_createUniqueIndex = true;
+    m_index = index;
+    return *this;
+}
+
+SqlMigrationQuery& SqlMigrationQuery::dropIndex(const QString& index)
+{
+    m_dropIndex = true;
+    m_index = index;
+    return *this;
+}
+
+SqlMigrationQuery& SqlMigrationQuery::actions(const QList<SqlAlterTableQuery>& actions)
+{
+    m_actions << actions;
     return *this;
 }
 
@@ -1282,8 +1480,21 @@ QString SqlMigrationQuery::build() const
             sql = Sql::concat(sql, "IF EXISTS");
         sql = Sql::concat(sql, this->prepareIdentifier(m_table, QSqlDriver::TableName));
     }
+    else if(m_alter && !m_table.isEmpty() && !m_actions.isEmpty()) {
+        sql = "ALTER TABLE";
+        if(m_ifExists)
+            sql = Sql::concat(sql, "IF EXISTS");
+        sql = Sql::concat(sql, this->prepareIdentifier(m_table, QSqlDriver::TableName));
+        QStringList actions;
+        actions.reserve(m_actions.size());
+        for(const SqlAlterTableQuery& action: m_actions)
+            actions.append(action.build(this));
+        sql = Sql::concat(sql, actions.join(','));
+    }
     else if(m_alter && !m_table.isEmpty() && !m_rename.isEmpty()) {
         sql = "ALTER TABLE";
+        if(m_ifExists)
+            sql = Sql::concat(sql, "IF EXISTS");
         sql = Sql::concat(sql, this->prepareIdentifier(m_table, QSqlDriver::TableName));
         sql = Sql::concat(sql, "RENAME TO");
         sql = Sql::concat(sql, this->prepareIdentifier(m_rename, QSqlDriver::TableName));
@@ -1309,6 +1520,14 @@ QString SqlMigrationQuery::build() const
     }
     else if(m_createIndex && !m_index.isEmpty() && !m_table.isEmpty() && !m_field.isEmpty()) {
         sql = "CREATE INDEX";
+        if(m_ifNotExists)
+            sql = Sql::concat(sql, "IF NOT EXISTS");
+        sql = Sql::concat(sql, this->prepareIdentifier(m_index, QSqlDriver::FieldName));
+        sql = Sql::concat(sql, Sql::on());
+        sql = Sql::concat(sql, QString("%1(%2)").arg(this->prepareIdentifier(m_table, QSqlDriver::TableName), this->prepareIdentifier(m_field, QSqlDriver::FieldName)));
+    }
+    else if(m_createUniqueIndex && !m_index.isEmpty() && !m_table.isEmpty() && !m_field.isEmpty()) {
+        sql = "CREATE UNIQUE INDEX";
         if(m_ifNotExists)
             sql = Sql::concat(sql, "IF NOT EXISTS");
         sql = Sql::concat(sql, this->prepareIdentifier(m_index, QSqlDriver::FieldName));

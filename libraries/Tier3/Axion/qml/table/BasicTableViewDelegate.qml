@@ -21,7 +21,6 @@ T.Control {
     leftInset: inset
     rightInset: inset
 
-    required property var model
     required property int row
     required property int column
     required property bool selected

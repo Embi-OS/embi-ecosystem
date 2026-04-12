@@ -14,9 +14,11 @@ HappyCrudRouter::HappyCrudRouter(QObject *parent) :
     m_sqlTablePreparator->setName(m_tableName);
     m_sqlTablePreparator->setDefaultEntries(m_defaultEntries);
     m_sqlTablePreparator->setBasicEntries(m_basicEntries);
+    m_sqlTablePreparator->setMigrationMode(m_migrationMode);
     connect(this, &HappyCrudRouter::tableNameChanged, m_sqlTablePreparator, &SqlTablePreparator::setName);
     connect(this, &HappyCrudRouter::defaultEntriesChanged, m_sqlTablePreparator, &SqlTablePreparator::setDefaultEntries);
     connect(this, &HappyCrudRouter::basicEntriesChanged, m_sqlTablePreparator, &SqlTablePreparator::setBasicEntries);
+    connect(this, &HappyCrudRouter::migrationModeChanged, m_sqlTablePreparator, &SqlTablePreparator::setMigrationMode);
 
     m_fields.onInserted([this](int index, AbstractHappyField* field) {
         if(VarHappyField* varField = qobject_cast<VarHappyField*>(field))
@@ -170,12 +172,9 @@ QVariant HappyCrudRouter::primaryFieldFromLookup(const QVariant& lookupValue) co
     return fieldFromLookup(m_primaryField, lookupValue);
 }
 
-QVariant HappyCrudRouter::fieldFromLookup(const QString& field, const QVariant& lookupValue) const
+QVariant HappyCrudRouter::fieldFromLookup(const QString& field, const QVariant& lookupValue, bool formatted) const
 {
     QVariant formattedLookup = m_lookupHappyField->formatWrite(lookupValue);
-
-    if(m_lookupField==field)
-        return formattedLookup;
 
     QSqlQuery selectReply = SqlBuilder::select(QStringList(field)).from(m_tableName).where(m_lookupField, formattedLookup).limit(1).offset(0)
                                        .connection(m_connection).forwardOnly().trust().exec();
@@ -186,10 +185,16 @@ QVariant HappyCrudRouter::fieldFromLookup(const QString& field, const QVariant& 
     if(!selectReply.seek(0))
         return QVariant();
 
-    return selectReply.value(field);
+    const QVariant value = selectReply.value(field);
+    if(formatted) {
+        bool ok;
+        const QVariant formattedValue = formatFieldRead(field, value, &ok);
+        return formattedValue;
+    }
+    return value;
 }
 
-QVariant HappyCrudRouter::fieldFromPrimary(const QString& field, const QVariant& primaryValue) const
+QVariant HappyCrudRouter::fieldFromPrimary(const QString& field, const QVariant& primaryValue, bool formatted) const
 {
     QVariant formattedPrimary = m_primaryHappyField->formatWrite(primaryValue);
 
@@ -205,10 +210,16 @@ QVariant HappyCrudRouter::fieldFromPrimary(const QString& field, const QVariant&
     if(!selectReply.seek(0))
         return QVariant();
 
-    return selectReply.value(field);
+    const QVariant value = selectReply.value(field);
+    if(formatted) {
+        bool ok;
+        const QVariant formattedValue = formatFieldRead(field, value, &ok);
+        return formattedValue;
+    }
+    return value;
 }
 
-QStringList HappyCrudRouter::parseColumns(const QStringList& fields, const QStringList& omit) const
+QStringList HappyCrudRouter::parseColumns(const QStringList& fields, const QStringList& omits, QStringList* sqlFields) const
 {
     QStringList columns = fields;
 
@@ -216,13 +227,25 @@ QStringList HappyCrudRouter::parseColumns(const QStringList& fields, const QStri
     {
         columns.clear();
         for(AbstractHappyField* field: m_fields)
+        {
             columns.append(field->getName());
+        }
     }
 
-    for(const QString& field: omit)
+    for(const QString& omit: omits)
     {
-        if(columns.contains(field))
-            columns.removeAll(field);
+        if(columns.contains(omit))
+            columns.removeAll(omit);
+    }
+
+    if(!sqlFields)
+        return columns;
+
+    sqlFields->reserve(columns.size());
+    for(const QString& column: std::as_const(columns))
+    {
+        if(VarHappyField* varField = qobject_cast<VarHappyField*>(field(column)))
+            sqlFields->append(varField->getName());
     }
 
     return columns;
@@ -443,23 +466,41 @@ QVariantMap HappyCrudRouter::writeFields(const QVariantMap& object, bool creatio
 
     for(AbstractHappyField* field: m_fields) {
         bool ok=false;
-        const QVariant value = field->write(object, creation, &ok);
-        if(ok)
-            formattedMap.insert(field->getName(), value);
+        const QVariant formattedValue = field->write(object, creation, &ok);
+        if (!ok)
+            continue;
+        formattedMap.insert(field->getName(), formattedValue);
     }
 
     return formattedMap;
 }
 
+QVariantMap HappyCrudRouter::mergeFields(const QVariantMap& object, const QVariant& primaryValue) const
+{
+    QVariantMap mergedMap;
+
+    for(AbstractHappyField* field: m_fields) {
+        if(!object.contains(field->getName()))
+            continue;
+        const QVariant oldValue = fieldFromPrimary(field->getName(), primaryValue, true);
+        const QVariant value = object.value(field->getName());
+        const QVariant mergedValue = qVariantDeepMerge(oldValue, value);
+        mergedMap.insert(field->getName(), mergedValue);
+    }
+
+    return writeFields(mergedMap, false);
+}
+
 QVariantList HappyCrudRouter::getValues(const HappyHttpParameters& parameters)
 {
-    const QStringList columns = parseColumns(parameters.fields, parameters.omit);
+    QStringList sqlFields;
+    const QStringList columns = parseColumns(parameters.fields, parameters.omit, &sqlFields);
 
     const int limit = parameters.page<=0 ? parameters.limit : parameters.perPage;
     const int offset = parameters.page<=0 ? parameters.offset : (parameters.page-1)*parameters.perPage;
     const QVariantMap sqlFilters = parseFilters(parameters.filters);
-    QSqlQuery sqlReply = SqlBuilder::select(columns).from(m_tableName).join(m_joins).where(sqlFilters).orderBy(parameters.sorters).limit(limit).offset(offset)
-                                    .connection(m_connection).forwardOnly().exec();
+    QSqlQuery sqlReply = SqlBuilder::select(sqlFields).from(m_tableName).join(m_joins).where(sqlFilters).orderBy(parameters.sorters).limit(limit).offset(offset)
+                                    .connection(m_connection).forwardOnly().trust().exec();
 
     if(sqlReply.lastError().isValid())
     {
@@ -475,13 +516,14 @@ QVariantList HappyCrudRouter::getValues(const HappyHttpParameters& parameters)
 
 QVariantMap HappyCrudRouter::getValues(const QVariant& argValue, const HappyHttpParameters& parameters)
 {
-    const QStringList columns = parseColumns(parameters.fields, parameters.omit);
+    QStringList sqlFields;
+    const QStringList columns = parseColumns(parameters.fields, parameters.omit, &sqlFields);
 
     const QVariant lookupValue = m_lookupHappyField->formatWrite(argValue);
 
     const QVariantMap sqlFilters = parseFilters(parameters.filters);
-    QSqlQuery sqlReply = SqlBuilder::select(columns).from(m_tableName).join(m_joins).where(m_lookupField, lookupValue).where(sqlFilters).limit(1).offset(0)
-                                    .connection(m_connection).forwardOnly().exec();
+    QSqlQuery sqlReply = SqlBuilder::select(sqlFields).from(m_tableName).join(m_joins).where(m_lookupField, lookupValue).where(sqlFilters).limit(1).offset(0)
+                                    .connection(m_connection).forwardOnly().trust().exec();
 
     if(sqlReply.lastError().isValid())
     {
@@ -502,16 +544,15 @@ QVariantMap HappyCrudRouter::getValues(const QVariant& argValue, const HappyHttp
 
 HappyReply HappyCrudRouter::getList(const HappyHttpParameters& parameters, const HappyHttpHeaders& headers)
 {
-    QElapsedTimer timer;
-    timer.start();
-    const QStringList columns = parseColumns(parameters.fields, parameters.omit);
+    QStringList sqlFields;
+    const QStringList columns = parseColumns(parameters.fields, parameters.omit, &sqlFields);
 
     const int limit = parameters.page<=0 ? parameters.limit : parameters.perPage;
     const int offset = parameters.page<=0 ? parameters.offset : (parameters.page-1)*parameters.perPage;
     const QVariantMap sqlFilters = parseFilters(parameters.filters);
 
-    QSqlQuery selectReply = SqlBuilder::select(columns).from(m_tableName).join(m_joins).where(sqlFilters).orderBy(parameters.sorters).limit(limit).offset(offset)
-                                       .connection(m_connection).forwardOnly().exec();
+    QSqlQuery selectReply = SqlBuilder::select(sqlFields).from(m_tableName).join(m_joins).where(sqlFilters).orderBy(parameters.sorters).limit(limit).offset(offset)
+                                       .connection(m_connection).forwardOnly().trust().exec();
 
     if(selectReply.lastError().isValid())
     {
@@ -601,10 +642,11 @@ HappyReply HappyCrudRouter::postObject(const QVariant& data, const HappyHttpPara
     const QVariant lastInsertedId = sqlReply.lastInsertId();
     objectInsertedNotify(lastInsertedId, object);
 
-    const QStringList columns = parseColumns(parameters.fields, parameters.omit);
+    QStringList sqlFields;
+    const QStringList columns = parseColumns(parameters.fields, parameters.omit, &sqlFields);
 
-    QSqlQuery selectReply = SqlBuilder::select(columns).from(m_tableName).join(m_joins).where(m_primaryField, lastInsertedId).limit(1)
-                                       .connection(m_connection).forwardOnly().exec();
+    QSqlQuery selectReply = SqlBuilder::select(sqlFields).from(m_tableName).join(m_joins).where(m_primaryField, lastInsertedId).limit(1)
+                                       .connection(m_connection).forwardOnly().trust().exec();
 
     if(selectReply.lastError().isValid())
     {
@@ -627,11 +669,12 @@ HappyReply HappyCrudRouter::postObject(const QVariant& data, const HappyHttpPara
 
 HappyReply HappyCrudRouter::getObject(const QVariant& argValue, const HappyHttpParameters& parameters, const HappyHttpHeaders& headers)
 {
-    const QStringList columns = parseColumns(parameters.fields, parameters.omit);
+    QStringList sqlFields;
+    const QStringList columns = parseColumns(parameters.fields, parameters.omit, &sqlFields);
     const QVariant lookupValue = m_lookupHappyField->formatWrite(argValue);
 
-    QSqlQuery selectReply = SqlBuilder::select(columns).from(m_tableName).join(m_joins).where(m_lookupField, lookupValue).limit(1).offset(0)
-                                       .connection(m_connection).forwardOnly().exec();
+    QSqlQuery selectReply = SqlBuilder::select(sqlFields).from(m_tableName).join(m_joins).where(m_lookupField, lookupValue).limit(1).offset(0)
+                                       .connection(m_connection).forwardOnly().trust().exec();
 
     if(selectReply.lastError().isValid())
     {
@@ -666,10 +709,11 @@ HappyReply HappyCrudRouter::putObject(const QVariant& data, const QVariant& argV
 
     preWriteFields(parameters);
 
-    QVariantMap object = writeFields(map, false);
 
     if(insert)
     {
+        QVariantMap object = writeFields(map, false);
+
         objectAboutToBeInsertedNotify(object);
 
         QSqlQuery sqlReply = SqlBuilder::insert(object).into(m_tableName).connection(m_connection).exec();
@@ -684,6 +728,12 @@ HappyReply HappyCrudRouter::putObject(const QVariant& data, const QVariant& argV
     }
     else
     {
+        QVariantMap object;
+        if(parameters.merge)
+            object = mergeFields(data.toMap(), primaryValue);
+        else
+            object = writeFields(data.toMap(), false);
+
         objectAboutToBeUpdatedNotify(primaryValue, object);
 
         QSqlQuery sqlReply = SqlBuilder::update(m_tableName).set(object).where(m_primaryField, primaryValue).connection(m_connection).exec();
@@ -696,10 +746,11 @@ HappyReply HappyCrudRouter::putObject(const QVariant& data, const QVariant& argV
         objectUpdatedNotify(primaryValue, object);
     }
 
-    const QStringList columns = parseColumns(parameters.fields, parameters.omit);
+    QStringList sqlFields;
+    const QStringList columns = parseColumns(parameters.fields, parameters.omit, &sqlFields);
 
-    QSqlQuery selectReply = SqlBuilder::select(columns).from(m_tableName).join(m_joins).where(m_primaryField, primaryValue).limit(1).offset(0)
-                               .connection(m_connection).forwardOnly().exec();
+    QSqlQuery selectReply = SqlBuilder::select(sqlFields).from(m_tableName).join(m_joins).where(m_primaryField, primaryValue).limit(1).offset(0)
+                               .connection(m_connection).forwardOnly().trust().exec();
 
     if(selectReply.lastError().isValid())
     {
@@ -731,7 +782,11 @@ HappyReply HappyCrudRouter::patchObject(const QVariant& data, const QVariant& ar
 
     preWriteFields(parameters);
 
-    QVariantMap object = writeFields(data.toMap(), false);
+    QVariantMap object;
+    if(parameters.merge)
+        object = mergeFields(data.toMap(), primaryValue);
+    else
+        object = writeFields(data.toMap(), false);
 
     objectAboutToBeUpdatedNotify(primaryValue, object);
 
@@ -744,10 +799,11 @@ HappyReply HappyCrudRouter::patchObject(const QVariant& data, const QVariant& ar
 
     objectUpdatedNotify(primaryValue, object);
 
-    const QStringList columns = parseColumns(parameters.fields, parameters.omit);
+    QStringList sqlFields;
+    const QStringList columns = parseColumns(parameters.fields, parameters.omit, &sqlFields);
 
-    QSqlQuery selectReply = SqlBuilder::select(columns).from(m_tableName).join(m_joins).where(m_primaryField, primaryValue).limit(1).offset(0)
-                                       .connection(m_connection).forwardOnly().exec();
+    QSqlQuery selectReply = SqlBuilder::select(sqlFields).from(m_tableName).join(m_joins).where(m_primaryField, primaryValue).limit(1).offset(0)
+                                       .connection(m_connection).forwardOnly().trust().exec();
 
     if(selectReply.lastError().isValid())
     {
@@ -770,11 +826,12 @@ HappyReply HappyCrudRouter::patchObject(const QVariant& data, const QVariant& ar
 
 HappyReply HappyCrudRouter::deleteObject(const QVariant& argValue, const HappyHttpParameters& parameters, const HappyHttpHeaders& headers)
 {
-    const QStringList columns = parseColumns(parameters.fields, parameters.omit);
+    QStringList sqlFields;
+    const QStringList columns = parseColumns(parameters.fields, parameters.omit, &sqlFields);
     const QVariant lookupValue = m_lookupHappyField->formatWrite(argValue);
 
-    QSqlQuery selectReply = SqlBuilder::select(columns).from(m_tableName).join(m_joins).where(m_lookupField, lookupValue).limit(1).offset(0)
-                                       .connection(m_connection).forwardOnly().exec();
+    QSqlQuery selectReply = SqlBuilder::select(sqlFields).from(m_tableName).join(m_joins).where(m_lookupField, lookupValue).limit(1).offset(0)
+                                       .connection(m_connection).forwardOnly().trust().exec();
 
     if(selectReply.lastError().isValid())
     {
@@ -820,9 +877,9 @@ QHttpServerResponse HappyCrudRouter::optionsRoute(const HappyHttpRequest &reques
 
 QHttpServerResponse HappyCrudRouter::getListRoute(const HappyHttpRequest &request)
 {
-    SqlDbPool::database(m_connection).transaction();
+    SqlDbPool::transaction(m_connection);
     const HappyReply reply = getList(request.parameters, request.headers);
-    SqlDbPool::database(m_connection).commit();
+    SqlDbPool::commit(m_connection);
 
     return reply.response(request.headers);
 }
@@ -834,18 +891,18 @@ QHttpServerResponse HappyCrudRouter::postObjectRoute(const HappyHttpRequest &req
         return QHttpServerResponse(request.data.toString(), QHttpServerResponder::StatusCode::InternalServerError);
     }
 
-    SqlDbPool::database(m_connection).transaction();
+    SqlDbPool::transaction(m_connection);
     const HappyReply reply = postObject(request.data, request.parameters, request.headers);
-    SqlDbPool::database(m_connection).commit();
+    SqlDbPool::commit(m_connection);
 
     return reply.response(request.headers);
 }
 
 QHttpServerResponse HappyCrudRouter::getObjectRoute(const QVariant& argValue, const HappyHttpRequest &request)
 {
-    SqlDbPool::database(m_connection).transaction();
+    SqlDbPool::transaction(m_connection);
     const HappyReply reply = getObject(argValue, request.parameters, request.headers);
-    SqlDbPool::database(m_connection).commit();
+    SqlDbPool::commit(m_connection);
 
     return reply.response(request.headers);
 }
@@ -857,9 +914,9 @@ QHttpServerResponse HappyCrudRouter::putObjectRoute(const QVariant& argValue, co
         return QHttpServerResponse(request.data.toString(), QHttpServerResponder::StatusCode::InternalServerError);
     }
 
-    SqlDbPool::database(m_connection).transaction();
+    SqlDbPool::transaction(m_connection);
     const HappyReply reply = putObject(request.data, argValue, request.parameters, request.headers);
-    SqlDbPool::database(m_connection).commit();
+    SqlDbPool::commit(m_connection);
 
     return reply.response(request.headers);
 }
@@ -871,18 +928,18 @@ QHttpServerResponse HappyCrudRouter::patchObjectRoute(const QVariant& argValue, 
         return QHttpServerResponse(request.data.toString(), QHttpServerResponder::StatusCode::InternalServerError);
     }
 
-    SqlDbPool::database(m_connection).transaction();
+    SqlDbPool::transaction(m_connection);
     const HappyReply reply = patchObject(request.data, argValue, request.parameters, request.headers);
-    SqlDbPool::database(m_connection).commit();
+    SqlDbPool::commit(m_connection);
 
     return reply.response(request.headers);
 }
 
 QHttpServerResponse HappyCrudRouter::deleteObjectRoute(const QVariant& argValue, const HappyHttpRequest &request)
 {
-    SqlDbPool::database(m_connection).transaction();
+    SqlDbPool::transaction(m_connection);
     const HappyReply reply = deleteObject(argValue, request.parameters, request.headers);
-    SqlDbPool::database(m_connection).commit();
+    SqlDbPool::commit(m_connection);
 
     return reply.response(request.headers);
 }

@@ -17,7 +17,7 @@ BasicDialog {
     property FolderTreeObject selectedElement: null
     property int selectionType: FolderTreeTypes.All
 
-    property alias folderTreeModel: folderTreeModel
+    readonly property FolderTreeModel folderTreeModel: folderTreeModel
     FolderTreeModel {
         id: folderTreeModel
         delayed: true

@@ -76,7 +76,7 @@ bool SqlTablePreparator::create()
 
     bool result = false;
     const QString definition = generateColumnsDefinition();
-    SqlBuilder::create().table(m_name).ifNotExists().definition(definition).connection(m_connectionName).exec(&result);
+    SqlBuilder::create().table(m_name).ifNotExists().definition(definition).connection(m_connectionName).notice().exec(&result);
 
     if(result)
         result = createIndexes();
@@ -84,8 +84,38 @@ bool SqlTablePreparator::create()
     return result;
 }
 
+bool SqlTablePreparator::dropIndexes(bool dropUniqueIndex)
+{
+    bool result = true;
+
+    // 1. Désactiver les unique checks
+    if(m_driver->dbmsType()==QSqlDriver::MySqlServer && dropUniqueIndex)
+    {
+        for(SqlColumnPreparator* column: m_columns)
+        {
+            if(column->isUnique() && !column->isPrimary()) {
+                SqlBuilder::dropIndex(column->getName()).ifExists().table(m_name).notice().exec(&result);
+            }
+        }
+    }
+
+    // 2. Lister les index de la table
+    QStringList declaredIndexes;
+    for (SqlIndexPreparator* index : m_indexes)
+        declaredIndexes << QString("idx_%1_%2").arg(m_name, index->getFields().join('_'));
+
+    // 3. Supprimer les index
+    for (const QString& index : std::as_const(declaredIndexes))
+    {
+        SqlBuilder::dropIndex(index).ifExists().table(m_name).notice().exec(&result);
+    }
+
+    return result;
+}
+
 bool SqlTablePreparator::createIndexes()
 {
+    const QSqlDriver::DbmsType dbmsType = m_driver->dbmsType();
     bool result = true;
 
     // 1. Lister les index actuels
@@ -101,7 +131,7 @@ bool SqlTablePreparator::createIndexes()
 
     // 3. Déterminer les index à supprimer (présents en DB mais pas déclarés)
     QStringList indexToRemove;
-    for (const QString& index : currentIndexes)
+    for (const QString& index : std::as_const(currentIndexes))
     {
         if (!index.startsWith("idx_"))
             continue;
@@ -110,51 +140,78 @@ bool SqlTablePreparator::createIndexes()
     }
 
     // 4. Supprimer les index obsolètes
-    for (const QString& index : indexToRemove)
+    for (const QString& index : std::as_const(indexToRemove))
     {
-        SQLLOG_DEBUG()<<"Dropping index"<<index;
-        SqlBuilder::dropIndex(index).ifExists().table(m_name).connection(m_connectionName).exec(&result);
+        SqlBuilder::dropIndex(index).ifExists().table(m_name).connection(m_connectionName).notice().exec(&result);
     }
 
     // 5. Créer les index manquants
-    bool indexCreated = false;
+    QList<SqlAlterTableQuery> alterQueries;
+    if(dbmsType==QSqlDriver::MySqlServer) {
+        for(SqlColumnPreparator* column: m_columns)
+        {
+            if(column->isUnique() && !column->isPrimary() && !currentIndexes.contains(column->getName()))
+            {
+                SqlAlterTableQuery alterQuery;
+                alterQuery.action = SqlMigrationActions::AddUniqueIndex;
+                alterQuery.index = column->getName();
+                alterQuery.fields << column->getName();
+                alterQueries.append(alterQuery);
+            }
+        }
+    }
+
     for (SqlIndexPreparator* index : m_indexes)
     {
-        QStringList fields = index->getFields();
+        const QStringList fields = index->getFields();
 
         const QString indexName = QString("idx_%1_%2").arg(m_name, fields.join('_'));
         if (currentIndexes.contains(indexName))
             continue; // déjà présent
 
-        for (QString& field : fields) {
-            field = Sql::prepareIdentifier(field, QSqlDriver::FieldName, m_driver);
-        }
+        SqlAlterTableQuery alterQuery;
+        alterQuery.action = SqlMigrationActions::AddIndex;
+        alterQuery.index = indexName;
+        alterQuery.fields = fields;
+        alterQueries.append(alterQuery);
+    }
 
-        SQLLOG_INFO()<<"Creating index"<<indexName<<"on table:"<<m_name;
-        SqlBuilder::createIndex(indexName).ifNotExists().table(m_name).field(fields.join(',')).connection(m_connectionName).exec(&result);
+    if(alterQueries.isEmpty())
+        return true;
+
+    if(dbmsType==QSqlDriver::MySqlServer) {
+        SqlBuilder::alter().table(m_name).actions(alterQueries).connection(m_connectionName).notice().exec(&result);
 
         if (!result) {
-            SQLLOG_WARNING()<<"Failed to create index"<<indexName;
+            SQLLOG_WARNING()<<"Failed to add indexes";
         }
+    }
+    else if(dbmsType==QSqlDriver::SQLite) {
+        for(const SqlAlterTableQuery& alterQuery: std::as_const(alterQueries)) {
+            if(alterQuery.action==SqlMigrationActions::AddIndex) {
+                QStringList preparedFileds;
+                preparedFileds.reserve(alterQuery.fields.size());
+                for (const QString& field : alterQuery.fields) {
+                    preparedFileds << Sql::prepareIdentifier(field, QSqlDriver::FieldName, m_driver);
+                }
+                SqlBuilder::alter().table(m_name).createIndex(alterQuery.index).field(preparedFileds.join(',')).ifNotExists().connection(m_connectionName).notice().exec(&result);
+            }
 
-        indexCreated = true;
+            if (!result) {
+                SQLLOG_WARNING()<<"Failed to create index";
+            }
+        }
     }
 
-    if(indexCreated)
-    {
-        SQLLOG_INFO()<<"Analyze table:"<<m_name;
-        SqlBuilder::analyze().table(m_name);
-    }
+    SqlBuilder::analyze().table(m_name).notice().exec();
 
     return result;
 }
 
 bool SqlTablePreparator::drop()
 {
-    SQLLOG_INFO()<<"Dropping table:"<<m_name;
-
     bool result = false;
-    SqlBuilder::drop().table(m_name).connection(m_connectionName).exec(&result);
+    SqlBuilder::drop().table(m_name).connection(m_connectionName).notice().exec(&result);
 
     return result;
 }
@@ -165,20 +222,22 @@ bool SqlTablePreparator::update()
 
     if(!isDefinitionEqualToExistingTable())
     {
-        SQLLOG_INFO()<<"Updating table schema:"<<m_name;
+        if(m_migrationMode>=SqlMigrationModes::CreationAuto)
+        {
+            SQLLOG_INFO()<<"Updating table schema:"<<m_name;
 
-        SQLLOG_NOTICE()<<"Creating table:"<<m_name+"_new";
-        const QString definition = generateColumnsDefinition();
-        SqlBuilder::create().table(m_name+"_new").ifNotExists().definition(definition).connection(m_connectionName).exec(&result);
+            SqlBuilder::alter().table(m_name).rename(m_name+"_old").connection(m_connectionName).notice().exec(&result);
 
-        SQLLOG_NOTICE()<<"Copying table:"<<m_name<<"to"<<m_name+"_new";
-        SqlBuilder::copy().table(m_name).into(m_name+"_new").connection(m_connectionName).exec(&result);
+            const QString definition = generateColumnsDefinition();
+            SqlBuilder::create().table(m_name).ifNotExists().definition(definition).connection(m_connectionName).notice().exec(&result);
+        }
 
-        SQLLOG_NOTICE()<<"Droping table:"<<m_name;
-        SqlBuilder::drop().table(m_name).ifExists().connection(m_connectionName).exec(&result);
+        if(m_migrationMode>=SqlMigrationModes::FullAuto)
+        {
+            SqlBuilder::copy().table(m_name+"_old").into(m_name).connection(m_connectionName).notice().exec(&result);
 
-        SQLLOG_NOTICE()<<"Renaming table:"<<m_name+"_new"<<"to"<<m_name;
-        SqlBuilder::alter().table(m_name+"_new").rename(m_name).connection(m_connectionName).exec(&result);
+            SqlBuilder::drop().table(m_name+"_old").ifExists().connection(m_connectionName).notice().exec(&result);
+        }
 
         result = true;
     }
@@ -191,10 +250,8 @@ bool SqlTablePreparator::update()
 
 bool SqlTablePreparator::truncate()
 {
-    SQLLOG_INFO()<<"Clearing table:"<<m_name;
-
     bool result = false;
-    SqlBuilder::truncate().table(m_name).connection(m_connectionName).exec(&result);
+    SqlBuilder::truncate().table(m_name).connection(m_connectionName).notice().exec(&result);
 
     return result;
 }

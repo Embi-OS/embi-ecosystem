@@ -75,6 +75,7 @@ void DialogLoader::onActiveChanged(bool active)
         connect(dialog, &DialogObject::pathSelected, this, &DialogLoader::pathSelected);
         connect(dialog, &DialogObject::inputAccepted, this, &DialogLoader::inputAccepted);
         connect(dialog, &DialogObject::inputApplied, this, &DialogLoader::inputApplied);
+        connect(dialog, &DialogObject::selectAccepted, this, &DialogLoader::selectAccepted);
         connect(dialog, &DialogObject::formValidated, this, &DialogLoader::formValidated);
         connect(dialog, &DialogObject::alarmValidated, this, &DialogLoader::alarmValidated);
 

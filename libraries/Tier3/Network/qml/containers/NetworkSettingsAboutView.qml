@@ -26,11 +26,11 @@ PaneTreeView {
 
     StandardObjectModel {
         id: treeModel
-        InfoTreeDelegate {text: qsTr("Adresse IPv4 Ethernet");info: Network.ethernetIPv4Address}
-        InfoTreeDelegate {text: qsTr("Adresse IPv4 Wifi");info: Network.wifiIPv4Address}
-        InfoTreeDelegate {text: qsTr("Adresse IPv4 Usb");info: Network.usbIPv4Address}
-        InfoTreeDelegate {text: qsTr("Hostname");info: Network.hostname}
-        InfoTreeDelegate {text: qsTr("Domain");info: Network.domain}
+        InfoTreeDelegate {text: qsTr("Adresse IPv4 Ethernet");info: NetworkInformation.ethernetIPv4Address}
+        InfoTreeDelegate {text: qsTr("Adresse IPv4 Wifi");info: NetworkInformation.wifiIPv4Address}
+        InfoTreeDelegate {text: qsTr("Adresse IPv4 Usb");info: NetworkInformation.usbIPv4Address}
+        InfoTreeDelegate {text: qsTr("Hostname");info: NetworkInformation.hostname}
+        InfoTreeDelegate {text: qsTr("Domain");info: NetworkInformation.domain}
 
         SeparatorTreeDelegate {}
 
@@ -52,17 +52,17 @@ PaneTreeView {
 
         SubtitleTreeDelegate {
             text: qsTr("Informations")
-            InfoTreeDelegate {text: "Backend";info: Network.backend}
-            InfoTreeDelegate {text: "Reachability";info: Network.reachability}
-            InfoTreeDelegate {text: "Transport medium";info: Network.transportMedium}
-            InfoTreeDelegate {text: "Is behind captive portal";info: Network.captivePortal}
-            InfoTreeDelegate {text: "Is metered";info: Network.metered}
+            InfoTreeDelegate {text: "Backend";info: NetworkInformation.backend}
+            InfoTreeDelegate {text: "Reachability";info: NetworkInformation.reachability}
+            InfoTreeDelegate {text: "Transport medium";info: NetworkInformation.transportMedium}
+            InfoTreeDelegate {text: "Is behind captive portal";info: NetworkInformation.captivePortal}
+            InfoTreeDelegate {text: "Is metered";info: NetworkInformation.metered}
 
             SubtitleTreeDelegate {
                 text: "NetworkSettingsInformation"
                 InfoTreeDelegate {text: "Initialized";info: NetworkSettingsInformation.isInitialized}
-                InfoTreeDelegate {text: "Reachability";info: Network.reachabilityAsString(NetworkSettingsInformation.reachability)}
-                InfoTreeDelegate {text: "Transport medium";info: Network.transportMediumAsString(NetworkSettingsInformation.transportMedium)}
+                InfoTreeDelegate {text: "Reachability";info: NetworkInformation.reachabilityAsString(NetworkSettingsInformation.reachability)}
+                InfoTreeDelegate {text: "Transport medium";info: NetworkInformation.transportMediumAsString(NetworkSettingsInformation.transportMedium)}
             }
         }
 

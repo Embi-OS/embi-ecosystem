@@ -210,7 +210,7 @@ bool FolderTreeModel::hasChildren(const QModelIndex& parent) const
     if (parent.column() > 0)
         return false;
     FolderTreeObject* childItem = static_cast<FolderTreeObject*>(parent.internalPointer());
-    return childItem->getFileIsDir() || childItem->size()>0;
+    return childItem->fileIsDir() || childItem->size()>0;
 }
 bool FolderTreeModel::canFetchMore(const QModelIndex& parent) const
 {
@@ -226,7 +226,7 @@ void FolderTreeModel::fetchMore(const QModelIndex& parent)
     FolderTreeObject* childItem = static_cast<FolderTreeObject*>(parent.internalPointer());
     if(childItem->getPopulated())
         return;
-    const QList<QTreeObject*> objects = fetchPath(childItem->getPath(), filters(), sortFlags(), m_nameFilters);
+    const QList<QTreeObject*> objects = fetchPath(childItem->path(), filters(), sortFlags(), m_nameFilters);
     insertObjects(objects, childItem);
     childItem->setPopulated(true);
 }
@@ -238,7 +238,7 @@ Qt::ItemFlags FolderTreeModel::flags(const QModelIndex& index) const
 
     if(index.column() == 0) {
         FolderTreeObject* childItem = static_cast<FolderTreeObject*>(index.internalPointer());
-        if (childItem->isEmpty() && !childItem->getFileIsDir())
+        if (childItem->isEmpty() && !childItem->fileIsDir())
             flags |= Qt::ItemNeverHasChildren;
     }
 
@@ -320,16 +320,8 @@ FolderTreeModel::DriveFilters FolderTreeModel::driveFilters() const
     return filters;
 }
 
-QList<QStorageInfo> FolderTreeModel::mountedVolumes(bool mount)
+QList<QStorageInfo> FolderTreeModel::mountedVolumes()
 {
-#if QT_CONFIG(process)
-    if(mount)
-    {
-        QProcess process;
-        process.start("mount", {"-a"});
-        process.waitForFinished();
-    }
-#endif
     return QStorageInfo::mountedVolumes();
 }
 
@@ -372,14 +364,14 @@ void FolderTreeModel::select()
 
 #ifdef QT_CONCURRENT_LIB
         auto future = QtConcurrent::run([]() {
-            return FolderTreeModel::mountedVolumes(true);
+            return FolderTreeModel::mountedVolumes();
         });
         future.then(this, [this](const QList<QStorageInfo>& storageList) mutable {
             setStorageList(storageList);
             setLoading(false);
         });
 #else
-        const QList<QStorageInfo> storageList = FolderTreeModel::mountedVolumes(true);
+        const QList<QStorageInfo> storageList = FolderTreeModel::mountedVolumes();
         setStorageList(storageList);
         setLoading(false);
 #endif
@@ -575,10 +567,12 @@ QList<QTreeObject*> FolderTreeModel::fetchStandardPaths()
         toAppend.append(new FolderTreeObject(path, QFileInfo(path), true));
     }
 
+#if defined(Q_OS_LINUX)
     path = QString("%1/.local/share/Trash").arg(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
     if (QFile::exists(path)) {
         toAppend.append(new FolderTreeObject(path, QFileInfo(path), true));
     }
+#endif
 
     return toAppend;
 }

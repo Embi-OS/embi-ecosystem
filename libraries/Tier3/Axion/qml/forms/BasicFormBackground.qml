@@ -45,12 +45,12 @@ FocusScope {
 
     property font font: Style.textTheme.headline5
 
-    property alias labelRectangle: labelRectangle
-    property alias controlRectangle: controlRectangle
-    property alias hintRectangle: hintRectangle
+    readonly property Rectangle labelRectangle: labelRectangle
+    readonly property Rectangle controlRectangle: controlRectangle
+    readonly property Rectangle hintRectangle: hintRectangle
 
-    property alias labelLabel: labelLabel
-    property alias hintLabel: hintLabel
+    readonly property BasicLabel labelLabel: labelLabel
+    readonly property BasicLabel hintLabel: hintLabel
 
     Rectangle {
         id: labelRectangle

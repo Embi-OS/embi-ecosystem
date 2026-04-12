@@ -35,6 +35,7 @@ RelationRole::RelationRole(QObject *parent) :
     connect(this, &RelationRole::modelAboutToChange, this, &RelationRole::onModelAboutToChange);
     connect(this, &RelationRole::modelChanged, this, &RelationRole::onModelChanged);
     connect(this, &RelationRole::defaultObjectChanged, this, &RelationRole::invalidate);
+    connect(this, &RelationRole::sortedChanged, this, &RelationRole::invalidate);
 }
 
 void RelationRole::onModelAboutToChange(QAbstractItemModel* oldModel, QAbstractItemModel* newModel)
@@ -68,16 +69,20 @@ void RelationRole::updateRoles(const QQmlSortFilterProxyModel& proxyModel)
         const QHash<int,QByteArray> roleNames = m_proxyRoleNames;
         m_proxyRoleNames.clear();
         m_proxyRoleNames.reserve(m_customRoleNames.size());
-        for(const QString& customRoleName: m_customRoleNames)
+        for(const QString& customRoleName: std::as_const(m_customRoleNames))
         {
             const QByteArray roleName = customRoleName.toUtf8();
             m_proxyRoleNames[roleNames.key(roleName)] = roleName;
+            m_proxyDefaultObject.insert(roleNames.key(roleName), m_defaultObject.value(roleName));
         }
     }
 
-    m_proxyDefaultObject.clear();
-    for (auto [key, value] : m_defaultObject.asKeyValueRange()) {
-        m_proxyDefaultObject.insert(m_proxyModel->roleForName(key), value);
+    if(m_proxyDefaultObject.isEmpty())
+    {
+        m_proxyDefaultObject.clear();
+        for (auto [key, value] : m_defaultObject.asKeyValueRange()) {
+            m_proxyDefaultObject.insert(m_proxyModel->roleForName(key), value);
+        }
     }
 
     ProxyRole::updateRoles(proxyModel);
@@ -87,7 +92,7 @@ QVariant RelationRole::data(const QModelIndex& sourceIndex, const QQmlSortFilter
 {
     const QVariant& sourceVal = proxyModel.sourceData(sourceIndex, m_role);
 
-    const int index = QQsfpm::indexOf(m_proxyModel, m_proxyModel->sortRole(), sourceVal);
+    int index = QQsfpm::indexOf(m_proxyModel, m_proxyModel->sortRole(), sourceVal);
 
     QVariantMap map;
     const QModelIndex modelIndex = m_proxyModel->index(index, 0);

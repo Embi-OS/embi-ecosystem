@@ -3,6 +3,7 @@
 
 #include "fstab.h"
 
+#include <QProcess>
 #include <QUtils>
 
 #ifdef QT_CONCURRENT_LIB
@@ -108,7 +109,7 @@ FilesystemDriveModel::FilesystemDriveModel(QObject* parent) :
 
 QList<QStorageInfo> FilesystemDriveModel::mountedVolumes(bool mount)
 {
-#if QT_CONFIG(process)
+#if defined(Q_OS_LINUX) && QT_CONFIG(process)
     if(mount)
     {
         QProcess process;
@@ -180,7 +181,7 @@ void FilesystemDriveModel::setStorageList(const QList<QStorageInfo>& storageList
 
             const QFileInfo info = QFileInfo(entry.mountPoint());
             FilesystemDrive* drive = new FilesystemDrive(QStorageInfo(), info, this);
-            drive->m_text = QString("%1 (%2)").arg(drive->getName(), entry.fsSpec());
+            drive->m_text = QString("%1 (%2)").arg(drive->name(), entry.fsSpec());
 
             toAppend.append(drive);
         }
@@ -193,13 +194,13 @@ void FilesystemDriveModel::setStorageList(const QList<QStorageInfo>& storageList
 
 void FilesystemDriveModel::eject(FilesystemDrive* drive)
 {
-#if QT_CONFIG(process)
+#if defined(Q_OS_LINUX) && QT_CONFIG(process)
     if(!drive)
         return;
 
-    if(drive->getDriveIsRoot() || drive->getDriveIsBoot())
+    if(drive->driveIsRoot() || drive->driveIsBoot())
     {
-        FILESLOG_CRITICAL()<<"Cannot eject boot or root drive"<<drive->getText();
+        FILESLOG_CRITICAL()<<"Cannot eject boot or root drive"<<drive->text();
     }
 
     QProcess *proc = new QProcess(this);
@@ -207,9 +208,10 @@ void FilesystemDriveModel::eject(FilesystemDrive* drive)
         markDirty();
         proc->deleteLater();
     });
-    proc->start("umount", {drive->getDriveRootPath()});
+    proc->start("umount", {drive->driveRootPath()});
 #else
-    FILESLOG_CRITICAL()<<"Cannot eject drive"<<drive->getText();
+    Q_UNUSED(drive)
+    FILESLOG_WARNING()<<"Cannot eject drive on this platform";
 #endif
 }
 

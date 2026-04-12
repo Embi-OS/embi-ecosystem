@@ -1,7 +1,5 @@
 #include "networkinterfacemodel.h"
 
-#define DEV_FILE_PATH (QString("/dev"))
-
 NetworkInterfaceModel::NetworkInterfaceModel(QObject *parent) :
     QAbstractListModel(parent)
 {

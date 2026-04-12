@@ -14,6 +14,7 @@ QSTree::~QSTree()
 {
     if (m_root) {
         delete m_root;
+        m_root = nullptr;
     }
 }
 

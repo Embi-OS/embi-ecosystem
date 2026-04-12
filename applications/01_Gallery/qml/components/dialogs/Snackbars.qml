@@ -69,7 +69,7 @@ ColumnLayout {
             filled: root.filled
             outlined: root.outlined
 
-            severity: SnackbarSeverities.Error
+            severity: SnackbarSeverities.Critical
             title: "Error"
             caption: "Un message d'erreur"
         }

@@ -29,6 +29,16 @@ Q_ENUM_CLASS(SqlInsertStatementTypes, SqlInsertStatementType,
              InsertOrReplace,
              InsertOrIgnore,)
 
+Q_ENUM_CLASS(SqlMigrationActions, SqlMigrationAction,
+             None,
+             Rename,
+             RenameColumn,
+             AddColumn,
+             DropColumn,
+             AddIndex,
+             DropIndex,
+             AddUniqueIndex,)
+
 Q_ENUM_CLASS(SqlJoinTypes, SqlJoinType,
              Inner,
              Left,
@@ -39,6 +49,11 @@ Q_ENUM_CLASS(SqlDatabaseTypes, SqlDatabaseType,
              None,
              SQLite,
              MySQL,)
+
+Q_ENUM_CLASS(SqlMigrationModes, SqlMigrationMode,
+             Manual,
+             CreationAuto,
+             FullAuto,)
 
 Q_ENUM_CLASS(SqlColumnTypes, SqlColumnType,
              Invalid,
@@ -115,6 +130,7 @@ protected:
     explicit SqlHelper(QObject *parent = nullptr);
 
 public:
+    static QString sqlTypeGenerated(SqlColumnType type, int precision=0);
 };
 
 #endif // SQL_HELPERTYPES_H

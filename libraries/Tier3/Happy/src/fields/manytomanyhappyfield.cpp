@@ -144,7 +144,7 @@ QVariant ManyToManyHappyField::write(const QVariantMap& values, bool creation, b
     if(ok)
         *ok = true;
 
-    QVariantList list = value.toList();
+    const QVariantList list = value.toList();
     QVariantList insert;
     insert.reserve(list.size());
     for(const QVariant& var: list)
@@ -170,7 +170,7 @@ void ManyToManyHappyField::onObjectSaved(const QVariant& primaryValue, const QVa
 
     SqlBuilder::delete_().from(m_manyToManyName).where(m_relatedField, lookupValue).connection(m_connection).trust().exec();
 
-    QVariantList list = value.toList();
+    const QVariantList list = value.toList();
     QVariantList inserts;
     inserts.reserve(list.size());
     for(const QVariant& var: list)

@@ -8,8 +8,9 @@ BasicTableViewHeaderDelegate {
     property int sortIndex: -1
     property int sortOrder: Qt.AscendingOrder
     property string sortIcon: root.sortOrder===Qt.AscendingOrder ? MaterialIcons.sortAscending : MaterialIcons.sortDescendingVariant
+    property string unfoldIcon: MaterialIcons.unfoldMoreHorizontal
 
     highlighted: sortIndex===column
     icon.source: highlighted ? sortIcon :
-                 clickable ? MaterialIcons.unfoldMoreHorizontal : ""
+                 clickable ? unfoldIcon : ""
 }

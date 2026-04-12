@@ -127,7 +127,7 @@ PaneListView {
             if(result)
                 SnackbarManager.showSuccess(qsTr("Successfully mounted: %1").arg(hostName))
         }
-        onError: (error) => SnackbarManager.showError(error)
+        onError: (error) => SnackbarManager.showCritical(error)
 
         property DialogObject processDialog: null
         onProcessRunningChanged: (processRunning) => {
@@ -135,8 +135,10 @@ PaneListView {
                 processDialog = DialogManager.showBusy({infos: currentProcess});
                 processDialog.infos = Qt.binding(() => fstabModel.currentProcess)
             }
-            else
+            else if (processDialog) {
                 processDialog.hide()
+                processDialog = null
+            }
         }
     }
 
@@ -228,6 +230,7 @@ PaneListView {
         required property string driveFileSystemType
         required property bool driveIsRoot
         required property bool driveIsBoot
+        required property bool driveIsUsb
         required property bool driveIsConfig
         required property bool driveIsOverlay
         required text
@@ -236,7 +239,7 @@ PaneListView {
 
         enabled: !(driveIsRoot || driveIsBoot || driveIsConfig || driveIsOverlay)
         canEdit: fstabModel.ModelHelper.contains("mountPoint", filePath) && root.editable
-        canEject: enabled && !canEdit && root.editable
+        canEject: enabled && canEdit && driveIsUsb && root.editable
 
         onFolderClicked: root.showFileTree(filePath)
         onEjectClicked: root.ejectButtonClicked(filePath)

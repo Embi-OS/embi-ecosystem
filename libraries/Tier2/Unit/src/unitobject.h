@@ -13,9 +13,9 @@ class UnitObject : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("")
 
-    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, Category, UnitCategories::NoCategory)
-    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, categoryObject, CategoryObject, nullptr)
-    Q_CONSTANT_VAR_PROPERTY(UnitTypes::Enum, defaultType, DefaultType, UnitTypes::NoUnit)
+    Q_CONSTANT_PTR_PROPERTY(UnitCategoryObject, categoryObject)
+    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, UnitCategories::NoCategory)
+    Q_CONSTANT_VAR_PROPERTY(UnitTypes::Enum, defaultType, UnitTypes::NoUnit)
     Q_WRITABLE_VAR_PROPERTY(UnitTypes::Enum, type, Type, UnitTypes::NoUnit)
 
     Q_WRITABLE_FUZ_PROPERTY(double, rawValue, RawValue, 0)
@@ -26,7 +26,7 @@ class UnitObject : public QObject
     Q_READONLY_REF_PROPERTY(QString, formattedValue, FormattedValue, "")
     Q_READONLY_REF_PROPERTY(QString, display, Display, "")
 
-    Q_CONSTANT_PTR_PROPERTY(QGenericSignalThrottler, throttler, Throttler, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QGenericSignalThrottler, throttler)
     Q_PROPERTY(double rawValueThrottled READ getRawValue NOTIFY throttled FINAL)
     Q_PROPERTY(double displayValueThrottled READ getDisplayValue NOTIFY throttled FINAL)
     Q_PROPERTY(QString formattedValueThrottled READ getFormattedValue NOTIFY throttled FINAL)

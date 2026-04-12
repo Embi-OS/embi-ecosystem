@@ -101,7 +101,7 @@ public:
             result.insert(QString::fromLocal8Bit(mntPtr->mnt_dir),
                           QString::fromLocal8Bit(mntPtr->mnt_fsname));
         }
-#  else
+#  elif !defined(Q_OS_WASM)
         static const size_t pathMax = static_cast<size_t>(pathconf("/", _PC_PATH_MAX)) * 2 + 1024;  // quite big, but better be safe than sorry
         QScopedArrayPointer<char> strBuf(new char[pathMax]);
         struct mntent mntBuf;
@@ -181,7 +181,7 @@ FileSystemMountWatcher::FileSystemMountWatcher(QObject *parent)
 
 FileSystemMountWatcher::~FileSystemMountWatcher()
 {
-    if (d->detach(this)) {
+    if (d && d->detach(this)) {
         delete d;
         d = nullptr;
     }
@@ -190,19 +190,21 @@ FileSystemMountWatcher::~FileSystemMountWatcher()
 QMultiMap<QString, QString> FileSystemMountWatcher::currentMountPoints()
 {
     // if we have an active cache, then use it
-    if (d->m_procMountsNotifier)
+    if (d && d->m_procMountsNotifier)
         return d->m_mounts;
     return FileSystemMountWatcherPrivate::currentMountPoints();
 }
 
 void FileSystemMountWatcher::addMountPoint(const QString &directory)
 {
-    d->add(this, directory);
+    if (d)
+        d->add(this, directory);
 }
 
 void FileSystemMountWatcher::removeMountPoint(const QString &directory)
 {
-    d->remove(this, directory);
+    if (d)
+        d->remove(this, directory);
 }
 
 bool FileSystemMountWatcher::setMountTabFileForTesting(const QString &mtabFile)

@@ -239,3 +239,48 @@ QStringList SqlDbPool::drivers()
 {
     return QSqlDatabase::drivers();
 }
+
+Q_GLOBAL_STATIC_WITH_ARGS(int, transactions, (0))
+
+bool SqlDbPool::transaction(const QString& connection)
+{
+    QElapsedTimer timer;
+    timer.start();
+
+    bool result = SqlDbPool::database(connection).transaction();
+    if(result)
+        (*transactions)++;
+
+    SQLLOG_DEBUG()<<"transaction"<<result<<*transactions<<"took"<<timer.nsecsElapsed()/1000000.0<<"ms";
+    // qNotice()<<"transaction"<<result<<*transactions<<"took"<<timer.nsecsElapsed()/1000000.0<<"ms";
+
+    return result;
+}
+bool SqlDbPool::commit(const QString& connection)
+{
+    QElapsedTimer timer;
+    timer.start();
+
+    bool result = SqlDbPool::database(connection).commit();
+    if(result)
+        (*transactions)--;
+
+    SQLLOG_DEBUG()<<"commit"<<result<<*transactions<<"took"<<timer.nsecsElapsed()/1000000.0<<"ms";
+    // qNotice()<<"commit"<<result<<*transactions<<"took"<<timer.nsecsElapsed()/1000000.0<<"ms";
+
+    return result;
+}
+bool SqlDbPool::rollback(const QString& connection)
+{
+    QElapsedTimer timer;
+    timer.start();
+
+    bool result = SqlDbPool::database(connection).rollback();
+    if(result)
+        (*transactions)--;
+
+    SQLLOG_DEBUG()<<"rollback"<<result<<*transactions<<"took"<<timer.nsecsElapsed()/1000000.0<<"ms";
+    // qNotice()<<"rollback"<<result<<*transactions<<"took"<<timer.nsecsElapsed()/1000000.0<<"ms";
+
+    return result;
+}

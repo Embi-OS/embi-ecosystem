@@ -6,9 +6,9 @@ import Eco.Tier3.Axion
 PaneTableCheckable {
     id: root
 
-    property alias tableViewModel: tableViewModel
-    property alias proxyModel: proxyModel
-    property alias sortProxyModel: sortProxyModel
+    readonly property TableViewModel tableViewModel: tableViewModel
+    readonly property SortFilterProxyModel proxyModel: proxyModel
+    readonly property ProxyModel sortProxyModel: sortProxyModel
     required property AbstractItemModel sourceModel
     required property TableViewColumnModel columnModel
     property Component headerSecondaryBar: null
@@ -33,7 +33,7 @@ PaneTableCheckable {
         var w = tableViewModel.columnWidth(column)
         if(w >= 0)
             return w;
-        return root.defaultColumnWidthProvider(column)
+        return visible ? root.defaultColumnWidthProvider(column) : undefined
     }
 
     header: BasicTableListHeader {

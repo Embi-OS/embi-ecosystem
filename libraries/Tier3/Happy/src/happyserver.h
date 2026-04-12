@@ -6,6 +6,7 @@
 #include <Sql>
 #include <Axion>
 
+#include "happymigration.h"
 #include "happyrouter.h"
 #include "happycrudrouter.h"
 #include "happyfullrouter.h"
@@ -15,15 +16,18 @@ class HappyServer : public QObject
     Q_OBJECT
     QML_ELEMENT
 
-    Q_COMPOSITION_PROPERTY(SqlSchemePreparator, sqlSchemePreparator, nullptr)
     Q_WRITABLE_REF_PROPERTY(QString, sqlConnection, SqlConnection, SqlDefaultConnection)
+
+    Q_CONSTANT_PTR_PROPERTY(SqlSchemePreparator, sqlSchemePreparator)
+    Q_CONSTANT_PTR_PROPERTY(SqlTablePreparator, sqlTablePreparator)
+    Q_CONSTANT_OLP_PROPERTY(HappyMigration, migrations)
 
     Q_WRITABLE_REF_PROPERTY(QString, name, Name, {})
     Q_WRITABLE_VAR_PROPERTY(int, port, Port, 32768)
     Q_WRITABLE_VAR_PROPERTY(bool, external, External, false)
     Q_READONLY_VAR_PROPERTY(bool, ready, Ready, false)
 
-    Q_COMPOSITION_PROPERTY(QHttpServer, httpServer, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QHttpServer, httpServer)
     Q_CONSTANT_OLP_PROPERTY(HappyRouter, routers)
     Q_DEFAULT_PROPERTY(routers)
 
@@ -37,7 +41,7 @@ public:
     bool registerRouter(HappyRouter* router);
 
     Q_INVOKABLE HappyCrudRouter* crudRouter(const QString& tableName) const;
-    Q_INVOKABLE QList<QWebSocket*> sockets(const QString& path) const;
+    Q_INVOKABLE QList<QWebSocket*> sockets(const QString& path, bool startsWith=false) const;
 
 signals:
     void started(bool status);

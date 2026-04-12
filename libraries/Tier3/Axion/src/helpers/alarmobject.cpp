@@ -1,6 +1,8 @@
 #include "alarmobject.h"
 #include "axion_log.h"
 
+#include "qmodelmatcher.h"
+
 AlarmModel::AlarmModel(QObject* parent) :
     QObjectListModel(parent, &AlarmObject::staticMetaObject)
 {
@@ -37,7 +39,7 @@ void AlarmModel::invalidateRemainingTimeChange()
     if(m_msToNextRingTime<0)
         setNextTimeRing(tr("Toutes les alarmes sont désactivées"));
     else
-        setNextTimeRing(tr("Alarme dans %1 - %2").arg(AlarmObject::nextTimeRing(m_msToNextRingTime/1000), QLocale().toString(m_nextRingDateTime, QLocale::NarrowFormat)));
+        setNextTimeRing(tr("Alarme dans %1 - %2").arg(AlarmObject::nextTimeRing(m_msToNextRingTime/1000), QLocale().toString(m_nextRingDateTime.toLocalTime(), QLocale::NarrowFormat)));
 }
 
 void AlarmModel::create(const QVariantMap& alarmMap)

@@ -7,15 +7,15 @@
 #include <QCoreApplication>
 #include <QProcess>
 
-#include <unistd.h>
-#ifdef Q_OS_LINUX
-#include <sys/reboot.h>
-#endif
-
 #include "qutils_log.h"
 
 #ifdef Q_OS_WIN
 # include <Windows.h>
+#endif
+
+#if defined(Q_OS_BOOT2QT) && defined(Q_DEVICE_APALIS_IMX8) && defined(Q_MANUAL_CORE_AFFINITY)
+# include <sched.h>
+# include <sys/syscall.h>
 #endif
 
 #ifndef APPCONTROLLER_CMD
@@ -90,12 +90,18 @@ private:
 
     void restart()
     {
+#ifdef Q_OS_WIN
+#else
         QUTILSLOG_INFO()<<"Restarting application...";
         qApp->exit();
 #if defined(Q_OS_BOOT2QT)
-        QProcess::startDetached(APPCONTROLLER_CMD, QStringList("--restart"));
-#elif defined(Q_OS_LINUX)
-        QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
+        QProcess::startDetached(QStringLiteral(APPCONTROLLER_CMD), {QStringLiteral("--restart")});
+#else
+        const QString applicationPath = QCoreApplication::applicationFilePath();
+        const QStringList applicationArguments = QCoreApplication::arguments().mid(1);
+        if (!applicationPath.isEmpty())
+            QProcess::startDetached(applicationPath, applicationArguments);
+#endif
 #endif
     }
 

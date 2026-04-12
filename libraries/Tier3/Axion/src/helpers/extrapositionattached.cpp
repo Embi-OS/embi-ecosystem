@@ -30,17 +30,34 @@ ExtraPositionAttached::ExtraPositionAttached(QObject* parent):
     scheduleRefresh();
 }
 
-ExtraPositionAttached* ExtraPositionAttached::qmlAttachedProperties (QObject * object)
+ExtraPositionAttached::~ExtraPositionAttached()
 {
-    return new ExtraPositionAttached(object);
-}
+    if(m_xProperty)
+        delete m_xProperty;
+    if(m_yProperty)
+        delete m_yProperty;
 
-void ExtraPositionAttached::onTargetParentChanged()
-{
+    if(m_heightProperty)
+        delete m_heightProperty;
+    if(m_widthProperty)
+        delete m_widthProperty;
+
     if(m_parentHeightProperty)
         delete m_parentHeightProperty;
     if(m_parentWidthProperty)
         delete m_parentWidthProperty;
+}
+
+void ExtraPositionAttached::onTargetParentChanged()
+{
+    if(m_parentHeightProperty) {
+        delete m_parentHeightProperty;
+        m_parentHeightProperty = nullptr;
+    }
+    if(m_parentWidthProperty) {
+        delete m_parentWidthProperty;
+        m_parentWidthProperty = nullptr;
+    }
 
     if(!m_targetParent)
         return;

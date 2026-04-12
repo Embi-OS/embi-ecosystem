@@ -7,8 +7,8 @@ BasicNavItem {
     property string stackBranchName: ""
     property string stackBranchSecondaryName: ""
 
-    property alias navStack: navStack
     required property BasicNavObject initialObject
+    readonly property BasicNavStack navStack: navStack
     readonly property BasicNavItem currentItem: navStack.currentItem as BasicNavItem
 
     stackItemName: currentItem?.stackItemName ?? ""
@@ -16,7 +16,6 @@ BasicNavItem {
     navigationLocked: currentItem?.navigationLocked ?? false
     navigationEnabled: currentItem?.navigationEnabled ?? true
     navModels: currentItem?.navModels ?? null
-    debugModel: currentItem?.debugModel ?? null
     state: currentItem?.state ?? ""
 
     onItemIsActive: {

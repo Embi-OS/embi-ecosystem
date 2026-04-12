@@ -53,7 +53,7 @@ void AnalogInputHelper::addSample(double value)
     resetMaxValue();
 
     double sum = 0;
-    for(const double& value: m_values)
+    for(const double& value: std::as_const(m_values))
     {
         if(value<m_minValue)
             setMinValue(value);

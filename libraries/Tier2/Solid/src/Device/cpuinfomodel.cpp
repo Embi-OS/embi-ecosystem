@@ -1,6 +1,9 @@
 #include "cpuinfomodel.h"
 #include "solid_log.h"
 
+#include <QSysInfo>
+#include <QThread>
+
 #define CPUINFO_FILE_PATH (QStringLiteral("/proc/cpuinfo"))
 
 CpuInfoModel::CpuInfoModel(QObject* parent):
@@ -18,6 +21,12 @@ CpuInfoModel::CpuInfoModel(QObject* parent):
 QVariantList CpuInfoModel::selectSource(bool* result)
 {
     QVariantList storage;
+    m_model = QString();
+    m_revision = QStringLiteral("N/A");
+    m_serial = QStringLiteral("N/A");
+    m_productId = QStringLiteral("N/A");
+    m_coreCount = 0;
+
     if(QFile::exists(CPUINFO_FILE_PATH))
     {
         QFile file(CPUINFO_FILE_PATH);
@@ -115,6 +124,23 @@ QVariantList CpuInfoModel::selectSource(bool* result)
         QFile file("/proc/device-tree/toradex,product-id");
         if(file.open(QIODevice::ReadOnly))
             m_productId = file.readAll().trimmed();
+    }
+
+    if (m_coreCount <= 0)
+        m_coreCount = qMax(1, QThread::idealThreadCount());
+
+    if (m_model.isEmpty()) {
+        const QString productName = QSysInfo::prettyProductName().trimmed();
+        const QString architecture = QSysInfo::currentCpuArchitecture().trimmed();
+
+        if (!productName.isEmpty() && !architecture.isEmpty())
+            m_model = QStringLiteral("%1 (%2)").arg(productName, architecture);
+        else if (!productName.isEmpty())
+            m_model = productName;
+        else if (!architecture.isEmpty())
+            m_model = architecture;
+        else
+            m_model = QStringLiteral("N/A");
     }
 
     if(result)

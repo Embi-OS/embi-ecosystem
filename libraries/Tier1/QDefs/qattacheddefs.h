@@ -10,8 +10,15 @@
 
 #define _Q_OBJECT_ATTACHED_IMPL(TYPE, PARENT_TYPE) \
     public: \
-    static TYPE* wrap(QObject* object) \
+    static TYPE* wrap(const QObject* object) \
     { \
+        PARENT_TYPE* parent = qobject_cast<PARENT_TYPE*>(const_cast<QObject *>(object)); \
+        if(!parent) \
+        { \
+                qCritical()<<object<<parent; \
+                qFatal(#TYPE " must be attached to a " #PARENT_TYPE); \
+                return nullptr; \
+        } \
         return qobject_cast<TYPE*>(qmlAttachedPropertiesObject<TYPE>(object, true)); \
     } \
     static TYPE* qmlAttachedProperties(QObject* object) \
@@ -24,6 +31,7 @@
             return nullptr; \
         } \
         TYPE* helper = new TYPE(parent); \
+        helper->setParent(parent); \
         QQmlEngine::setObjectOwnership(helper, QQmlEngine::CppOwnership); \
         return helper; \
     } \
@@ -31,9 +39,9 @@
 
 #define _Q_OBJECT_CHILD_ATTACHED_IMPL(TYPE, PARENT_TYPE) \
     public: \
-    static TYPE* wrap(QObject* object) \
+    static TYPE* wrap(const QObject* object) \
     { \
-        PARENT_TYPE* parent = qobject_cast<PARENT_TYPE*>(object); \
+        PARENT_TYPE* parent = qobject_cast<PARENT_TYPE*>(const_cast<QObject *>(object)); \
         if (!parent) \
         { \
             qCritical()<<object<<parent; \
@@ -44,6 +52,7 @@
         if(!helper) \
         { \
             helper = new TYPE(parent); \
+            helper->setParent(parent); \
             QQmlEngine::setObjectOwnership(helper, QQmlEngine::CppOwnership); \
         } \
         return helper; \

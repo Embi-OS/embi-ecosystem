@@ -23,7 +23,7 @@ BasicDialog {
     property int selectPolicy: FormEditPolicies.Manual
     property int submitPolicy: FormEditPolicies.Manual
 
-    readonly property bool warning: root.formModel.warning
+    readonly property bool warning: root.formModel?.warning ?? false
 
     onAccepted: {
         root.formModel.submit()
@@ -72,9 +72,9 @@ BasicDialog {
         implicitHeight: 400
         implicitWidth: 800
 
-        drawFrame: root.formModel.warning
+        drawFrame: root.warning
         borderWidth: Style.contentRectangleBorderWidth
-        borderColor: root.formModel.warning ? Style.colorWarning : Style.colorPrimary
+        borderColor: root.warning ? Style.colorWarning : Style.colorPrimary
 
         model: ProxyModel {
             delayed: true

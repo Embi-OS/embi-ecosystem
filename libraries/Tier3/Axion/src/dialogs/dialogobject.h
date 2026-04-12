@@ -10,9 +10,11 @@ Q_ENUM_CLASS(DialogTypes, DialogType,
              Tree,
              Busy,
              Date,
+             DateRange,
              Time,
              FileTree,
              Input,
+             Select,
              Form,
              Alarm)
 
@@ -21,7 +23,7 @@ Q_ENUM_CLASS(DialogSeverities, DialogSeverity,
              Message,
              Info,
              Warning,
-             Error,
+             Critical,
              Fatal,)
 
 class DialogManager;
@@ -69,10 +71,12 @@ public:
     QMetaObject::Connection onReset(std::function<void()> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
 
     QMetaObject::Connection onDateSelected(std::function<void(const QDate& date)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
+    QMetaObject::Connection onDateRangeSelected(std::function<void(const QDate& fromDate, const QDate& toDate)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onTimeSelected(std::function<void(const QTime& time)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onPathSelected(std::function<void(const QString& path)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onInputAccepted(std::function<void(const QString& value)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onInputApplied(std::function<void(const QString& value)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
+    QMetaObject::Connection onSelectAccepted(std::function<void(const QVariant& value)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onFormValidated(std::function<void(const QVariantMap& formValues)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onAlarmValidated(std::function<void(const QVariantMap& alarmMap)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
 
@@ -100,10 +104,12 @@ signals:
 
     // Eco.Tier3.Axion Dialog
     void dateSelected(const QDate& date);
+    void dateRangeSelected(const QDate& fromDate, const QDate& toDate);
     void timeSelected(const QTime& time);
     void pathSelected(const QString& path);
     void inputAccepted(const QString& value);
     void inputApplied(const QString& value);
+    void selectAccepted(const QVariant& value);
     void formValidated(const QVariantMap& formValues);
     void alarmValidated(const QVariantMap& alarmMap);
 

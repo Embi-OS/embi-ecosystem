@@ -16,5 +16,5 @@ T.HorizontalHeaderView {
     pointerNavigationEnabled: false
     boundsBehavior: syncView.boundsBehavior
 
-    delegate: BasicTableViewHeaderDelegate {}
+    delegate: TableViewLabelHeaderDelegate {}
 }

@@ -57,15 +57,15 @@ bool SqlPatchable::patch(const QVariantList& destination)
     QElapsedTimer timer;
     timer.start();
 
-    SqlDbPool::database(m_connection).transaction();
+    SqlDbPool::transaction(m_connection);
 
     const QSPatchSet patches = QSDiffRunner::compare(m_source, destination, m_primaryField);
     bool result = QSDiffRunner::patch(this, patches);
 
     if(result)
-        SqlDbPool::database(m_connection).commit();
+        SqlDbPool::commit(m_connection);
     else
-        SqlDbPool::database(m_connection).rollback();
+        SqlDbPool::rollback(m_connection);
 
     SQLLOG_TRACE()<<"SqlPatchable::patch took:"<<timer.nsecsElapsed()/1000000.0;
 
@@ -83,7 +83,7 @@ bool SqlPatchable::insert(int index, const QVariant& variant)
     m_source.reserve(m_source.count() + variants.count());
 
     int offset = 0;
-    for(const QVariant& var: variants)
+    for(const QVariant& var: std::as_const(variants))
     {
         QVariantMap map = var.toMap();
         QSqlQuery reply = SqlBuilder::insert(map).into(m_tableName).connection(m_connection).exec();

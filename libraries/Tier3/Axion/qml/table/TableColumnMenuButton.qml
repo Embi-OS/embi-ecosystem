@@ -6,7 +6,7 @@ import Eco.Tier3.Axion
 RawButton {
     id: root
 
-    property alias menu: menu
+    readonly property BasicMenu menu: menu
     property alias matcherRoleName: visibleMatcher.roleName
     property alias matcherValue: visibleMatcher.value
 

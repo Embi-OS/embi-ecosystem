@@ -30,9 +30,9 @@ embi_add_qml_module(${PROJECT_NAME}
     PRIVATE_DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Device
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Display
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/DBus
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Locale
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Network
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Network/connman
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Power
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Timedate
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools

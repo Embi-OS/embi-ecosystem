@@ -17,8 +17,8 @@ class SqlBrowser : public QObject,
     Q_INTERFACES(QQmlParserStatus)
     Q_WRITABLE_REF_PROPERTY(QString, connection, Connection, SqlDefaultConnection)
 
-    Q_CONSTANT_PTR_PROPERTY(QStringListModel, tableNames, TableNames, nullptr)
-    Q_CONSTANT_PTR_PROPERTY(QStringListModel, connectionNames, ConnectionNames, nullptr)
+    Q_CONSTANT_PTR_PROPERTY(QStringListModel, tableNames)
+    Q_CONSTANT_PTR_PROPERTY(QStringListModel, connectionNames)
     Q_READONLY_PTR_PROPERTY(QAbstractItemModel, model, Model, nullptr)
 
     Q_WRITABLE_VAR_PROPERTY(bool, delayed, Delayed, false)

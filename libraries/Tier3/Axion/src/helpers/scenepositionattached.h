@@ -1,11 +1,8 @@
 #ifndef SCENEPOSITIONATTACHED_H
 #define SCENEPOSITIONATTACHED_H
 
-#include <QObject>
-#include <QQmlEngine>
-#include <QPointF>
-
-class QQuickItem;
+#include <QDefs>
+#include <QQuickItem>
 
 /**
  * This attached property contains the information about the scene position of the item:
@@ -25,6 +22,9 @@ class ScenePositionAttached : public QObject
     QML_ATTACHED(ScenePositionAttached)
     QML_NAMED_ELEMENT(ScenePosition)
     QML_UNCREATABLE("")
+
+    Q_OBJECT_ATTACHED(ScenePositionAttached, QQuickItem)
+
     /**
      * The global scene X position
      */
@@ -41,9 +41,6 @@ public:
 
     double x() const;
     double y() const;
-
-    // QML attached property
-    static ScenePositionAttached *qmlAttachedProperties(QObject *object);
 
 Q_SIGNALS:
     void xChanged();

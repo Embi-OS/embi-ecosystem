@@ -9,32 +9,62 @@
 // Read/Write methods
 //──────────────────────────────────────────────────────────────────────
 
-inline QVariant qVariantFromJSVariant(const QVariant &variant)
+inline QVariant qVariantFromJSVariant(const QVariant &variant, bool recursive=true)
 {
     int type = variant.userType();
 
     if (type == qMetaTypeId<QJSValue>()) {
-        return qVariantFromJSVariant(variant.value<QJSValue>().toVariant());
+        return qVariantFromJSVariant(variant.value<QJSValue>().toVariant(), recursive);
+    } else if (!recursive) {
+        return variant;
     } else if (type == QMetaType::QVariant) {
         // got a matryoshka variant
-        return qVariantFromJSVariant(variant.value<QVariant>());
+        return qVariantFromJSVariant(variant.value<QVariant>(), recursive);
     } else if (type == QMetaType::QVariantList) {
         const QVariantList inList = variant.toList();
         QVariantList outList;
         outList.reserve(inList.size());
         for (const QVariant& v: inList)
-            outList.append(qVariantFromJSVariant(v));
+            outList.append(qVariantFromJSVariant(v, recursive));
         return outList;
     } else if (type == QMetaType::QVariantMap) {
         const QVariantMap inMap = variant.toMap();
         QVariantMap outMap;
         // outMap.reserve(inMap.size());
         for (auto [key, value] : inMap.asKeyValueRange())
-            outMap.insert(key, qVariantFromJSVariant(value));
+            outMap.insert(key, qVariantFromJSVariant(value, recursive));
         return outMap;
     } else {
         return variant;
     }
+}
+
+inline bool qVariantContainsNestedValue(const QVariant& variant, const QStringList& keys, int index=0)
+{
+    if(index<0 || index>=keys.size())
+        return false;
+
+    if (variant.metaType().id()!=QMetaType::QVariantMap)
+        return false;
+
+    const QString& key = keys[index];
+    const QVariantMap& nest = *reinterpret_cast<const QVariantMap*>(variant.constData());
+
+    if(index==keys.size()-1) {
+        return nest.contains(key);
+    }
+
+    const QVariant& nestedValue = nest[key];
+
+    return qVariantContainsNestedValue(nestedValue, keys, index+1);
+}
+
+inline bool qVariantContainsNestedValue(const QVariant& variant, const QString& keys, const QString& separator=".")
+{
+    if(separator.isEmpty())
+        return false;
+    const QStringList keyList = keys.split(separator, Qt::SkipEmptyParts);
+    return qVariantContainsNestedValue(variant, keyList);
 }
 
 inline QVariant qVariantGetNestedValue(const QVariant& variant, const QStringList& keys, bool* ok=nullptr, int index=0)
@@ -232,6 +262,31 @@ inline bool qVariantMergeNestedValue(QVariant& variant, const QString& keys, con
         return false;
     const QStringList keyList = keys.split(separator, Qt::SkipEmptyParts);
     return qVariantMergeNestedValue(variant, keyList, value);
+}
+
+inline QVariant qVariantDeepMerge(const QVariant& base, const QVariant& patch)
+{
+    if (patch.isNull())
+        return QVariant();
+
+    if (base.metaType().id() == QMetaType::QVariantMap &&
+        patch.metaType().id() == QMetaType::QVariantMap)
+    {
+        QVariantMap result = base.toMap();
+        const QVariantMap patchMap = patch.toMap();
+
+        for (auto it = patchMap.begin(); it != patchMap.end(); ++it)
+        {
+            if (result.contains(it.key()))
+                result[it.key()] = qVariantDeepMerge(result[it.key()], it.value());
+            else
+                result.insert(it.key(), it.value());
+        }
+
+        return result;
+    }
+
+    return patch;
 }
 
 //──────────────────────────────────────────────────────────────────────

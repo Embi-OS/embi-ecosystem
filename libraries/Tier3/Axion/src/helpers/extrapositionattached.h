@@ -15,14 +15,13 @@ class ExtraPositionAttached : public QObject
     QML_UNCREATABLE("Attached")
     QML_NAMED_ELEMENT(ExtraPosition)
 
+    Q_OBJECT_ATTACHED(ExtraPositionAttached, QObject)
+
     Q_WRITABLE_VAR_PROPERTY(ItemPositions::Enum, position, Position, ItemPositions::None)
     Q_WRITABLE_FUZ_PROPERTY(double, margins, Margins, 0)
     Q_WRITABLE_FUZ_PROPERTY(double, xOffset, XOffset, 0)
     Q_WRITABLE_FUZ_PROPERTY(double, yOffset, YOffset, 0)
     Q_WRITABLE_PTR_PROPERTY(QObject, targetParent, TargetParent, nullptr)
-
-public:
-    static ExtraPositionAttached* qmlAttachedProperties(QObject* object);
 
 private slots:
     void onTargetParentChanged();
@@ -30,6 +29,7 @@ private slots:
 
 private:
     explicit ExtraPositionAttached(QObject* parent=nullptr);
+    ~ExtraPositionAttached();
 
     void definePosition();
     static double defineX(ItemPosition position, const double width, const double parentWidth, const double margins=0);

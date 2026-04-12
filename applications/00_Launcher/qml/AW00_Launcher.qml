@@ -1,6 +1,5 @@
 import QtQuick
 import Eco.Tier1.Utils
-import Eco.Tier2.Solid
 import Eco.Tier3.Axion
 import Eco.Tier3.System
 import L00_Launcher
@@ -21,16 +20,17 @@ BasicWindow {
     hideKeyboard: DisplaySettings.hideKeyboard
     contentRotation: DisplaySettings.rotation
 
-    ThemeAttached.flat: true
-    ThemeAttached.fine: true
-    ThemeAttached.sharp: true
-    ThemeAttached.dense: false
-
     ThemeAttached.label: "Embi-OS"
     ThemeAttached.icon: "qrc:/images/logo.svg"
     ThemeAttached.logo: "qrc:/images/logo.svg"
     ThemeAttached.splash: "qrc:/images/logo.svg"
     ThemeAttached.backgroundImage: "qrc:/images/wallpaper/gradient.png"
+    
+    ThemeAttached.flat: true
+    ThemeAttached.fine: true
+    ThemeAttached.sharp: true
+    ThemeAttached.dense: false
+
     ThemeAttached.textTheme.primaryFont: Style.fine ? "Roboto" : "Frutiger LT Pro"
 
     ThemeAttached.colorBlack: imageColorsHelper.closestToBlack
@@ -68,4 +68,14 @@ BasicWindow {
     }
 
     onApplicationLoaded: Swupdate.init();
+
+    Connections {
+        target: AxionHelper
+        function onRestartAccepted() {
+            Power.restart()
+        }
+        function onRebootAccepted() {
+            Power.reboot()
+        }
+    }
 }

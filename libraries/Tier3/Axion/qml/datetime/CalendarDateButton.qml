@@ -10,19 +10,18 @@ T.AbstractButton {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    topInset: 1
-    bottomInset: 1
-    rightInset: 1
-    leftInset: 1
-
     horizontalPadding: 10
     font: Style.textTheme.button
 
     property bool highlighted: checked
     property bool outlined: false
+    property bool inRange: false
+    property bool firstInRange: false
+    property bool lastInRange: false
+    property double radius: height / 2
 
     readonly property color relativeBackgroundColor: root.backgroundColor.a>0 ? root.backgroundColor : Style.colorBackground
-    readonly property color backgroundColor: root.checked ? Style.colorAccent : "transparent"
+    readonly property color backgroundColor: root.checked ? Style.colorAccent : root.inRange ? Style.colorAccentFade : "transparent"
     readonly property color foreroundColor: {
         if(root.highlighted && !root.checked)
             return Style.colorAccent
@@ -44,15 +43,22 @@ T.AbstractButton {
         implicitWidth: Style.buttonMinWidth
         implicitHeight: Style.buttonMinHeight
 
-        radius: height / 2
+        topLeftRadius: root.inRange ? root.firstInRange ? root.radius : 0 : root.radius
+        bottomLeftRadius: root.inRange ? root.firstInRange ? root.radius : 0 : root.radius
+        topRightRadius: root.inRange ? root.lastInRange ? root.radius : 0 : root.radius
+        bottomRightRadius: root.inRange ? root.lastInRange ? root.radius : 0 : root.radius
+
         color: root.backgroundColor
-        border.width: 2
-        border.color: root.outlined ? Style.colorAccent : root.backgroundColor
 
         BasicVeil {
             z: 100
             anchors.fill: parent
-            radius: parent.height / 2
+            anchors.margins: 1
+            radius: height / 2
+
+            visible: true
+            border.width: 2
+            border.color: root.outlined ? Style.colorAccent : color
 
             relativeBackgroundColor: root.relativeBackgroundColor
             focussed: enabled && (root.down || root.visualFocus || root.hovered)

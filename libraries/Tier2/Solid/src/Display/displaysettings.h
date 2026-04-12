@@ -3,6 +3,7 @@
 
 #include <QDefs>
 #include "qsingleton.h"
+#include "displaybackend.h"
 
 Q_ENUM_CLASS(DisplayScaleFactors, DisplayScaleFactor,
              Pct75 = 75,
@@ -25,6 +26,8 @@ class DisplaySettings : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
+    Q_CONSTANT_PTR_PROPERTY(DisplayBackend, backend)
+
     Q_PROPERTY(bool  canSetBrightness  READ canSetBrightness  CONSTANT FINAL)
     Q_PROPERTY(bool  canSetHighDpi     READ canSetHighDpi     CONSTANT FINAL)
     Q_PROPERTY(bool  canSetScaleFactor READ canSetScaleFactor CONSTANT FINAL)
@@ -45,12 +48,12 @@ protected:
     explicit DisplaySettings(QObject *parent = nullptr);
 
 public:
-    static bool canSetBrightness();
-    static bool canSetHighDpi();
-    static bool canSetScaleFactor();
-    static bool canSetRotation();
-    static bool canHideCursor();
-    static bool canHideKeyboard();
+    bool canSetBrightness() const;
+    bool canSetHighDpi() const;
+    bool canSetScaleFactor() const;
+    bool canSetRotation() const;
+    bool canHideCursor() const;
+    bool canHideKeyboard() const;
 
     int getBrightness() const;
     bool getHighDpi() const;

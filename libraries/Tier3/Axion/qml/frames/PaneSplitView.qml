@@ -9,7 +9,7 @@ BasicPane {
     id: root
 
     navigationLocked: currentItem?.navigationLocked ?? false
-    navigationEnabled: loader.ready && (currentItem?.navigationEnabled ?? true)
+    navigationEnabled: !loader.loading && (currentItem?.navigationEnabled ?? true)
 
     readonly property int currentIndex: proxyModel.count>0 ? proxyModel.mapToSource(listView.currentIndex) : -1
     required property StandardObjectModel model

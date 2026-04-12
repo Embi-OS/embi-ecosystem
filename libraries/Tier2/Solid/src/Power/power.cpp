@@ -1,100 +1,61 @@
 #include "power.h"
+#include "powerbackend.h"
 #include "solid_log.h"
 
-#if defined(Q_DEVICE_APALIS_IMX8)
-#include "powercomponentapalisimx8.h"
-#elif defined(Q_OS_BOOT2QT)
-#include "powercomponentb2qt.h"
-#elif defined(LINUX_DBUS) || defined(Q_OS_LINUX)
-#include "powercomponentlinux.h"
-#elif defined(Q_OS_WIN32) || defined(Q_OS_WIN)
-#elif defined(Q_OS_MAC)
-#endif
-
-#include "abstractpowercomponent.h"
-
-static AbstractPowerComponent* getComponent()
-{
-    static AbstractPowerComponent* instance = nullptr;
-
-    if(!instance)
-    {
-#if defined(Q_DEVICE_APALIS_IMX8)
-        instance = new PowerComponentApalisIMX8();
-#elif defined(Q_OS_BOOT2QT)
-        instance = new PowerComponentB2qt();
-#elif defined(LINUX_DBUS) || defined(Q_OS_LINUX)
-        instance = new PowerComponentLinux();
-#elif defined(Q_OS_WIN32) || defined(Q_OS_WIN)
-#elif defined(Q_OS_MAC)
-#endif
-    }
-
-    return instance;
-}
+#include "powerbackenddesktop.h"
+#include "powerbackendb2qt.h"
+#include "powerbackendapalisimx8.h"
 
 Power::Power(QObject *parent) :
-    QObject(parent)
+    QObject(parent),
+#if defined(Q_DEVICE_APALIS_IMX8)
+    m_backend(new PowerBackendApalisIMX8(this))
+#elif defined(Q_OS_BOOT2QT)
+    m_backend(new PowerBackendB2Qt(this))
+#elif defined(Q_OS_WIN) || defined(Q_OS_LINUX)
+    m_backend(new PowerBackendDesktop(this))
+#else
+    m_backend(nullptr)
+#endif
 {
-    if(!getComponent()) {
+    if(!m_backend) {
         SOLIDLOG_WARNING()<<"Could not find a power component matching this platform";
     }
 }
 
-bool Power::canQuit()
+bool Power::canQuit() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canQuit();
+    return m_backend && m_backend->canQuit();
 }
 
-bool Power::canRestart()
+bool Power::canRestart() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canRestart();
+    return m_backend && m_backend->canRestart();
 }
 
-bool Power::canShutdown()
+bool Power::canShutdown() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canShutdown();
+    return m_backend && m_backend->canShutdown();
 }
 
-bool Power::canReboot()
+bool Power::canReboot() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canReboot();
+    return m_backend && m_backend->canReboot();
 }
 
-bool Power::canLaunch()
+bool Power::canSuspend() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canLaunch();
+    return m_backend && m_backend->canSuspend();
 }
 
-bool Power::canSuspend()
+bool Power::canWake() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canSuspend();
+    return m_backend && m_backend->canWake();
 }
 
-bool Power::canWake()
+bool Power::canAlwaysOn() const
 {
-    if(!getComponent())
-        return false;
-    return getComponent()->canWake();
-}
-
-bool Power::canAlwaysOn()
-{
-    if(!getComponent())
-        return false;
-    return getComponent()->canAlwaysOn();
+    return m_backend && m_backend->canAlwaysOn();
 }
 
 void Power::quit()
@@ -105,9 +66,9 @@ void Power::quit()
         return;
     }
 
-    emit Get()->aboutToQuit();
+    emit this->aboutToQuit();
 
-    getComponent()->quit();
+    m_backend->quit();
     SOLIDLOG_INFO()<<"Quit app...";
 }
 
@@ -119,9 +80,9 @@ void Power::restart()
         return;
     }
 
-    emit Get()->aboutToRestart();
+    emit this->aboutToRestart();
 
-    getComponent()->restart();
+    m_backend->restart();
     SOLIDLOG_INFO()<<"Restart app..."<<qApp->applicationFilePath();
 }
 
@@ -133,9 +94,9 @@ void Power::shutdown()
         return;
     }
 
-    emit Get()->aboutToShutdown();
+    emit this->aboutToShutdown();
 
-    getComponent()->shutdown();
+    m_backend->shutdown();
     SOLIDLOG_INFO()<<"Shutdown device...";
 }
 
@@ -147,24 +108,10 @@ void Power::reboot()
         return;
     }
 
-    emit Get()->aboutToReboot();
+    emit this->aboutToReboot();
 
-    getComponent()->reboot();
+    m_backend->reboot();
     SOLIDLOG_INFO()<<"Reboot device...";
-}
-
-void Power::launch(const QString& path)
-{
-    if(!canLaunch())
-    {
-        SOLIDLOG_WARNING()<<"Cannot launch";
-        return;
-    }
-
-    emit Get()->aboutToLaunch(path);
-
-    getComponent()->launch(path);
-    SOLIDLOG_INFO()<<"Launch app"<<path;
 }
 
 void Power::suspend(bool deep)
@@ -175,9 +122,9 @@ void Power::suspend(bool deep)
         return;
     }
 
-    emit Get()->aboutToSuspend(deep);
+    emit this->aboutToSuspend(deep);
 
-    getComponent()->suspend(deep);
+    m_backend->suspend(deep);
     SOLIDLOG_INFO()<<"Suspend device..."<<deep;
 }
 
@@ -189,16 +136,14 @@ void Power::wakeIn(int second)
         return;
     }
 
-    getComponent()->wakeIn(second);
+    m_backend->wakeIn(second);
     SOLIDLOG_INFO()<<"Wake device in"<<second;
 }
 
 bool Power::isAlwaysOn()
 {
-    if(!canLaunch())
-    {
+    if(!canAlwaysOn())
         return false;
-    }
 
-    return getComponent()->isAlwaysOn();
+    return m_backend->isAlwaysOn();
 }

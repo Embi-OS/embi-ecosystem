@@ -103,5 +103,5 @@ void BackupExporter::exitWithError(const QString& msg)
     QVariantMap settings;
     settings["message"] = tr("Erreur lors de la sauvegarde");
     settings["infos"] = msg;
-    DialogManager::Get()->showError(settings);
+    DialogManager::Get()->showCritical(settings);
 }

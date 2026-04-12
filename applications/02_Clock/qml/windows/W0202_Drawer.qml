@@ -31,9 +31,9 @@ BasicDrawer {
                 Layout.fillWidth: true
                 horizontalAlignment: Qt.AlignRight
                 textFont: Style.textTheme.body1
-                text: qsTr("Adresse IPv4 Ethernet: %1").arg(NetworkSettingsManager.currentWiredConnection?.ipv4.address ?? "N/A")
+                text: qsTr("Adresse IPv4 Ethernet: %1").arg(pane.visible ? NetworkInformation.ethernetIPv4Address : "N/A")
                 captionFont: Style.textTheme.body1
-                caption: qsTr("Adresse IPv4 Wifi: %1").arg(NetworkSettingsManager.currentWifiConnection?.ipv4.address ?? "N/A")
+                caption: qsTr("Adresse IPv4 Wifi: %1").arg(pane.visible ? NetworkInformation.wifiIPv4Address : "N/A")
             }
         }
 

@@ -15,14 +15,19 @@ BasicDialog {
     property string buttonAccept: qsTr("Valider")
 
     function printDate(date: date): string {
-        var day = root.locale.dayName(date.getDay())
-        var dateString = Qt.formatDate(date, root.locale, Locale.ShortFormat)
+        const day = root.locale.dayName(date.getDay())
+        const dateString = DateTimeUtils.formatDate(date, Locale.ShortFormat)
 
-        return day+", "+dateString
+        return day + ", " + dateString
+    }
+
+    function today() {
+        const today = DateTimeUtils.currentDate()
+        root.selectedDate = today
     }
 
     function resetDate() {
-        root.selectedDate = new Date()
+        today()
     }
 
     title: printDate(root.selectedDate)
@@ -35,7 +40,7 @@ BasicDialog {
     buttonsContainer: [
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; text: root.buttonAccept; highlighted: true},
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.RejectRole; text: root.buttonReject},
-        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.ActionRole; text: qsTr("Aujourd'hui"); onClicked: root.resetDate()}
+        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.ActionRole; text: qsTr("Aujourd'hui"); onClicked: root.today()}
     ]
 
     preferredHeight: 0
@@ -51,6 +56,8 @@ BasicDialog {
         dayOfWeekVisible: true
         tumblerEnabled: true
 
-        onDayClicked: (date) => root.selectedDate = date
+        onDayClicked: (date) => {
+            root.selectedDate = date
+        }
     }
 }

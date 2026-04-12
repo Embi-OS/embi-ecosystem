@@ -2,9 +2,6 @@
 #include "tableviewmodel.h"
 #include "axion_log.h"
 
-#include <QQmlContext>
-#include <QQmlExpression>
-
 TableViewMethodColumn::TableViewMethodColumn(QObject* parent):
     TableViewColumn(parent)
 {

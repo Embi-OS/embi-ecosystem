@@ -27,6 +27,7 @@ Item {
         RawButton {onClicked: root.showInput();       text: ("Dialog input");        color: Style.cyan;        icon.source: MaterialIcons.formTextbox;   Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showLogout();      text: ("Dialog logout");       color: Style.lightBlue;   icon.source: MaterialIcons.logout;        Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showDate();        text: ("Dialog calendar");     color: Style.blue;        icon.source: MaterialIcons.calendar;      Layout.fillWidth: true; Layout.fillHeight: true }
+        RawButton {onClicked: dialogDateRange.open(); text: ("Dialog date range");   color: Style.oxfordBlue;  icon.source: MaterialIcons.calendarBadge; Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showTime();        text: ("Dialog time");         color: Style.indigo;      icon.source: MaterialIcons.clock;         Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showFileTree();    text: ("Dialog file tree");    color: Style.deepPurple;  icon.source: MaterialIcons.folder;        Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: dialogForm.open();      text: ("Form no manager");     color: Style.pink;        icon.source: MaterialIcons.formTextbox;   Layout.fillWidth: true; Layout.fillHeight: true }
@@ -139,7 +140,7 @@ Item {
             buttonAccept: qsTr("Await"),
             buttonReject: qsTr("Annuler"),
             onAccepted: function() {
-                Utils.await(2000)
+                Utils.await(5000)
             }
         });
     }
@@ -185,7 +186,7 @@ Item {
 
     DialogQrCode {
         id: qrcodePopup
-        dataToEncode: "www.voh.ch"
+        dataToEncode: "www.google.ch"
     }
 
     DialogBusy {
@@ -249,6 +250,13 @@ Item {
         infos: qsTr("Entrer un text dans le champs ci-dessus")
         onInputAccepted: (value) => {
             console.log(value)
+        }
+    }
+
+    DialogDateRangePicker {
+        id: dialogDateRange
+        onDateRangeSelected: (fromDate, toDate) => {
+            console.log(fromDate, toDate)
         }
     }
 }

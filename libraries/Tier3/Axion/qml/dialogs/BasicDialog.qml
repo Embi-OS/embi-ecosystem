@@ -26,8 +26,8 @@ T.Dialog {
     readonly property BasicWindow rootWindow: parent.Window.window as BasicWindow
     readonly property double windowWidth: rootWindow?.contentWidth ?? rootWindow?.width ?? 0
     readonly property double windowHeight: rootWindow?.contentHeight ?? rootWindow?.height ?? 0
-    readonly property double keyboardHeight: rootWindow?.keyboardHeight ?? 0
-    readonly property bool keyboardVisible: InputMethod && InputMethod.visible
+    readonly property double keyboardHeight: VirtualKeyboardHelper.height
+    readonly property bool keyboardVisible: VirtualKeyboardHelper.visible
     readonly property double parentWidth: windowWidth
     readonly property double parentHeight: windowHeight - (keyboardVisible ? keyboardHeight : 0)
     readonly property double maximumWidth: parentWidth - 2*padding

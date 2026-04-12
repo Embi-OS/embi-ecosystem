@@ -47,11 +47,11 @@ SnackbarObject* SnackbarManager::showWarning(const QVariant& settings)
     return snackbar;
 }
 
-SnackbarObject* SnackbarManager::showError(const QVariant& settings)
+SnackbarObject* SnackbarManager::showCritical(const QVariant& settings)
 {
     SnackbarObject* snackbar = show(settings);
 
-    snackbar->setSeverity(SnackbarSeverities::Error);
+    snackbar->setSeverity(SnackbarSeverities::Critical);
 
     if(snackbar->getTitle().isEmpty())
         snackbar->setTitle(tr("Erreur"));
@@ -104,7 +104,7 @@ void SnackbarManager::diagnose(SnackbarSeverities::Enum severity, QString log) c
             POPUPLOG_TRACE()<<severity<<log;
             break;
         case SnackbarSeverities::Fatal:
-        case SnackbarSeverities::Error:
+        case SnackbarSeverities::Critical:
             POPUPLOG_CRITICAL()<<severity<<log;
             break;
         case SnackbarSeverities::Warning:

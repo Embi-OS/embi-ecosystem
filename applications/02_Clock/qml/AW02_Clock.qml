@@ -1,6 +1,5 @@
 import QtQuick
 import Eco.Tier1.Utils
-import Eco.Tier2.Solid
 import Eco.Tier3.Axion
 import Eco.Tier3.System
 import L02_Clock
@@ -68,4 +67,14 @@ BasicWindow {
     }
 
     onApplicationLoaded: Swupdate.init();
+
+    Connections {
+        target: AxionHelper
+        function onRestartAccepted() {
+            Power.restart()
+        }
+        function onRebootAccepted() {
+            Power.reboot()
+        }
+    }
 }

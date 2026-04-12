@@ -42,7 +42,7 @@ DelegateChooser {
 
     DelegateChoice {
         roleValue: TableViewColumnDelegates.Color
-        BasicTableViewDelegate {
+        TableViewLabelDelegate {
             readonly property bool dataDiffersFromRowSibling: visible && (TableView.view.model as AbstractItemModel).ModelHelper.dataDiffersFromRowSibling(row, column)
             readonly property bool dataDiffersFromColumnSibling: visible && (TableView.view.model as AbstractItemModel).ModelHelper.dataDiffersFromColumnSibling(row, column)
             backgroundBorderColor: root.compareRows && dataDiffersFromRowSibling ? Style.colorWarning :
@@ -61,7 +61,7 @@ DelegateChooser {
     }
 
     DelegateChoice {
-        BasicTableViewDelegate {
+        TableViewLabelDelegate {
             readonly property bool dataDiffersFromRowSibling: visible && (TableView.view.model as AbstractItemModel).ModelHelper.dataDiffersFromRowSibling(row, column)
             readonly property bool dataDiffersFromColumnSibling: visible && (TableView.view.model as AbstractItemModel).ModelHelper.dataDiffersFromColumnSibling(row, column)
             backgroundBorderColor: root.compareRows && dataDiffersFromRowSibling ? Style.colorWarning :

@@ -138,7 +138,7 @@ void SqlManager::testConnexion(const QVariantMap& params)
         QVariantMap settings;
         settings["caption"] = error.text();
         settings["closable"] = true;
-        SnackbarManager::Get()->showError(settings);
+        SnackbarManager::Get()->showCritical(settings);
     })
     .done([](const QSqlError&) {
         SnackbarManager::Get()->showSuccess(tr("Connexion réussie"));
@@ -151,7 +151,7 @@ void SqlManager::dropDatabase()
     .fail([]() {
         QVariantMap settings;
         settings["message"] = tr("Impossible de supprimer la base de donnée");
-        DialogManager::Get()->showError(settings);
+        DialogManager::Get()->showCritical(settings);
     })
     .done([]() {
         AxionHelper::criticalRestart(tr("Suppression terminée"));
@@ -170,7 +170,7 @@ void SqlManager::vacuumDatabase()
     future.then(this, [dialog](const QSqlError& error){
         dialog->hide();
         if(error.isValid())
-            DialogManager::Get()->showError(error.text());
+            DialogManager::Get()->showCritical(error.text());
         else
             DialogManager::Get()->showMessage(tr("Optimisation réussie"));
     });
@@ -192,7 +192,7 @@ void SqlManager::exportDatabase(const QString& path)
         if(result)
             DialogManager::Get()->showMessage(tr("Export terminé"));
         else
-            DialogManager::Get()->showError(tr("Erreur lors de l'export"));
+            DialogManager::Get()->showCritical(tr("Erreur lors de l'export"));
     });
 }
 
@@ -201,7 +201,7 @@ void SqlManager::importDatabase(const QString& path)
     QFileInfo fileInfo = QFileInfo(path);
     if(fileInfo.baseName()!=Paths::applicationFileName()+"_dbBackup")
     {
-        DialogManager::Get()->showError(tr("Le chemin n'est pas compatible").arg(path));
+        DialogManager::Get()->showCritical(tr("Le chemin n'est pas compatible").arg(path));
         return;
     }
 
@@ -218,6 +218,6 @@ void SqlManager::importDatabase(const QString& path)
         if(result)
             AxionHelper::criticalRestart(tr("Import terminé"));
         else
-            DialogManager::Get()->showError(tr("Erreur lors de l'import"));
+            DialogManager::Get()->showCritical(tr("Erreur lors de l'import"));
     });
 }

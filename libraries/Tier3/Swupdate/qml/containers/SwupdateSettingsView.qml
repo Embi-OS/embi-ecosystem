@@ -50,7 +50,6 @@ PaneTreeView {
         property string suricatta_service
 
         property bool mongoose_enabled
-        property int mongoose_port
 
         property string gservice_url
         property int gservice_polldelay
@@ -84,7 +83,7 @@ PaneTreeView {
         InfoTreeDelegate {text: "software_branch";info: swupdateSettings.software_branch}
         InfoTreeDelegate {text: "suricatta_service";info: swupdateSettings.suricatta_service}
         InfoTreeDelegate {text: "mongoose_enabled";info: swupdateSettings.mongoose_enabled}
-        InfoTreeDelegate {text: "mongoose_port";info: swupdateSettings.mongoose_port}
+        InfoTreeDelegate {text: "mongoose_port";info: "8080"}
         InfoTreeDelegate {text: "gservice_url";info: swupdateSettings.gservice_url}
         InfoTreeDelegate {text: "gservice_polldelay";info: swupdateSettings.gservice_polldelay}
         InfoTreeDelegate {text: "hawkbit_url";info: swupdateSettings.hawkbit_url}
