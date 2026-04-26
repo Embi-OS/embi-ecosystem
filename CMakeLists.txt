@@ -109,7 +109,7 @@ if(BOOT2QT)
     endif()
 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}_Boot2Qt")
-    set(QT_DEPLOY_PREFIX "/VOH")
+    set(QT_DEPLOY_PREFIX "/Embi")
 
     add_definitions(-DQ_OS_BOOT2QT)
 
@@ -148,7 +148,7 @@ else()
     endif()
 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}")
-    set(QT_DEPLOY_PREFIX "/VOH")
+    set(QT_DEPLOY_PREFIX "/Embi")
 
 endif()
 
