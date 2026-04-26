@@ -5,7 +5,7 @@ import Eco.Tier3.Axion
 Window {
     id: root
 
-    visible: true
+    visibility: Window.Windowed
     width: 1280
     height: 800
     title: Version.productName
@@ -65,6 +65,9 @@ Window {
     signal applicationLoaded()
     signal applicationError()
 
+    onApplicationLoaded: {
+        AxionHelper.applicationLoaded()
+    }
     onApplicationError: {
         Log.fatal("Axion Window failed to load application...")
     }

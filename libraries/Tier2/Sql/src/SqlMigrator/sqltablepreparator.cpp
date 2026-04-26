@@ -94,7 +94,7 @@ bool SqlTablePreparator::dropIndexes(bool dropUniqueIndex)
         for(SqlColumnPreparator* column: m_columns)
         {
             if(column->isUnique() && !column->isPrimary()) {
-                SqlBuilder::dropIndex(column->getName()).ifExists().table(m_name).notice().exec(&result);
+                SqlBuilder::dropIndex(column->getName()).ifExists().table(m_name).connection(m_connectionName).notice().exec(&result);
             }
         }
     }
@@ -107,7 +107,7 @@ bool SqlTablePreparator::dropIndexes(bool dropUniqueIndex)
     // 3. Supprimer les index
     for (const QString& index : std::as_const(declaredIndexes))
     {
-        SqlBuilder::dropIndex(index).ifExists().table(m_name).notice().exec(&result);
+        SqlBuilder::dropIndex(index).ifExists().table(m_name).connection(m_connectionName).notice().exec(&result);
     }
 
     return result;
@@ -120,9 +120,13 @@ bool SqlTablePreparator::createIndexes()
 
     // 1. Lister les index actuels
     QStringList currentIndexes;
-    QSqlQuery query = SqlBuilder::indexList().table(m_name).connection(m_connectionName).exec(&result);
-    while (query.next())
-        currentIndexes << SqlBuilder::value(query, query.at(), "Key_name").toString();
+    {
+        QSqlQuery query = SqlBuilder::indexList().table(m_name).connection(m_connectionName).exec(&result);
+        while (query.next())
+            currentIndexes << SqlBuilder::value(query, query.at(), "Key_name").toString();
+        query.finish();
+        query.clear();
+    }
 
     // 2. Index déclarés dans ton code
     QStringList declaredIndexes;
@@ -203,7 +207,7 @@ bool SqlTablePreparator::createIndexes()
         }
     }
 
-    SqlBuilder::analyze().table(m_name).notice().exec();
+    SqlBuilder::analyze().table(m_name).connection(m_connectionName).notice().exec();
 
     return result;
 }
@@ -270,8 +274,13 @@ bool SqlTablePreparator::updatePrimary()
         return true;
 
     bool result=false;
-    QSqlQuery query = SqlBuilder::autoIncrement().table(m_name).connection(m_connectionName).exec(&result);
-    int autoIncrement = SqlBuilder::value(query, 0, "AUTO_INCREMENT").toInt();
+    int autoIncrement = 0;
+    {
+        QSqlQuery query = SqlBuilder::autoIncrement().table(m_name).connection(m_connectionName).exec(&result);
+        autoIncrement = SqlBuilder::value(query, 0, "AUTO_INCREMENT").toInt();
+        query.finish();
+        query.clear();
+    }
     if(result && autoIncrement>=primaryColumn->getStartValue())
         return true;
 

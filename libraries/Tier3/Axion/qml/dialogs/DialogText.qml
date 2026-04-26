@@ -14,6 +14,7 @@ BasicDialog {
 
     property string infos: ""
     property int textFormat: TextEdit.AutoText
+    property font textFont: Style.textTheme.code1
 
     buttonsContainer: [
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.RejectRole; visible: root.rejectVisible; text: root.buttonReject },
@@ -29,5 +30,6 @@ BasicDialog {
         implicitWidth: 800
         text: root.infos
         textFormat: root.textFormat
+        font: root.textFont
     }
 }

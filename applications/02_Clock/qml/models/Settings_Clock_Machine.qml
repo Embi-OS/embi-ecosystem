@@ -2,19 +2,20 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Eco.Tier1.Models
 import Eco.Tier3.Axion
-import Eco.Tier3.System
-import Eco.Tier3.Network
-import Eco.Tier3.Files
+import Eco.Tier3.Fluid
+import Eco.Tier3.Solid
 import Eco.Tier3.Database
 import Eco.Tier3.Postman
 import L02_Clock
 
 StandardObjectModel {
+    id: root
+
     StandardObject {
         group: "100_About"
         text: qsTr("A propos")
         icon: MaterialIcons.informationOutline
-        delegate: SettingsInfosView {}
+        delegate: InfosAboutView {}
     }
 
     StandardObject {
@@ -27,23 +28,30 @@ StandardObjectModel {
 
     StandardObject {
         group: "200_System"
+        text: "Monitoring"
+        icon: MaterialIcons.chartLine
+        delegate: SystemMonitoringAboutView {}
+    }
+
+    StandardObject {
+        group: "200_System"
         text: qsTr("Affichage")
         icon: MaterialIcons.monitor
-        delegate: SettingsDisplayView {}
+        delegate: DisplaySettingsView {}
     }
 
     StandardObject {
         group: "200_System"
         text: qsTr("Langue")
         icon: MaterialIcons.earth
-        delegate: SettingsLocaleView {}
+        delegate: LocaleSettingsView {}
     }
 
     StandardObject {
         group: "200_System"
         text: qsTr("Heure et date")
         icon: MaterialIcons.calendarClock
-        delegate: SettingsTimedateView {}
+        delegate: TimedateSettingsView {}
     }
 
     StandardObject {
@@ -60,14 +68,15 @@ StandardObjectModel {
             StandardObject {
                 text: qsTr("A propos")
                 icon: MaterialIcons.informationOutline
-                delegate: NetworkSettingsAboutView {}
+                delegate: NetworkAboutView {}
             }
         }
 
         property Instantiator instantiator: Instantiator {
             model: NetworkSettingsManager.interfaces
             delegate: StandardObject {
-                id: networkEntryTab
+                id: interfaceSettingObject
+                editable: network.editable
                 required property NetworkSettingsInterface entry
                 required property string name
                 required property int type
@@ -75,10 +84,12 @@ StandardObjectModel {
                 icon: type===NetworkSettingsType.Wired ? MaterialIcons.ethernet :
                       type===NetworkSettingsType.Wifi ? MaterialIcons.wifi:
                       type===NetworkSettingsType.Bluetooth ? MaterialIcons.bluetooth : MaterialIcons.accountQuestion
-                delegate: NetworkSettingsInterfaceView { networkInterface: networkEntryTab.entry }
+                delegate: NetworkInterfaceSettingsView {
+                     networkInterface: interfaceSettingObject.entry
+                }
             }
             onObjectAdded: (index, object) => network.tabsModel.append(object)
-            onObjectRemoved: (index, object) => network.tabsModel.append(object)
+            onObjectRemoved: (index, object) => network.tabsModel.remove(object)
         }
     }
 
@@ -96,47 +107,56 @@ StandardObjectModel {
             StandardObject {
                 text: qsTr("A propos")
                 icon: MaterialIcons.informationOutline
-                delegate: FileSettingsAboutView { editable: filesystem.editable }
+                delegate: FilesystemAboutView {}
             }
+
             StandardObject {
                 text: qsTr("Stockage")
                 icon: MaterialIcons.harddisk
-                delegate: FileSettingsStorageView { editable: filesystem.editable }
+                delegate: FstabStorageSettingsView {}
             }
+
             StandardObject {
                 text: qsTr("Navigateur")
                 icon: MaterialIcons.folderSearchOutline
-                delegate: FileSettingsBrowserView { editable: filesystem.editable }
+                delegate: FilesystemBrowserView {}
             }
         }
     }
 
     StandardObject {
         group: "300_System"
+        text: qsTr("Maintenance")
+        icon: MaterialIcons.tools
+        delegate: MaintenanceSettingsView {}
+    }
+
+    StandardObject {
+        group: "300_System"
         text: qsTr("SSH")
         icon: MaterialIcons.ssh
-        delegate: SettingsSshView {}
+        delegate: SshSettingsView {}
     }
 
     StandardObject {
         group: "300_System"
         text: qsTr("Launcher")
         icon: MaterialIcons.rocketLaunch
-        delegate: SettingsAppControllerView {}
-    }
-
-    StandardObject {
-        group: "300_System"
-        text: qsTr("Maintenance")
-        icon: MaterialIcons.tools
-        delegate: SettingsMaintenanceView {}
+        delegate: AppControllerSettingsView {}
     }
 
     StandardObject {
         group: "300_System"
         text: qsTr("Logs")
         icon: MaterialIcons.fileDocumentOutline
-        delegate: SettingsLogsView {}
+        delegate: LogsSettingsView {}
+    }
+
+    StandardObject {
+        group: "300_System"
+        text: qsTr("U-Boot")
+        icon: MaterialIcons.submarine
+        delegate: UBootSettingsView {}
     }
 
     StandardObject {
@@ -164,9 +184,6 @@ StandardObjectModel {
         }
     }
 
-    property alias rest: rest
-    property alias restSettings: restSettings
-    property alias restBrowser: restBrowser
     StandardObject {
         id: rest
         group: "400_Application"
@@ -196,9 +213,6 @@ StandardObjectModel {
         }
     }
 
-    property alias database: database
-    property alias databaseSettings: databaseSettings
-    property alias databaseBrowser: databaseBrowser
     StandardObject {
         id: database
         group: "400_Application"

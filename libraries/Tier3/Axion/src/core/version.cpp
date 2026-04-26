@@ -4,12 +4,14 @@
 Version::Version(QObject *parent) :
     QObject(parent),
     m_globalVersion(PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH),
-    m_versionSuffix(PROJECT_DESCRIPTION),
+    m_versionSuffix(PROJECT_VERSION_SUFFIX),
+    m_versionCodename(PROJECT_VERSION_CODENAME),
+    m_description(PROJECT_DESCRIPTION),
     m_company(PROJECT_COMPANY),
     m_website(PROJECT_WEBSITE),
     m_maintainer(PROJECT_MAINTAINER),
     m_copyright(PROJECT_COPYRIGHT),
-    m_version(m_versionSuffix.isEmpty() ? QString("%1").arg(m_globalVersion.toString()) : QString("%1 [%2]").arg(m_globalVersion.toString(),m_versionSuffix)),
+    m_version(m_versionSuffix.isEmpty() ? QString("%1").arg(m_globalVersion.toString()) : QString("%1-%2").arg(m_globalVersion.toString(),m_versionSuffix)),
     m_productName(PROJECT_NAME)
 {
 
@@ -21,6 +23,7 @@ void Version::dumpInfos() const
     infos += QString("\n\n");
     infos += m_productName.isEmpty() ? "" : QString("\t %1\n").arg(m_productName);
     infos += m_version.isEmpty() ? "" : QString("\t Version: %1\n").arg(m_version);
+    infos += m_versionCodename.isEmpty() ? "" : QString("\t Codename: %1\n").arg(m_versionCodename);
     infos += m_company.isEmpty() ? "" : QString("\t Company: %1\n").arg(m_company);
     infos += m_website.isEmpty() ? "" : QString("\t Website: %1\n").arg(m_website);
     infos += m_maintainer.isEmpty() ? "" : QString("\t Maintainer: %1\n").arg(m_maintainer);
@@ -35,6 +38,8 @@ QString Version::about() const
         about += tr("Produit: %1").arg(m_productName);
     if(!m_version.isEmpty())
         about += tr("Version: %1").arg(m_version);
+    if(!m_versionCodename.isEmpty())
+        about += tr("Codename: %1").arg(m_versionCodename);
     about += tr("Version Qt: %1").arg(qVersion());
     if(!m_company.isEmpty())
         about += tr("Entreprise: %1").arg(m_company);

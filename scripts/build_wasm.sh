@@ -22,7 +22,7 @@ WASM_TOOLCHAIN_PATH="$WASM_PREFIX_PATH/lib/cmake/Qt6/qt.toolchain.cmake"
 WASM_CXX_COMPILER_PATH="$EMSCRIPTEN_PATH/upstream/emscripten/em++"
 WASM_C_COMPILER_PATH="$EMSCRIPTEN_PATH/upstream/emscripten/emcc"
 WASM_BUILD_DIR="$BUILD_DIR/build-wasm-Qt-$QT_VERSION"
-WASM_OUTPUT_DIR="$BUILD_DIR/${PROJECT_NAME}_WASM/v$PROJECT_VERSION"
+WASM_OUTPUT_DIR="$BUILD_DIR/${PROJECT_NAME}_WASM"
 
 if [ "$REBUILD" -eq 1 ]; then
     rm -rf "$WASM_BUILD_DIR"
@@ -30,7 +30,7 @@ if [ "$REBUILD" -eq 1 ]; then
 fi
 ensure_dir "$WASM_BUILD_DIR"
 
-run_cmd "$WASM_CMAKE_BIN" --log-level=NOTICE -G "$GENERATOR" -S "$PROJECT_ROOT" -B "$WASM_BUILD_DIR" \
+run_cmd "$WASM_CMAKE_BIN" -G "$GENERATOR" -S "$PROJECT_ROOT" -B "$WASM_BUILD_DIR" \
     -DCMAKE_MAKE_PROGRAM:FILEPATH="$WASM_MAKE_PROGRAM" \
     -DCMAKE_TOOLCHAIN_FILE:FILEPATH="$WASM_TOOLCHAIN_PATH" \
     -DCMAKE_CXX_COMPILER:FILEPATH="$WASM_CXX_COMPILER_PATH" \
@@ -54,7 +54,7 @@ if [ -d "$WASM_OUTPUT_DIR" ]; then
         has_entries=1
         if [ -d "$item" ]; then
             app_name=$(basename "$item")
-            zip_path="$WASM_ARTIFACT_DIR/A${app_name}_${SANITIZED_PROJECT_VERSION}-${PROJECT_DESCRIPTION}_Wasm.zip"
+            zip_path="$WASM_ARTIFACT_DIR/A${app_name}_${SANITIZED_PROJECT_VERSION}-${PROJECT_VERSION_SUFFIX}_Wasm.zip"
             rm -f "$zip_path"
             log "Packaging WASM app $app_name → $zip_path"
             run_cmd bash -lc "cd \"$item\" && zip -r -q \"$zip_path\" ."

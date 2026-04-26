@@ -96,7 +96,7 @@ private:
         qApp->exit();
 #if defined(Q_OS_BOOT2QT)
         QProcess::startDetached(QStringLiteral(APPCONTROLLER_CMD), {QStringLiteral("--restart")});
-#else
+#elif defined(Q_OS_LINUX)
         const QString applicationPath = QCoreApplication::applicationFilePath();
         const QStringList applicationArguments = QCoreApplication::arguments().mid(1);
         if (!applicationPath.isEmpty())

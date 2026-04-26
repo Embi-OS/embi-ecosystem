@@ -1,4 +1,0 @@
-#include "Display/displaysettings.h"
-#include "Power/power.h"
-#include "Locale/localesettings.h"
-#include "Timedate/timedatesettings.h"

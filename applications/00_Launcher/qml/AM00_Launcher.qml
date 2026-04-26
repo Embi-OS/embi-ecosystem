@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Eco.Tier1.Models
 import Eco.Tier3.Axion
-import Eco.Tier3.System
 import L00_Launcher
 
 Page {

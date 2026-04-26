@@ -1,6 +1,7 @@
 #include "sqldbpool.h"
 #include "sql_log.h"
 
+#include <QDir>
 #include <QThread>
 
 class SqlDbConnection
@@ -124,6 +125,10 @@ QSqlDatabase SqlDbPool::create(const SqlDbProfile& profile, bool force)
         {
             const QString path = profile.path;
             const QString file = QString("%1.sqlite").arg(profile.name);
+            if (!path.isEmpty() && !QDir().mkpath(path)) 
+            {
+                SQLLOG_WARNING()<<"Failed to create SQLite database path:"<<path;
+            }
             const QString filePath = QDir(path).filePath(file);
             db.setDatabaseName(filePath);
         }

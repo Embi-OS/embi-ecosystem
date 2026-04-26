@@ -8,7 +8,7 @@ T.Popup {
     id: root
 
     signal imageClicked()
-    property alias screenCapture: screenCapture
+    readonly property ItemCapturer screenCapture: screenCapture
 
     readonly property Window rootWindow: parent.Window.window as Window
 

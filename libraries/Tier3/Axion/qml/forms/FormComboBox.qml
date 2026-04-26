@@ -8,6 +8,7 @@ BasicFormBackground {
     signal activated(int index)
     signal highlighted(int index)
     signal textEdited(string text)
+    signal editingFinished(string text)
 
     property alias validator: comboBox.validator
     property alias textRole: comboBox.textRole
@@ -22,7 +23,6 @@ BasicFormBackground {
     property alias currentText: comboBox.currentText
     property alias editText: comboBox.editText
     property alias displayText: comboBox.displayText
-    property alias customText: comboBox.customText
     property alias inputMethodHints: comboBox.inputMethodHints
     property alias acceptableInput: comboBox.acceptableInput
     property alias inputMethodComposing: comboBox.inputMethodComposing
@@ -65,7 +65,7 @@ BasicFormBackground {
 
     warning: authorizeCustom ? !acceptableInput :
              !authorizeEmpty ? (currentIndex<0 || currentIndex>=count) : false
-    highlighted: comboBoxOpened
+    highlighted: comboBoxOpened || comboBoxActiveFocus
 
     BasicComboBox {
         id: comboBox
@@ -89,5 +89,10 @@ BasicFormBackground {
         onTextEdited: (text) => root.textEdited(text)
         onActivated: (index) => root.activated(index)
         onHighlighted: (index) => root.highlighted(index)
+        onEditingFinished: (text) => {
+            root.editingFinished(text)
+            if(acceptableInput)
+                root.accepted(text)
+        }
     }
 }

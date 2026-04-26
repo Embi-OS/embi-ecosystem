@@ -17,18 +17,16 @@ embi_add_application(${PROJECT_NAME}
     LIBRARIES
         Axion
         Happy
-        Files
-        Network
-        System
+        Fluid
+        Solid
         Media
         Postman
         Database
     QML_DEPENDENCIES
         Eco.Tier3.Axion
         Eco.Tier3.Happy
-        Eco.Tier3.Files
-        Eco.Tier3.Network
-        Eco.Tier3.System
+        Eco.Tier3.Fluid
+        Eco.Tier3.Solid
         Eco.Tier3.Media
         Eco.Tier3.Postman
         Eco.Tier3.Database

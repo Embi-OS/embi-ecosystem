@@ -12,7 +12,9 @@ class Version : public QObject,
     QML_SINGLETON
 
     Q_CONSTANT_REF_PROPERTY(QVersionNumber, globalVersion, {})
-    Q_CONSTANT_REF_PROPERTY(QString, versionSuffix, "Unreleased")
+    Q_CONSTANT_REF_PROPERTY(QString, versionSuffix, "")
+    Q_CONSTANT_REF_PROPERTY(QString, versionCodename, "")
+    Q_CONSTANT_REF_PROPERTY(QString, description, "")
     Q_CONSTANT_REF_PROPERTY(QString, company, "N/A")
     Q_CONSTANT_REF_PROPERTY(QString, website, "N/A")
     Q_CONSTANT_REF_PROPERTY(QString, maintainer, "N/A")

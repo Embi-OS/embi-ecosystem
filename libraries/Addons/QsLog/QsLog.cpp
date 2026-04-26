@@ -197,7 +197,7 @@ void Logger::init(const QString& path)
     consoleDest->setIncludeTimestamp(false);
     consoleDest->setLoggingLevel(QsLogging::NoticeLevel);
 
-#if !defined(QT_CREATOR_RUN) && defined(QT_NO_DEBUG)
+#if defined(QT_NO_DEBUG)
     if(!path.isEmpty())
     {
         QsLogging::DestinationPtr fileDest = QsLogging::DestinationFactory::MakeFileDestination(path,

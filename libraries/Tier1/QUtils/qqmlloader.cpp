@@ -82,6 +82,14 @@ QObject* QQmlLoader::createObject(QQmlComponent* compo, const QVariantMap& initi
             QUTILSLOG_DEBUG()<<"Loaded:"<<compo->url()<<"into:"<<obj<<"in"<<timer.nsecsElapsed()/1000000.0<<"ms";
             return obj;
         }
+        else if(compo->isError())
+        {
+            const QList<QQmlError> errors = compo->errors();
+            for(const QQmlError& qmlError: errors)
+            {
+                QUTILSLOG_CRITICAL()<<qmlError.toString();
+            }
+        }
     }
     else
     {

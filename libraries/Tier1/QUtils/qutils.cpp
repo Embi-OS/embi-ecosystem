@@ -259,7 +259,7 @@ bool QUtils::Filesystem::clear(const QString& path)
 {
     QDir dir(path);
     if(! dir.exists())
-        return false;
+        return true;
 
     const QStringList entryList = dir.entryList();
     for(const QString & filename: entryList)

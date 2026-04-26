@@ -9,9 +9,6 @@ BasicPane {
     padding: 10
     topPadding: 0
     contentItem: PaneSplitView {
-        title: qsTr("Paramètres appareil")
-        comment: qsTr("Certains changements peuvent nécessiter un redémarrage du système")
-
         model: Settings_Clock_Machine {}
     }
 }

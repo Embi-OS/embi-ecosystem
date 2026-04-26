@@ -35,8 +35,8 @@ T.ComboBox {
     readonly property bool opened: popup.visible
 
     signal textEdited(string text)
+    signal editingFinished(string text)
 
-    property string customText: ""
     property string emptyText: "N/A"
     currentIndex: 0
 
@@ -95,7 +95,7 @@ T.ComboBox {
     }
 
     contentItem: BasicTextField {
-        text: root.editable ? (root.editText || root.customText) : root.displayText
+        text: root.editable ? root.editText : root.displayText
 
         enabled: root.editable
         autoScroll: root.editable
@@ -110,6 +110,7 @@ T.ComboBox {
         color: root.colorValue
         verticalAlignment: Text.AlignVCenter
         onTextEdited: root.textEdited(text)
+        onEditingFinished: root.editingFinished(text)
     }
 
     background: Rectangle {

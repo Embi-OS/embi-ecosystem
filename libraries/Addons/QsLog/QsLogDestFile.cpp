@@ -26,6 +26,8 @@
 #include "QsLogDestFile.h"
 
 #include <QDateTime>
+#include <QDir>
+#include <QFileInfo>
 #include <QtGlobal>
 #include <iostream>
 
@@ -157,6 +159,13 @@ bool QsLogging::FileDestination::isValid()
 
 void QsLogging::FileDestination::init()
 {
+    const QFileInfo fileInfo(mFile.fileName());
+    const QString path = fileInfo.absolutePath();
+    if (!path.isEmpty() && !QDir().mkpath(path)) {
+        std::cerr<<"QsLog: could not create log path "<<qPrintable(path);
+        return;
+    }
+
     if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag()))
         std::cerr<<"QsLog: could not open log file "<<qPrintable(mFile.fileName());
     mOutputStream.setDevice(&mFile);

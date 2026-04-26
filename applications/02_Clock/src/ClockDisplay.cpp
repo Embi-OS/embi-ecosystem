@@ -1,6 +1,6 @@
 #include "ClockDisplay.h"
 
-#include "Display/displaysettings.h"
+#include "display/displaysettings.h"
 
 ClockDisplay::ClockDisplay(QObject *parent) :
     AbstractManager(parent),

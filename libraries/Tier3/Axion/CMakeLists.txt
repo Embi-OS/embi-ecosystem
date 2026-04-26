@@ -74,11 +74,11 @@ embi_add_qml_module(${PROJECT_NAME}
     PRIVATE_DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dialogs
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/files
         ${CMAKE_CURRENT_SOURCE_DIR}/src/forms
         ${CMAKE_CURRENT_SOURCE_DIR}/src/forms/validators
         ${CMAKE_CURRENT_SOURCE_DIR}/src/graphs
         ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/models
         ${CMAKE_CURRENT_SOURCE_DIR}/src/steps
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tables
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tables/columnobjects

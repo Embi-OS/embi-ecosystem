@@ -1,7 +1,8 @@
 import QtQuick
 import Eco.Tier1.ProxyModel
 import Eco.Tier3.Axion
-import Eco.Tier3.System
+import Eco.Tier3.Fluid
+import Eco.Tier3.Solid
 import L00_Launcher
 
 Item {

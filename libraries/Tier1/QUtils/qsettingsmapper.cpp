@@ -1,6 +1,7 @@
 #include "qsettingsmapper.h"
 #include "qutils_log.h"
 
+#include <QDir>
 #include <QStandardPaths>
 
 Q_GLOBAL_STATIC(QString, g_path)
@@ -114,6 +115,15 @@ bool QSettingsMapper::submitSettings(const QStringList& dirtyKeys)
 
 bool QSettingsMapper::toFile(const QVariantMap& map)
 {
+    const QString settingsPath = !m_settingsPath.isEmpty() || m_baseName.isEmpty() ?
+                                     m_settingsPath :
+                                     QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+
+    if (!settingsPath.isEmpty() && !QDir().mkpath(settingsPath)) {
+        QUTILSLOG_WARNING() << "Failed to create settings path:" << settingsPath;
+        return false;
+    }
+
     for(auto [key, value]: map.asKeyValueRange())
     {
         instance()->setValue(key, value);

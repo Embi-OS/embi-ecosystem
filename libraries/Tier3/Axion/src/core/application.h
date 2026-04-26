@@ -14,7 +14,7 @@ public:
     Application(int &argc, char **argv, const QString& applicationName=QString());
     ~Application();
 
-    int run(QAnyStringView uri, QAnyStringView typeName);
+    virtual int run(QAnyStringView uri, QAnyStringView typeName);
 
     static void putEnvironmentVariable(const char *varName, QByteArrayView value);
     static void unsetEnvironmentVariable(const char *varName);

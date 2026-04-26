@@ -29,7 +29,7 @@ class ClockDisplay : public AbstractManager
     Q_WRITABLE_VAR_PROPERTY(int, lockedBrightness, LockedBrightness, 25)
     Q_WRITABLE_VAR_PROPERTY(int, lockedTimeout, LockedTimeout, 5)
     Q_WRITABLE_VAR_PROPERTY(int, wakeBrightness, WakeBrightness, 255)
-    Q_WRITABLE_VAR_PROPERTY(int, wakeTimeout, WakeTimeout, 10)
+    Q_WRITABLE_VAR_PROPERTY(int, wakeTimeout, WakeTimeout, 5)
 
     Q_WRITABLE_VAR_PROPERTY(bool, alwaysOnEnabled, AlwaysOnEnabled, false)
 

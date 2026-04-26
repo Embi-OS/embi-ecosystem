@@ -6,7 +6,7 @@ import Eco.Tier3.Axion
 BasicPane {
     id: root
 
-    font: Style.textTheme.code
+    font: Style.textTheme.code1
     property string text: ""
     property int textFormat: Text.PlainText
     property color textColor: ColorUtils.isDarkColor(root.color) ? Style.colorWhite : Style.colorBlack

@@ -17,7 +17,7 @@
 #include "graphs/graphaxisobject.h"
 #include "graphs/graphseriesmodel.h"
 
-#include "models/foldertreemodel.h"
+#include "files/foldertreemodel.h"
 
 #include "tables/tableviewcolumnmodel.h"
 #include "tables/tableviewmodel.h"

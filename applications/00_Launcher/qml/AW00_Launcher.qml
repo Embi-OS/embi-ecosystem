@@ -1,11 +1,11 @@
 import QtQuick
 import Eco.Tier1.Utils
 import Eco.Tier3.Axion
-import Eco.Tier3.System
+import Eco.Tier3.Fluid
 import L00_Launcher
 
 BasicWindow {
-    id: window
+    id: root
 
     width: 1024
     height: 600
@@ -60,22 +60,10 @@ BasicWindow {
 //──────────────────────────────────────────────────────────────────────
 
     BasicKeyboard {
-        hide: window.hideKeyboard
+        hide: root.hideKeyboard
     }
 
     Watchdog {
         enabled: root.backendReady // && root.frontendReady
-    }
-
-    onApplicationLoaded: Swupdate.init();
-
-    Connections {
-        target: AxionHelper
-        function onRestartAccepted() {
-            Power.restart()
-        }
-        function onRebootAccepted() {
-            Power.reboot()
-        }
     }
 }

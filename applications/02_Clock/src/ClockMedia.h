@@ -23,7 +23,7 @@ class ClockMedia : public AbstractManager
 
     Q_WRITABLE_PTR_PROPERTY(QMediaPlayer, mediaPlayer, MediaPlayer, nullptr)
 
-    Q_WRITABLE_VAR_PROPERTY(int, wakeTimeout, WakeTimeout, 10)
+    Q_WRITABLE_VAR_PROPERTY(int, wakeTimeout, WakeTimeout, 5)
     Q_WRITABLE_VAR_PROPERTY(int, defaultVolume, DefaultVolume, 20)
 
 private:

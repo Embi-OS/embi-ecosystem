@@ -21,7 +21,7 @@ FormObject {
     readonly property int optionsCount: root.options.ModelHelper.count
     readonly property int currentIndex: root.options.ModelHelper.contentIsEmpty ? -1 : root.options.ModelHelper.indexOf(root.valueRole,root.currentValue,root.isSorted)
     readonly property string currentText: root.currentIndex>=0 ? root.options.ModelHelper.getProperty(root.currentIndex, root.textRole) : ""
-    readonly property string editText: (root.currentIndex<0 && root.customizable) ? (root.currentValue || "") : ""
+    readonly property string editText: root.currentValue
 
     warning: customizable ? !acceptableInput :
              mandatory ? (currentIndex<0 || currentIndex>=optionsCount) : false
@@ -33,8 +33,6 @@ FormObject {
         authorizeEmpty: !root.mandatory
         authorizeCustom: root.customizable
         emptyText: root.emptyText
-        editText: root.editText
-        customText: root.editText
 
         enabled: root.enabled
         warning: root.warning || (authorizeCustom ? !acceptableInput :
@@ -48,6 +46,12 @@ FormObject {
         textRole: root.textRole
         valueRole: root.valueRole!=="" ? root.valueRole : root.textRole
         currentIndex: root.currentIndex
+
+        Binding on editText {
+            delayed: true
+            when: root.customizable && root.currentIndex < 0
+            value: root.editText
+        }
 
         onTextEdited: (text) => root.validateValue(text)
         onAccepted: (text) => root.changeValue(text)

@@ -1,4 +1,3 @@
-#include <System>
 #include <Solid>
 #include <Axion>
 // #include <QtWebView>
@@ -10,6 +9,8 @@ int main(int argc, char *argv[])
 
     ApplicationController::init();
     LocaleSettings::init();
+
+    AxionHelper::onApplicationLoaded(Swupdate::init);
 
     return app->run("L02_Clock", "AW02_Clock");
 }

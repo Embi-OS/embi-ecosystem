@@ -16,14 +16,12 @@ embi_add_application(${PROJECT_NAME}
         ${LIB_NAME}
     LIBRARIES
         Axion
-        Files
-        Network
-        System
+        Fluid
+        Solid
     QML_DEPENDENCIES
         Eco.Tier3.Axion
-        Eco.Tier3.Files
-        Eco.Tier3.Network
-        Eco.Tier3.System
+        Eco.Tier3.Fluid
+        Eco.Tier3.Solid
     SRC_FILES
         ${ALL_SRC_FILES}
     QML_FILES

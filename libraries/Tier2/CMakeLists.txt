@@ -12,6 +12,5 @@ add_subdirectory(Rest)
 add_subdirectory(Unit)
 
 if(NOT EMSCRIPTEN)
-    add_subdirectory(Solid)
     add_subdirectory(Sql)
 endif()

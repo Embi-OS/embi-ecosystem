@@ -1,63 +1,60 @@
 #!/bin/bash
 set -e
 
-# Yocto/manifest defaults (can be overridden in build_yocto.conf)
+# Yocto/kas defaults (can be overridden in build.conf)
 YOCTO_DIR="$PROJECT_PARENT/_YoctoBuilds"
-YOCTO_MANIFEST_URL="git@gitlab.voh.local:projects-ecosysteme/voh-os/voh-manifest.git"
-YOCTO_MANIFEST_XML="stable.xml"
+YOCTO_KAS_FILE="embi-kas/latest.yml"
 YOCTO_MACHINE="apalis-imx8"
-YOCTO_TARGET="b2qt-image-swu"
-REPO_BIN="$HOME/.local/bin/repo"
-BITBAKE_EXTRA_ARGS=""
+YOCTO_IMAGE_NAME="embi-image"
+YOCTO_IMAGE_EXTENSION="tezi.tar"
+KAS_BIN="kas"
 
 # Load common config and helpers
 . "$(dirname "$0")/common.sh"
 
 # Expand leading ~ if present in paths
 YOCTO_DIR="${YOCTO_DIR/#\~/$HOME}"
-REPO_BIN="${REPO_BIN/#\~/$HOME}"
+YOCTO_KAS_FILE="${YOCTO_KAS_FILE/#\~/$HOME}"
 
 start_timer "Yocto"
 
-# Ensure directories
-ensure_dir "$YOCTO_DIR"
+require_tools "$KAS_BIN"
 
-# Ensure repo tool is available
-if [ ! -x "$REPO_BIN" ]; then
-    log "Installing repo tool to $REPO_BIN"
-    mkdir -p "$(dirname "$REPO_BIN")"
-    curl -sSL https://storage.googleapis.com/git-repo-downloads/repo -o "$REPO_BIN"
-    chmod a+rx "$REPO_BIN"
+[ -d "$YOCTO_DIR" ] || error_exit "Yocto kas workspace not found: $YOCTO_DIR"
+
+if [[ "$YOCTO_KAS_FILE" = /* ]]; then
+    KAS_CONFIG_ARG="$YOCTO_KAS_FILE"
+    KAS_CONFIG_PATH="$YOCTO_KAS_FILE"
+else
+    KAS_CONFIG_ARG="$YOCTO_KAS_FILE"
+    KAS_CONFIG_PATH="$YOCTO_DIR/$YOCTO_KAS_FILE"
 fi
 
-# Initialize repo
-log "Initializing Yocto repo (manifest: $YOCTO_MANIFEST_URL, file: $YOCTO_MANIFEST_XML)"
-run_cmd bash -lc "cd \"$YOCTO_DIR\" && \"$REPO_BIN\" init -u \"$YOCTO_MANIFEST_URL\" -m \"$YOCTO_MANIFEST_XML\""
-run_cmd bash -lc "cd \"$YOCTO_DIR\" && \"$REPO_BIN\" sync"
+[ -f "$KAS_CONFIG_PATH" ] || error_exit "kas config not found: $KAS_CONFIG_PATH"
 
-# Construct the yocto build command sequence
-YOCTO_ENV_CMD="export MACHINE=\"$YOCTO_MACHINE\"; source ./setup-environment.sh;"
-YOCTO_ENV_CMD+=" export BB_ENV_PASSTHROUGH_ADDITIONS=\"\$BB_ENV_PASSTHROUGH_ADDITIONS PRODUCT_VERSION\";"
-YOCTO_ENV_CMD+=" export BB_ENV_PASSTHROUGH_ADDITIONS=\"\$BB_ENV_PASSTHROUGH_ADDITIONS PRODUCT_VERSION_NAME\";"
-YOCTO_ENV_CMD+=" export BB_ENV_PASSTHROUGH_ADDITIONS=\"\$BB_ENV_PASSTHROUGH_ADDITIONS PRODUCT_IMAGE_BRANCH\";"
-YOCTO_ENV_CMD+=" export PRODUCT_VERSION=\"$PROJECT_VERSION\";"
-YOCTO_ENV_CMD+=" export PRODUCT_VERSION_NAME=\"$PROJECT_DESCRIPTION\";"
-YOCTO_ENV_CMD+=" export PRODUCT_IMAGE_BRANCH=\"$PROJECT_BRANCH\";"
+KAS_BUILD_CMD=(
+    env
+    "PRODUCT_VERSION=$PROJECT_VERSION"
+    "PRODUCT_VERSION_SUFFIX=$PROJECT_VERSION_SUFFIX"
+    "PRODUCT_VERSION_CODENAME=$PROJECT_VERSION_CODENAME"
+    "PRODUCT_IMAGE_BRANCH=$PROJECT_BRANCH"
+    "$KAS_BIN" build "$KAS_CONFIG_ARG"
+)
 
-BITBAKE_CMD="bitbake $YOCTO_TARGET ${BITBAKE_EXTRA_ARGS}"
-YOCTO_BUILD_COMMAND="cd \"$YOCTO_DIR\"; $YOCTO_ENV_CMD $BITBAKE_CMD"
-
-# Run the combined yocto build command in a single subshell to preserve the sourced environment
-log "Starting Yocto build (non-deterministic hash warnings will be ignored)"
-log ">>> $YOCTO_BUILD_COMMAND"
-if ! bash -lc "$YOCTO_BUILD_COMMAND"; then
+log "Starting Yocto build with kas (non-deterministic hash warnings will be ignored)"
+log "Workspace: $YOCTO_DIR"
+log "Config: $KAS_CONFIG_ARG"
+log ">>> cd \"$YOCTO_DIR\" && ${KAS_BUILD_CMD[*]}"
+if ! (
+    cd "$YOCTO_DIR"
+    "${KAS_BUILD_CMD[@]}"
+); then
     warn "Yocto build command reported a non-zero exit. Proceeding anyway; inspect Yocto logs if this is unexpected."
 fi
 
-# Print typical output locations (best effort guess)
-YOCTO_BUILD_DIR_GUESS="$YOCTO_DIR/build-$YOCTO_MACHINE"
-IMAGE_DIR="$YOCTO_BUILD_DIR_GUESS/tmp/deploy/images/$YOCTO_MACHINE"
-QBSP_DIR="$YOCTO_BUILD_DIR_GUESS/tmp/deploy/qbsp"
+YOCTO_BUILD_DIR="${YOCTO_DIR}/build"
+IMAGE_DIR="$YOCTO_BUILD_DIR/tmp/deploy/images/$YOCTO_MACHINE"
+QBSP_DIR="$YOCTO_BUILD_DIR/tmp/deploy/qbsp"
 
 # Verify that expected artifacts were produced (patterns are globs)
 ARTIFACT_PATTERNS=(

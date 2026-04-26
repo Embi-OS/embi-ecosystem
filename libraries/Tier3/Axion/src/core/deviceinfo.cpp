@@ -24,12 +24,12 @@ void DeviceInfo::dumpInfos()
 
 QString DeviceInfo::about()
 {
-    static const QString desc = QString(PROJECT_DESCRIPTION).isEmpty() ? QString() : QString("[%1]").arg(PROJECT_DESCRIPTION);
+    static const QString versionSuffix = QString(PROJECT_VERSION_SUFFIX).isEmpty() ? QString() : QString("-%1").arg(PROJECT_VERSION_SUFFIX);
     QString about;
     about += QString("Running on: %1 [%2] arch %3\n").arg(platformName(),platformKernelVersion(), platformCpuArchitecture());
     about += QString("Qt Version: %1 [%2]\n").arg(qtVersion(), buildAbi());
     about += QString("Qt Version build: %1\n").arg(qtVersionBuild());
-    about += QString("Version: %1 %2\n").arg(QVersionNumber(PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH).toString(), desc);
+    about += QString("Version: %1%2\n").arg(QVersionNumber(PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH).toString(), versionSuffix);
     about += QString("Build date: %1 at %2").arg(buildDate(), buildTime());
     return about;
 }

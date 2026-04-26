@@ -103,6 +103,9 @@ QByteArray QPasswordHasher::encryptPassword(const QByteArray &password)
 // Decrypt password: input is IV+ciphertext (Base64)
 QByteArray QPasswordHasher::decryptPassword(const QByteArray &encryptedPassword)
 {
+    if(encryptedPassword.isEmpty())
+        return QByteArray();
+
     const QByteArrayList parts = encryptedPassword.split(ENCRYPTION_SEPARATOR);
     if (parts.size() != 3)
         return QByteArray();
@@ -134,6 +137,9 @@ QByteArray QPasswordHasher::decryptPassword(const QByteArray &encryptedPassword)
 
 bool QPasswordHasher::isPasswordEncrypted(const QByteArray &password)
 {
+    if(password.isEmpty())
+        return false;
+
     const QByteArrayList parts = password.split(ENCRYPTION_SEPARATOR);
     if (parts.size() != 3)
         return false;

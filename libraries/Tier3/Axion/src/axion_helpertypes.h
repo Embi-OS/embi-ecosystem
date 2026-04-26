@@ -34,7 +34,8 @@ class TextTheme : public QObject
     Q_PROPERTY(QFont overline MEMBER overline NOTIFY familyChanged FINAL)
     Q_PROPERTY(QFont hint1 MEMBER hint1 NOTIFY familyChanged FINAL)
     Q_PROPERTY(QFont hint2 MEMBER hint2 NOTIFY familyChanged FINAL)
-    Q_PROPERTY(QFont code MEMBER code CONSTANT FINAL)
+    Q_PROPERTY(QFont code1 MEMBER code1 CONSTANT FINAL)
+    Q_PROPERTY(QFont code2 MEMBER code2 CONSTANT FINAL)
 
 public:
     explicit TextTheme(QObject* parent = nullptr);
@@ -60,7 +61,8 @@ public:
     QFont overline;
     QFont hint1;
     QFont hint2;
-    QFont code;
+    QFont code1;
+    QFont code2;
 
 signals:
     void familyChanged();
@@ -264,6 +266,7 @@ public:
     static void registerImageProvider(QQmlEngine& engine);
     static void registerFontsPath(const QString& path=":/fonts");
 
+    static QMetaObject::Connection onApplicationLoaded(std::function<void()> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     static QMetaObject::Connection onRestartAccepted(std::function<void()> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     static QMetaObject::Connection onRebootAccepted(std::function<void()> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
 
@@ -284,6 +287,7 @@ public slots:
     static bool markForReboot();
 
 signals:
+    void applicationLoaded();
     void restartAccepted();
     void rebootAccepted();
 };

@@ -160,6 +160,7 @@ Item {
             buttonAccept: root.buttonAccept
 
             textFormat: root.settings?.textFormat ?? TextEdit.AutoText
+            textFont: root.settings?.textFont ?? Style.textTheme.code1
 
             onAboutToHide: root.onAboutToHide()
             onAboutToShow: root.onAboutToShow()

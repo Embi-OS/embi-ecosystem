@@ -101,9 +101,13 @@ TextTheme::TextTheme(QObject* parent) :
     hint2.setPixelSize(11);
     hint2.setWeight(QFont::Weight::Normal);
 
-    code.setFamily("Monospace");
-    code.setPixelSize(14);
-    code.setWeight(QFont::Weight::Normal);
+    code1.setFamily("Monospace");
+    code1.setPixelSize(12);
+    code1.setWeight(QFont::Weight::Normal);
+
+    code2.setFamily("Monospace");
+    code2.setPixelSize(10);
+    code2.setWeight(QFont::Weight::Normal);
 
     connect(this, &TextTheme::primaryFontChanged, this, [this](){
         headline1.setFamily(m_primaryFont);
@@ -297,6 +301,16 @@ bool AxionHelper::markForReboot()
 {
     AXIONLOG_INFO()<<"System has been mark for reboot";
     return Get()->setPendingReboot(true);
+}
+
+QMetaObject::Connection AxionHelper::onApplicationLoaded(std::function<void()> callback, const Qt::ConnectionType &connection)
+{
+    if(!callback)
+        return {};
+
+    return connect(AxionHelper::Get(), &AxionHelper::applicationLoaded, AxionHelper::Get(), [callback](){
+        callback();
+    }, connection);
 }
 
 QMetaObject::Connection AxionHelper::onRestartAccepted(std::function<void()> callback, const Qt::ConnectionType &connection)

@@ -50,7 +50,6 @@ bool SqlSubmitWorker::doRun()
 
         bool result = sqlPatchable.patch(destination);
 
-        std::tuple<bool, long long, QSqlError, QVariant>(result, 0, sqlPatchable.lastError(), sqlPatchable.getSource());
         defer.end(result, 0, sqlPatchable.lastError(), sqlPatchable.getSource());
         return result;
     };

@@ -1,9 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Eco.Tier3.Axion
-import Eco.Tier3.Files
-import Eco.Tier3.System
-import Eco.Tier3.Network
+import Eco.Tier3.Solid
 
 RowContainer {
     id: root

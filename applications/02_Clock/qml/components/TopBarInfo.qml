@@ -3,8 +3,7 @@ import QtQuick
 import Eco.Tier1.Models
 import Eco.Tier1.ProxyModel
 import Eco.Tier3.Axion
-import Eco.Tier3.Files
-import Eco.Tier3.System
+import Eco.Tier3.Solid
 
 RowContainer {
     id: root
@@ -75,6 +74,11 @@ RowContainer {
             Layout.fillHeight: true
             alarmEnabled: root.alarmEnabled
             mediaPlaying: root.mediaPlaying
+        }
+
+        BasicLabel {
+            font: root.font
+            text: root.language
         }
 
         Item {

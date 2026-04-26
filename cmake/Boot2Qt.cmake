@@ -1,24 +1,30 @@
 string(TOLOWER "${CMAKE_TOOLCHAIN_FILE}" CMAKE_TOOLCHAIN_FILE_lower)
 
-# Initialize variables to OFF before conditional checks
-set(RASPBERRY_PI OFF)
-set(APALIS_IMX8 OFF)
-set(BOOT2QT OFF)
+option(BOOT2QT "Build for Boot2Qt runtime" OFF)
+option(RASPBERRY_PI "Build for Raspberry Pi target" OFF)
+option(APALIS_IMX8 "Build for Apalis iMX8 target" OFF)
 
-if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "raspberrypi")
-    set(RASPBERRY_PI ON)
-    set(BOOT2QT ON)
+# Fallback heuristics for SDK/local builds. Yocto recipe builds typically use a
+# generic toolchain.cmake filename, so callers should prefer passing these
+# options explicitly when target details matter.
+if(NOT BOOT2QT AND NOT RASPBERRY_PI AND NOT APALIS_IMX8)
+
+    if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "raspberrypi")
+        set(RASPBERRY_PI ON CACHE BOOL "" FORCE)
+        set(BOOT2QT ON CACHE BOOL "" FORCE)
+    endif()
+
+    if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "apalis-imx8")
+        set(APALIS_IMX8 ON CACHE BOOL "" FORCE)
+        set(BOOT2QT ON CACHE BOOL "" FORCE)
+    endif()
+
+    if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "boot2qt")
+        set(BOOT2QT ON CACHE BOOL "" FORCE)
+    endif()
+
 endif()
 
-if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "apalis-imx8")
-    set(APALIS_IMX8 ON)
-    set(BOOT2QT ON)
+if(RASPBERRY_PI OR APALIS_IMX8)
+    set(BOOT2QT ON CACHE BOOL "" FORCE)
 endif()
-
-if(CMAKE_TOOLCHAIN_FILE_lower MATCHES "boot2qt")
-    set(BOOT2QT ON)
-endif()
-
-set(RASPBERRY_PI ${RASPBERRY_PI} CACHE BOOL "")
-set(APALIS_IMX8 ${APALIS_IMX8} CACHE BOOL "")
-set(BOOT2QT ${BOOT2QT} CACHE BOOL "")

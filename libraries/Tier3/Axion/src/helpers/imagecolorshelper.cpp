@@ -32,25 +32,6 @@ struct SampleBatch
     qint64 count = 0;
 };
 
-struct SampleRange
-{
-    qsizetype firstIndex;
-    qsizetype lastIndex;
-};
-
-struct ClusterAccumulator
-{
-    qint64 red = 0;
-    qint64 green = 0;
-    qint64 blue = 0;
-    qint64 count = 0;
-};
-
-struct AssignmentBatch
-{
-    QVector<ClusterAccumulator> accumulators;
-};
-
 #ifdef IMAGE_COLOR_HELPER_THREADED
 SampleBatch sampleImageRange(const QImage &sourceImage, const ColumnRange &range)
 {
@@ -104,27 +85,6 @@ QVector<ColumnRange> columnRanges(int width)
 
         ranges.append({firstColumn, firstColumn + columnCount});
         firstColumn += columnCount;
-    }
-
-    return ranges;
-}
-
-QVector<SampleRange> sampleRanges(qsizetype sampleCount)
-{
-    const int workerCount = qMax(1, qMin(int(sampleCount), QThread::idealThreadCount()));
-    QVector<SampleRange> ranges;
-    ranges.reserve(workerCount);
-
-    const qsizetype samplesPerWorker = sampleCount / workerCount;
-    const qsizetype extraSamples = sampleCount % workerCount;
-    qsizetype firstIndex = 0;
-    for (int workerIndex = 0; workerIndex < workerCount; ++workerIndex) {
-        const qsizetype rangeSize = samplesPerWorker + (workerIndex < extraSamples ? 1 : 0);
-        if (rangeSize == 0)
-            continue;
-
-        ranges.append({firstIndex, firstIndex + rangeSize});
-        firstIndex += rangeSize;
     }
 
     return ranges;
@@ -478,107 +438,33 @@ void ImageColorsHelper::finalizePalette(ImageData &imageData, qint64 red, qint64
 
     positionColorMP(imageData.m_samples, imageData.m_clusters);
 
-#ifdef IMAGE_COLOR_HELPER_THREADED
-    const QVector<SampleRange> ranges = sampleRanges(imageData.m_samples.size());
-#endif
-
     for (int iteration = 0; iteration < 5; ++iteration) {
-        if (imageData.m_clusters.isEmpty())
-            break;
-
-        QVector<QRgb> centroids;
-        centroids.reserve(imageData.m_clusters.size());
-        for (const auto &cluster : std::as_const(imageData.m_clusters)) {
-            centroids.append(cluster.centroid);
-        }
-
-        QVector<ClusterAccumulator> mergedAccumulators(centroids.size());
-
-#ifdef IMAGE_COLOR_HELPER_THREADED
-        if (ranges.size() > 1) {
-            const auto *samples = &imageData.m_samples;
-            QFutureSynchronizer<AssignmentBatch> synchronizer;
-            for (const SampleRange &range : ranges) {
-                synchronizer.addFuture(QtConcurrent::run([samples, centroids, range]() {
-                    AssignmentBatch batch;
-                    batch.accumulators.resize(centroids.size());
-
-                    for (qsizetype sampleIndex = range.firstIndex; sampleIndex < range.lastIndex; ++sampleIndex) {
-                        const QRgb sample = samples->at(sampleIndex);
-
-                        int bestClusterIndex = 0;
-                        int bestDistance = squareDistance(sample, centroids.at(0));
-                        for (int clusterIndex = 1; clusterIndex < centroids.size(); ++clusterIndex) {
-                            const int distance = squareDistance(sample, centroids.at(clusterIndex));
-                            if (distance < bestDistance) {
-                                bestDistance = distance;
-                                bestClusterIndex = clusterIndex;
-                            }
-                        }
-
-                        auto &accumulator = batch.accumulators[bestClusterIndex];
-                        accumulator.red += qRed(sample);
-                        accumulator.green += qGreen(sample);
-                        accumulator.blue += qBlue(sample);
-                        ++accumulator.count;
-                    }
-
-                    return batch;
-                }));
-            }
-
-            synchronizer.waitForFinished();
-
-            for (const QFuture<AssignmentBatch> &future : synchronizer.futures()) {
-                const AssignmentBatch batch = future.result();
-                for (int clusterIndex = 0; clusterIndex < batch.accumulators.size(); ++clusterIndex) {
-                    const auto &source = batch.accumulators.at(clusterIndex);
-                    auto &destination = mergedAccumulators[clusterIndex];
-                    destination.red += source.red;
-                    destination.green += source.green;
-                    destination.blue += source.blue;
-                    destination.count += source.count;
-                }
-            }
-        } else
-#endif
-        {
-            for (QRgb sample : std::as_const(imageData.m_samples)) {
-                int bestClusterIndex = 0;
-                int bestDistance = squareDistance(sample, centroids.at(0));
-                for (int clusterIndex = 1; clusterIndex < centroids.size(); ++clusterIndex) {
-                    const int distance = squareDistance(sample, centroids.at(clusterIndex));
-                    if (distance < bestDistance) {
-                        bestDistance = distance;
-                        bestClusterIndex = clusterIndex;
-                    }
-                }
-
-                auto &accumulator = mergedAccumulators[bestClusterIndex];
-                accumulator.red += qRed(sample);
-                accumulator.green += qGreen(sample);
-                accumulator.blue += qBlue(sample);
-                ++accumulator.count;
-            }
-        }
-
-        QList<ImageData::colorStat> nextClusters;
-        nextClusters.reserve(imageData.m_clusters.size());
         for (int i = 0; i < imageData.m_clusters.size(); ++i) {
-            const auto &accumulator = mergedAccumulators.at(i);
-            if (accumulator.count == 0)
-                continue;
+            auto &stat = imageData.m_clusters[i];
+            qint64 r = 0;
+            qint64 g = 0;
+            qint64 b = 0;
+            qint64 c = 0;
 
-            ImageData::colorStat stat;
-            stat.centroid = qRgb(int(accumulator.red / accumulator.count),
-                                 int(accumulator.green / accumulator.count),
-                                 int(accumulator.blue / accumulator.count));
-            stat.ratio = std::clamp(double(accumulator.count) / double(imageData.m_samples.count()), 0.0, 1.0);
+            for (QRgb color : std::as_const(stat.colors)) {
+                ++c;
+                r += qRed(color);
+                g += qGreen(color);
+                b += qBlue(color);
+            }
+
+            if (c != 0) {
+                r /= c;
+                g /= c;
+                b /= c;
+            }
+
+            stat.centroid = qRgb(int(r), int(g), int(b));
+            stat.ratio = std::clamp(double(stat.colors.count()) / double(imageData.m_samples.count()), 0.0, 1.0);
             stat.colors = QList<QRgb>({stat.centroid});
-            nextClusters.append(stat);
         }
 
-        imageData.m_clusters = nextClusters;
+        positionColorMP(imageData.m_samples, imageData.m_clusters);
     }
 
     buildPaletteFromClusters(imageData);

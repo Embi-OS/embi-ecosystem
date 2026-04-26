@@ -2,16 +2,19 @@
 #include "axion_log.h"
 
 #include "axion_helpertypes.h"
+#include "power.h"
 #include "log.h"
 #include "paths.h"
 #include "version.h"
+
+#include <QDir>
+#include <QStandardPaths>
 
 #ifdef Q_OS_WASM
 #include <emscripten/emscripten.h>
 #endif
 
-using QByteArrayMap = QMap<QString,QByteArray>;
-#ifndef Q_OS_WASM
+#ifdef Q_OS_BOOT2QT
 Q_GLOBAL_STATIC_WITH_ARGS(QByteArrayMap, s_environmentVariable, ({
     // {"QSG_VISUALIZE", "overdraw"},
     // {"QT_DEBUG_PLUGINS", "1"},
@@ -25,6 +28,44 @@ Q_GLOBAL_STATIC_WITH_ARGS(QByteArrayMap, s_environmentVariable, ({
 Q_GLOBAL_STATIC_WITH_ARGS(QByteArrayMap, s_environmentVariable, ({}))
 #endif
 
+static QByteArrayMap readEnvironmentConfigFiles()
+{
+#if !defined(Q_OS_BOOT2QT) && !defined(Q_OS_WASM)
+    AXIONLOG_INFO()<<"Read environment config file at"<<QUtils::EnvironmentVariables::path();
+    return QUtils::EnvironmentVariables::readDirectory(QUtils::EnvironmentVariables::path());
+#else
+    return {};
+#endif
+}
+
+static void loadEnvironmentConfigFiles()
+{
+    const QByteArrayMap configuredVariables = readEnvironmentConfigFiles();
+    if (configuredVariables.isEmpty())
+        return;
+
+    const QByteArrayMap applicationVariables = *s_environmentVariable();
+    QMap<QString, QByteArray> &environmentVariables = *s_environmentVariable();
+
+    environmentVariables = configuredVariables;
+    for (auto it = applicationVariables.constBegin(); it != applicationVariables.constEnd(); ++it)
+        environmentVariables[it.key()] = it.value();
+}
+
+static void applyEnvironmentVariables()
+{
+    for (auto it = s_environmentVariable->constBegin(); it != s_environmentVariable->constEnd(); ++it) {
+        const QByteArray key = it.key().toUtf8();
+        if (qEnvironmentVariableIsSet(key.constData())) {
+            AXIONLOG_INFO() << "Preserve existing environment variable" << it.key();
+            continue;
+        }
+
+        AXIONLOG_INFO()<<"qputenv"<<it.key()<<it.value();
+        qputenv(key.constData(), it.value());
+    }
+}
+
 static QApplication *createQtApplication(int &argc, char **argv, const QString &applicationName)
 {
     QGuiApplication::setOrganizationName(PROJECT_COMPANY);
@@ -35,10 +76,8 @@ static QApplication *createQtApplication(int &argc, char **argv, const QString &
 
     QQuickStyle::setStyle(QStringLiteral("Material"));
 
-    for (auto it = s_environmentVariable->constBegin(); it != s_environmentVariable->constEnd(); ++it) {
-        AXIONLOG_INFO()<<"qputenv"<<it.key()<<it.value();
-        qputenv(it.key().toUtf8().constData(), it.value());
-    }
+    loadEnvironmentConfigFiles();
+    applyEnvironmentVariables();
 
     QApplication *app = new QApplication(argc, argv);
 
@@ -61,7 +100,8 @@ Application::Application(int &argc, char **argv, const QString &applicationName)
     AxionHelper::parseArguments();
     AxionHelper::registerComponents(*m_engine);
 
-    installTranslators();
+    AxionHelper::onRestartAccepted(Power::restart);
+    AxionHelper::onRebootAccepted(Power::reboot);
 }
 
 Application::~Application()
@@ -101,6 +141,8 @@ const QMap<QString, QByteArray>& Application::environmentVariable()
 
 int Application::run(QAnyStringView uri, QAnyStringView typeName)
 {
+    installTranslators();
+
     AXIONLOG_INFO()<<"Loading QML...";
 
     Q_DEBUG_TIME(m_engine->loadFromModule(uri, typeName);)

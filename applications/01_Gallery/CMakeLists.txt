@@ -1,5 +1,5 @@
 include(Common)
-include(CreateDebPackage)
+include(CreatePackage)
 
 project(01_Gallery)
 
@@ -28,4 +28,4 @@ embi_add_application(${PROJECT_NAME}
         /samples
 )
 
-create_deb_package(${APP_NAME})
+create_package(TARGET ${APP_NAME})

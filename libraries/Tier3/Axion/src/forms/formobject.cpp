@@ -343,7 +343,7 @@ bool FormObject::doRevert()
 
 bool FormObject::changeValue(const QVariant& value)
 {
-    QVariant formattedValue = formatValue(value);
+    const QVariant formattedValue = formatValue(value);
     if(!setCurrentValue(formattedValue))
         return false;
 
@@ -363,19 +363,19 @@ bool FormObject::changeValue(const QVariant& value)
 
 bool FormObject::loadDefaultValue()
 {
-    QVariant formattedValue = formatValue(m_defaultValue);
+    const QVariant formattedValue = formatValue(m_defaultValue);
     return setCurrentValue(formattedValue);
 }
 
 bool FormObject::loadCurrentValue()
 {
-    QVariant formattedValue = formatValue(m_value);
+    const QVariant formattedValue = formatValue(m_value);
     return setCurrentValue(formattedValue);
 }
 
 bool FormObject::loadTargetValue()
 {
-    QVariant formattedValue = formatValue(m_targetPropertyValue);
+    const QVariant formattedValue = formatValue(m_targetPropertyValue);
     return setCurrentValue(formattedValue);
 }
 

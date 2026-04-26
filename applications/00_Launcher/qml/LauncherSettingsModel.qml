@@ -2,9 +2,8 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Eco.Tier1.Models
 import Eco.Tier3.Axion
-import Eco.Tier3.System
-import Eco.Tier3.Network
-import Eco.Tier3.Files
+import Eco.Tier3.Fluid
+import Eco.Tier3.Solid
 
 StandardObjectModel {
     id: root
@@ -12,28 +11,35 @@ StandardObjectModel {
     StandardObject {
         text: qsTr("A propos")
         icon: MaterialIcons.informationOutline
-        delegate: SettingsInfosView {}
+        delegate: InfosAboutView {}
+    }
+
+    StandardObject {
+        group: "200_System"
+        text: "Monitoring"
+        icon: MaterialIcons.chartLine
+        delegate: SystemMonitoringAboutView {}
     }
 
     StandardObject {
         group: "200_System"
         text: qsTr("Affichage")
         icon: MaterialIcons.monitor
-        delegate: SettingsDisplayView {}
+        delegate: DisplaySettingsView {}
     }
 
     StandardObject {
         group: "200_System"
         text: qsTr("Langue")
         icon: MaterialIcons.earth
-        delegate: SettingsLocaleView {}
+        delegate: LocaleSettingsView {}
     }
 
     StandardObject {
         group: "200_System"
         text: qsTr("Heure et date")
         icon: MaterialIcons.calendarClock
-        delegate: SettingsTimedateView {}
+        delegate: TimedateSettingsView {}
     }
 
     StandardObject {
@@ -50,7 +56,7 @@ StandardObjectModel {
             StandardObject {
                 text: qsTr("A propos")
                 icon: MaterialIcons.informationOutline
-                delegate: NetworkSettingsAboutView {}
+                delegate: NetworkAboutView {}
             }
         }
 
@@ -66,7 +72,7 @@ StandardObjectModel {
                 icon: type===NetworkSettingsType.Wired ? MaterialIcons.ethernet :
                       type===NetworkSettingsType.Wifi ? MaterialIcons.wifi:
                       type===NetworkSettingsType.Bluetooth ? MaterialIcons.bluetooth : MaterialIcons.accountQuestion
-                delegate: NetworkSettingsInterfaceView {
+                delegate: NetworkInterfaceSettingsView {
                      networkInterface: interfaceSettingObject.entry
                 }
             }
@@ -89,50 +95,49 @@ StandardObjectModel {
             StandardObject {
                 text: qsTr("A propos")
                 icon: MaterialIcons.informationOutline
-                delegate: FileSettingsAboutView {}
+                delegate: FilesystemAboutView {}
             }
 
             StandardObject {
                 text: qsTr("Stockage")
                 icon: MaterialIcons.harddisk
-                delegate: FileSettingsStorageView {}
+                delegate: FstabStorageSettingsView {}
             }
 
             StandardObject {
-                editable: filesystem.editable
                 text: qsTr("Navigateur")
                 icon: MaterialIcons.folderSearchOutline
-                delegate: FileSettingsBrowserView {}
+                delegate: FilesystemBrowserView {}
             }
         }
     }
 
     StandardObject {
         group: "300_System"
-        text: qsTr("U-Boot")
-        icon: MaterialIcons.submarine
-        delegate: SettingsUBootView {}
-    }
-
-    StandardObject {
-        group: "300_System"
         text: qsTr("SSH")
         icon: MaterialIcons.ssh
-        delegate: SettingsSshView {}
+        delegate: SshSettingsView {}
     }
 
     StandardObject {
         group: "300_System"
         text: qsTr("Launcher")
         icon: MaterialIcons.rocketLaunch
-        delegate: SettingsAppControllerView {}
+        delegate: AppControllerSettingsView {}
     }
 
     StandardObject {
         group: "300_System"
         text: qsTr("Logs")
         icon: MaterialIcons.fileDocumentOutline
-        delegate: SettingsLogsView {}
+        delegate: LogsSettingsView {}
+    }
+
+    StandardObject {
+        group: "300_System"
+        text: qsTr("U-Boot")
+        icon: MaterialIcons.submarine
+        delegate: UBootSettingsView {}
     }
 
     StandardObject {

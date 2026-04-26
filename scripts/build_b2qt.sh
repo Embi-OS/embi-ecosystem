@@ -13,7 +13,7 @@ B2QT_TOOLCHAIN_PATH="$B2QT_PREFIX_PATH/usr/lib/cmake/Qt6/qt.toolchain.cmake"
 B2QT_CXX_COMPILER_PATH="$B2QT_PREFIX_PATH/usr/bin/aarch64-poky-linux/aarch64-poky-linux-g++"
 B2QT_C_COMPILER_PATH="$B2QT_PREFIX_PATH/usr/bin/aarch64-poky-linux/aarch64-poky-linux-gcc"
 B2QT_BUILD_DIR="$BUILD_DIR/build-b2qt-Qt-$QT_VERSION"
-B2QT_OUTPUT_DIR="$BUILD_DIR/${PROJECT_NAME}_Boot2Qt_$QT_VERSION/v$PROJECT_VERSION"
+B2QT_OUTPUT_DIR="$BUILD_DIR/${PROJECT_NAME}_Boot2Qt"
 
 if [ "$REBUILD" -eq 1 ]; then
     rm -rf "$B2QT_BUILD_DIR"
@@ -21,11 +21,12 @@ if [ "$REBUILD" -eq 1 ]; then
 fi
 ensure_dir "$B2QT_BUILD_DIR"
 
-run_cmd "$B2QT_CMAKE_BIN" --log-level=NOTICE -G "$GENERATOR" -S "$PROJECT_ROOT" -B "$B2QT_BUILD_DIR" \
+run_cmd "$B2QT_CMAKE_BIN" -G "$GENERATOR" -S "$PROJECT_ROOT" -B "$B2QT_BUILD_DIR" \
     -DCMAKE_MAKE_PROGRAM:FILEPATH="$B2QT_MAKE_PROGRAM" \
     -DCMAKE_TOOLCHAIN_FILE:FILEPATH="$B2QT_TOOLCHAIN_PATH" \
     -DCMAKE_CXX_COMPILER:FILEPATH="$B2QT_CXX_COMPILER_PATH" \
     -DCMAKE_C_COMPILER:FILEPATH="$B2QT_C_COMPILER_PATH" \
+    -DBOOT2QT=ON \
     $EXTRA_CMAKE_VARIABLES
 
 run_cmd "$B2QT_CMAKE_BIN" --build "$B2QT_BUILD_DIR" --target all
@@ -41,7 +42,7 @@ if [ -d "$B2QT_OUTPUT_DIR" ]; then
     if [ -z "$(ls -A "$B2QT_OUTPUT_DIR")" ]; then
         warn "Boot2Qt output directory is empty: $B2QT_OUTPUT_DIR"
     else
-        ZIP_BASENAME="${SANITIZED_PROJECT_NAME}_${SANITIZED_PROJECT_VERSION}-${PROJECT_DESCRIPTION}_Boot2Qt.zip"
+        ZIP_BASENAME="${SANITIZED_PROJECT_NAME}_${SANITIZED_PROJECT_VERSION}-${PROJECT_VERSION_SUFFIX}_Boot2Qt.zip"
         ZIP_PATH="$B2QT_ARTIFACT_DIR/$ZIP_BASENAME"
         log "Compressing Boot2Qt outputs → $ZIP_PATH"
         rm -f "$ZIP_PATH"

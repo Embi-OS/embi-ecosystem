@@ -3,6 +3,7 @@
 #include <QQuickItemGrabResult>
 #include <QStandardPaths>
 #include <QDateTime>
+#include <QDir>
 #include <QFileInfo>
 
 QItemCapturer::QItemCapturer(QObject *parent) :
@@ -26,6 +27,11 @@ void QItemCapturer::capture(const QString& path, QQuickItem* item)
 
     QSharedPointer<const QQuickItemGrabResult> grabResult = item->grabToImage();
     connect(grabResult.data(), &QQuickItemGrabResult::ready, this, [this, pathTmp, captureName, grabResult]() {
+
+        if (!QDir().mkpath(pathTmp)) {
+            emit this->captureFinished(false, pathTmp);
+            return;
+        }
 
         const QString path = QFileInfo(pathTmp+"/"+captureName).absoluteFilePath();
         bool result = grabResult->saveToFile(path);

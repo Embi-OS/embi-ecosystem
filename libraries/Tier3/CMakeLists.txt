@@ -9,14 +9,17 @@
 include(Common)
 
 add_subdirectory(Axion)
-add_subdirectory(Files)
 add_subdirectory(Postman)
 
 if(NOT EMSCRIPTEN)
+
     add_subdirectory(Database)
+    add_subdirectory(Fluid)
     add_subdirectory(Happy)
     add_subdirectory(Media)
-    add_subdirectory(Network)
-    add_subdirectory(System)
-    add_subdirectory(Swupdate)
+
+    if(NOT WIN32)
+        add_subdirectory(Solid)
+    endif()
+
 endif()

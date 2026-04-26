@@ -272,7 +272,7 @@ void RestSocket::handleStateChanged(QAbstractSocket::SocketState state)
 void RestSocket::handleConnected()
 {
     if(m_reconnectNeeded) {
-        RESTLOG_INFO()<<"REST socket reconnected"<<m_url;
+        RESTLOG_DEBUG()<<"REST socket reconnected"<<m_url;
     }
     else {
         RESTLOG_DEBUG()<<"REST socket connected"<<m_url;

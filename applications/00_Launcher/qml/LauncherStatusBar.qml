@@ -3,8 +3,7 @@ import QtQuick
 import Eco.Tier1.Models
 import Eco.Tier1.ProxyModel
 import Eco.Tier3.Axion
-import Eco.Tier3.Files
-import Eco.Tier3.System
+import Eco.Tier3.Solid
 
 LauncherInfosBar {
     id: root

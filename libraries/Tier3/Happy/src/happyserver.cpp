@@ -109,7 +109,7 @@ bool HappyServer::start()
     }
 
     QTcpServer* tcpserver = new QTcpServer(this);
-    if (!tcpserver->listen(m_external ? QHostAddress::Any : QHostAddress::Any, m_port) || !m_httpServer->bind(tcpserver)) {
+    if (!tcpserver->listen(m_external ? QHostAddress::Any : QHostAddress::LocalHost, m_port) || !m_httpServer->bind(tcpserver)) {
         tcpserver->deleteLater();
         HAPPYLOG_CRITICAL()<<qPrintable(QString("%1 failed to listen on port %2").arg(m_name).arg(m_port));
         setReady(false);

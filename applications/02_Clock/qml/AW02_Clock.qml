@@ -1,7 +1,7 @@
 import QtQuick
 import Eco.Tier1.Utils
 import Eco.Tier3.Axion
-import Eco.Tier3.System
+import Eco.Tier3.Fluid
 import L02_Clock
 
 BasicWindow {
@@ -64,17 +64,5 @@ BasicWindow {
 
     Watchdog {
         enabled: root.backendReady // && root.frontendReady
-    }
-
-    onApplicationLoaded: Swupdate.init();
-
-    Connections {
-        target: AxionHelper
-        function onRestartAccepted() {
-            Power.restart()
-        }
-        function onRebootAccepted() {
-            Power.reboot()
-        }
     }
 }
