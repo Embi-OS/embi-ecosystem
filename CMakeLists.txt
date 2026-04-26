@@ -84,6 +84,7 @@ set(DEPLOYABLE_APPS "")
 list(APPEND DEPLOYABLE_APPS "00_Launcher")
 list(APPEND DEPLOYABLE_APPS "01_Gallery")
 list(APPEND DEPLOYABLE_APPS "02_Clock")
+list(APPEND DEPLOYABLE_APPS "03_Life")
 # ──────────────────────
 
 # ────── Qt stuff ──────
