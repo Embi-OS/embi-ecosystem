@@ -187,6 +187,7 @@ Item {
 
             buttonReject: root.buttonReject
             buttonAccept: root.buttonAccept
+            buttonHelp: root.buttonHelp
 
             treeModel: root.settings?.treeModel ?? null
 

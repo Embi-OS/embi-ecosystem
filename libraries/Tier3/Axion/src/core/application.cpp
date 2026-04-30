@@ -8,7 +8,6 @@
 #include "version.h"
 
 #include <QDir>
-#include <QStandardPaths>
 
 #ifdef Q_OS_WASM
 #include <emscripten/emscripten.h>
@@ -68,6 +67,8 @@ static void applyEnvironmentVariables()
 
 static QApplication *createQtApplication(int &argc, char **argv, const QString &applicationName)
 {
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
+
     QGuiApplication::setOrganizationName(PROJECT_COMPANY);
     QGuiApplication::setOrganizationDomain(PROJECT_DOMAIN);
     QGuiApplication::setApplicationName(applicationName);

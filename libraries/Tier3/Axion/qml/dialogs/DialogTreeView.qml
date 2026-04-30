@@ -13,13 +13,16 @@ BasicDialog {
     message: ""
     property string buttonReject: ""
     property string buttonAccept: qsTr("Fermer")
+    property string buttonHelp: ""
 
     property bool rejectVisible: buttonReject!==""
     property bool acceptVisible: buttonAccept!==""
+    property bool helpVisible: buttonHelp!==""
 
     buttonsContainer: [
+        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; visible: root.acceptVisible; text: root.buttonAccept; highlighted: true },
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.RejectRole; visible: root.rejectVisible; text: root.buttonReject },
-        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; visible: root.acceptVisible; text: root.buttonAccept; highlighted: true }
+        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.HelpRole; text: root.buttonHelp; visible: root.helpVisible}
     ]
 
     padding: Style.contentRectangleBorderWidth

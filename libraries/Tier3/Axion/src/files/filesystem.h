@@ -18,6 +18,8 @@ class Filesystem : public QObject,
     Q_CONSTANT_REF_PROPERTY(QString, rootPath, "")
     Q_CONSTANT_REF_PROPERTY(QString, tempPath, "")
     Q_CONSTANT_REF_PROPERTY(QString, appDirPath, "")
+    Q_CONSTANT_REF_PROPERTY(QString, appLocalDataPath, "")
+    Q_CONSTANT_REF_PROPERTY(QString, appDataPath, "")
     Q_CONSTANT_REF_PROPERTY(QString, appCachePath, "")
     Q_CONSTANT_REF_PROPERTY(QString, appConfigPath, "")
     Q_CONSTANT_REF_PROPERTY(QString, desktopPath, "")

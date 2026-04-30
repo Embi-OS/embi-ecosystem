@@ -3,12 +3,21 @@
 #include <Axion>
 
 #include <QStandardPaths>
+#include <QDesktopServices>
 #include <QtConcurrentRun>
 
 MaintenanceHelper::MaintenanceHelper(QObject *parent) :
     QObject(parent)
 {
 
+}
+
+bool MaintenanceHelper::canOpenUrl()
+{
+#ifdef Q_OS_BOOT2QT
+    return false;
+#endif
+    return true;
 }
 
 void MaintenanceHelper::clearLogs()
@@ -158,4 +167,18 @@ void MaintenanceHelper::clearAll()
                 AxionHelper::criticalRestart(tr("Suppression terminée"));
         });
     });
+}
+
+void MaintenanceHelper::openLocalFilePath(const QString& path)
+{
+    if(!QFileInfo::exists(path))
+    {
+        SnackbarManager::Get()->showWarning(tr("Le chemin demandé n'existe pas"));
+        return;
+    }
+
+    if(!QDesktopServices::openUrl(QUrl::fromLocalFile(path)))
+    {
+        SnackbarManager::Get()->showWarning(tr("Impossible d'ouvrir le chemin demandé"));
+    }
 }

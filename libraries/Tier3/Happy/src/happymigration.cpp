@@ -73,7 +73,7 @@ bool HappyMigration::run(HappyServer* happyServer)
         }
     }
 
-    HAPPYLOG_INFO().noquote()<<"HappyMigration run succesfully in"<<DateTimeUtils::formatDuration(timer.elapsed(), DurationFormatOptions::ShowMilliseconds);
+    HAPPYLOG_INFO().noquote()<<"HappyMigration run successfully in"<<DateTimeUtils::formatDuration(timer.elapsed(), DurationFormatOptions::ShowMilliseconds);
 
     return result;
 }
@@ -96,7 +96,7 @@ bool HappyMigration::runMigration(const MigrationObject& migration)
         return false;
     }
 
-    HAPPYLOG_INFO().noquote()<<"HappyMigration"<<migration.app<<migration.name<<"applied succesfully in"<<DateTimeUtils::formatDuration(timer.elapsed(), DurationFormatOptions::ShowMilliseconds);
+    HAPPYLOG_INFO().noquote()<<"HappyMigration"<<migration.app<<migration.name<<"applied successfully in"<<DateTimeUtils::formatDuration(timer.elapsed(), DurationFormatOptions::ShowMilliseconds);
 
     return true;
 }

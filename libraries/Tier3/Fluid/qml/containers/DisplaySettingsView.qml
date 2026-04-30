@@ -34,12 +34,6 @@ PaneTreeView {
             to: 255
             targetProperty: "brightness"
         }
-        FormSwitchDelegate {
-            visible: DisplaySettings.canSetHighDpi
-            label: qsTr("Ecran haute densité")
-            targetProperty: "highDpi"
-            onAccepted: AxionHelper.warningRestart()
-        }
         FormComboBoxDelegate {
             visible: DisplaySettings.canSetScaleFactor
             label: qsTr("Mise à l'échelle")

@@ -68,6 +68,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # ask for all warnings and strict compliance with the standard
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic-errors")
 
+set(ENABLE_TARGET_IPO OFF)
+if(ENABLE_OPTIMIZATION)
+    if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        message(STATUS "Build without interprocedural optimization: MinGW GCC LTO is unstable with Qt on Windows")
+    else()
+        set(ENABLE_TARGET_IPO ON)
+    endif()
+endif()
+
 if(NOT DEFINED QT_VERSION_MAJOR)
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 endif()
@@ -105,7 +114,7 @@ if(BOOT2QT)
     if(ENABLE_OPTIMIZATION)
         message(STATUS "Build with optimization")
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ${ENABLE_TARGET_IPO})
     endif()
 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}_Boot2Qt")
@@ -130,7 +139,7 @@ elseif(EMSCRIPTEN)
     if(ENABLE_OPTIMIZATION)
         message(STATUS "Build with optimization")
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Oz") # smaller footprint but dangerous
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ${ENABLE_TARGET_IPO})
     endif()
 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}_WASM")
@@ -138,13 +147,19 @@ elseif(EMSCRIPTEN)
 
 else()
 
-    message(NOTICE "CMake Building for Linux")
+    if(WIN32)
+        message(NOTICE "CMake Building for Windows")
+    elseif(APPLE)
+        message(NOTICE "CMake Building for macOS")
+    else()
+        message(NOTICE "CMake Building for Linux")
+    endif()
 
     # optimization
     if(ENABLE_OPTIMIZATION)
         message(STATUS "Build with optimization")
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ${ENABLE_TARGET_IPO})
     endif()
 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}")

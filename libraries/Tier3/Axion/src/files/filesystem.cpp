@@ -12,6 +12,8 @@ Filesystem::Filesystem(QObject *parent) :
     m_rootPath(QDir::rootPath()),
     m_tempPath(QDir::tempPath()),
     m_appDirPath(QCoreApplication::applicationDirPath()),
+    m_appLocalDataPath(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)),
+    m_appDataPath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)),
     m_appCachePath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)),
     m_appConfigPath(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation)),
     m_desktopPath(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)),

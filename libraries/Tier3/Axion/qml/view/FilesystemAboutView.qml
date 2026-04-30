@@ -18,6 +18,8 @@ PaneTreeView {
         InfoTreeDelegate {text: "FS tempPath";info: Filesystem.tempPath}
         InfoTreeDelegate {text: "FS appDirPath";info: Filesystem.appDirPath}
         InfoTreeDelegate {text: "FS appDirPathSize";info: Filesystem.sizeInfo(Filesystem.appDirPath)}
+        InfoTreeDelegate {text: "FS appLocalDataPath";info: Filesystem.appLocalDataPath}
+        InfoTreeDelegate {text: "FS appDataPath";info: Filesystem.appDataPath}
         InfoTreeDelegate {text: "FS appCachePath";info: Filesystem.appCachePath}
         InfoTreeDelegate {text: "FS appConfigPath";info: Filesystem.appConfigPath}
         InfoTreeDelegate {text: "FS documentsPath";info: Filesystem.documentsPath}

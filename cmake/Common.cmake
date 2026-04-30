@@ -321,7 +321,9 @@ function(embi_add_executable NAME)
         endif()
     endif()
 
-    set_property(TARGET ${NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    if(ENABLE_TARGET_IPO)
+        set_property(TARGET ${NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
 
     target_compile_definitions(${NAME} PRIVATE
         QT_MESSAGELOGCONTEXT
@@ -436,7 +438,10 @@ function(embi_add_application NAME)
     else()
         qt_add_executable(${APP_NAME} main.cpp)
     endif()
-    set_property(TARGET ${APP_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+    if(ENABLE_TARGET_IPO)
+        set_property(TARGET ${APP_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
 
     embi_add_qml_module(${LIB_NAME}
         URI ${LIB_NAME}

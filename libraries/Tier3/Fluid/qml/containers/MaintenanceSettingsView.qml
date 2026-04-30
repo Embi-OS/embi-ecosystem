@@ -50,6 +50,12 @@ PaneTreeView {
             icon: MaterialIcons.export_
             onClicked: backupExporter.run()
         }
+        FormButtonDelegate {
+            visible: root.editable && MaintenanceHelper.canOpenUrl
+            label: qsTr("Ouvrir le dossier des données application")
+            icon: MaterialIcons.folderEyeOutline
+            onClicked: MaintenanceHelper.openLocalFilePath(Paths.local())
+        }
         SeparatorTreeDelegate {}
         FormButtonDelegate {
             enabled: root.editable
@@ -71,6 +77,10 @@ PaneTreeView {
         }
 
         SeparatorTreeDelegate {}
+        InfoTreeDelegate {
+            text: qsTr("Chemin données application")
+            info: Paths.local()
+        }
         InfoTreeDelegate {
             text: qsTr("Chemin screenshot")
             info: Paths.capture()

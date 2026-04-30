@@ -107,9 +107,9 @@ PaneTreeView {
         InfoTreeDelegate {text: "DB type"; info: SqlDatabaseTypes.asString(SqlManager.dbType) }
         InfoTreeDelegate {text: "DB name"; info: SqlManager.dbName }
         InfoTreeDelegate {text: "DB path"; info: SqlManager.dbPath;        visible: SqlManager.dbType===SqlDatabaseTypes.SQLite }
-        InfoTreeDelegate {text: "DB server"; info: SqlManager.dbServer;    visible: SqlManager.dbType===SqlDatabaseTypes.MySQL }
-        InfoTreeDelegate {text: "DB port"; info: SqlManager.dbPort;        visible: SqlManager.dbType===SqlDatabaseTypes.MySQL }
-        InfoTreeDelegate {text: "DB user"; info: SqlManager.dbUserName;    visible: SqlManager.dbType===SqlDatabaseTypes.MySQL }
+        InfoTreeDelegate {text: "DB server"; info: SqlManager.dbServer;    visible: SqlManager.dbType===SqlDatabaseTypes.MySQL || SqlManager.dbType===SqlDatabaseTypes.MariaDB }
+        InfoTreeDelegate {text: "DB port"; info: SqlManager.dbPort;        visible: SqlManager.dbType===SqlDatabaseTypes.MySQL || SqlManager.dbType===SqlDatabaseTypes.MariaDB }
+        InfoTreeDelegate {text: "DB user"; info: SqlManager.dbUserName;    visible: SqlManager.dbType===SqlDatabaseTypes.MySQL || SqlManager.dbType===SqlDatabaseTypes.MariaDB }
 
         FormButtonDelegate {
             visible: root.editable

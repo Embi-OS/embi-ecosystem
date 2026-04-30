@@ -92,6 +92,9 @@ SqlDbProfile SqlManager::createConnectionProfile()
     case SqlDatabaseTypes::MySQL:
         profile.type = "QMYSQL";
         break;
+    case SqlDatabaseTypes::MariaDB:
+        profile.type = "QMARIADB";
+        break;
     default:
         break;
     }
@@ -120,6 +123,9 @@ void SqlManager::testConnexion(const QVariantMap& params)
         break;
     case SqlDatabaseTypes::MySQL:
         profile.type = "QMYSQL";
+        break;
+    case SqlDatabaseTypes::MariaDB:
+        profile.type = "QMARIADB";
         break;
     default:
         break;

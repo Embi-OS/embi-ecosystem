@@ -15,11 +15,6 @@ bool RestManager::init()
 {
 #ifdef Q_OS_WASM
     emscripten::val location = emscripten::val::global("location");
-    qDebug()<<location["origin"].as<std::string>();
-    qDebug()<<location["protocol"].as<std::string>();
-    qDebug()<<location["hostname"].as<std::string>();
-    qDebug()<<location["port"].as<std::string>();
-
     m_apiBaseUrl = QString::fromStdString(location["hostname"].as<std::string>());
     const QString port = QString::fromStdString(location["port"].as<std::string>());
     m_apiPort = port.isEmpty() ? -1 : port.toInt();

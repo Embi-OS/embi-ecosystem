@@ -5,7 +5,6 @@
 #include "dialogs/snackbarmanager.h"
 #include "dialogs/dialogloader.h"
 #include "ubootsettings.h"
-#include <QStandardPaths>
 
 #define SWUPDATELOG_WARNING QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC,"UBOOT").warning
 

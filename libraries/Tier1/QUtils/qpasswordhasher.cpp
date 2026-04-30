@@ -6,9 +6,23 @@
 #include <QStringList>
 
 static const QString PBKDF2_ALGORITHM = "pbkdf2_sha256";
+static const int PBKDF2_SHA256_HASH_SIZE = 32;
 static const QByteArray ENCRYPTION_ALGORITHM = "enc_xor";
 static const char ENCRYPTION_SEPARATOR = '$';
 static const int IV_SIZE = 32; // random IV size
+
+static QByteArray decodePbkdf2Sha256Hash(const QString& hash)
+{
+    const QByteArray hashB64 = hash.toUtf8();
+    const auto decodedHash = QByteArray::fromBase64Encoding(hashB64, QByteArray::AbortOnBase64DecodingErrors);
+    if(!decodedHash || decodedHash.decoded.size()!=PBKDF2_SHA256_HASH_SIZE)
+        return QByteArray();
+
+    if(decodedHash.decoded.toBase64()!=hashB64)
+        return QByteArray();
+
+    return decodedHash.decoded;
+}
 
 QPasswordHasher::QPasswordHasher(QObject *parent):
     QObject(parent)
@@ -20,7 +34,7 @@ QString QPasswordHasher::makePassword(const QString &password) const
 {
     const QString salt = generateSalt(m_saltLength);
     const QByteArray hash = pbkdf2(password, salt, m_iterations, m_hashLength);
-    const QString hashB64 = hash.toBase64(QByteArray::OmitTrailingEquals);
+    const QString hashB64 = hash.toBase64();
 
     QStringList result;
     result += PBKDF2_ALGORITHM;
@@ -38,11 +52,12 @@ bool QPasswordHasher::checkPassword(const QString &password, const QString &stor
         return false;
 
     const QString algorithm = parts[0];
-    const int iterations = parts[1].toInt();
+    bool iterationsOk = false;
+    const int iterations = parts[1].toInt(&iterationsOk);
     const QString salt = parts[2];
-    const QByteArray storedHash = QByteArray::fromBase64(parts[3].toUtf8());
+    const QByteArray storedHash = decodePbkdf2Sha256Hash(parts[3]);
 
-    if (algorithm != PBKDF2_ALGORITHM || iterations <= 0)
+    if (algorithm != PBKDF2_ALGORITHM || !iterationsOk || iterations <= 0 || salt.isEmpty() || storedHash.isEmpty())
         return false;
 
     const QByteArray computedHash = pbkdf2(password, salt, iterations, storedHash.size());

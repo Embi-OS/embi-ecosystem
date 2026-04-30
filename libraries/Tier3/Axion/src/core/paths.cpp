@@ -25,10 +25,10 @@ QString writableBaseLocation()
         baseLocation = homeDir.filePath(QCoreApplication::organizationName());
         baseLocation = QDir(baseLocation).filePath(QCoreApplication::applicationName());
     }
-#elif defined(QT_CREATOR_RUN)
+#elif defined(QT_CREATOR_RUN) && !defined(Q_OS_WASM)
     baseLocation = applicationDirPath;
 #else
-    baseLocation = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    baseLocation = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     if (baseLocation.isEmpty())
         baseLocation = applicationDirPath;
 #endif
@@ -103,7 +103,7 @@ bool isValidStorageFolder(const QString& folder)
 
     const QString path = QDir(writableBaseLocation()).filePath(cleanFolder);
     if (!isPathInsideDirectory(path, writableBaseLocation())) {
-        AXIONLOG_WARNING() << "Refusing folder outside application storage:" << folder;
+        AXIONLOG_WARNING() << "Refusing folder outside application storage:" << path;
         return false;
     }
 

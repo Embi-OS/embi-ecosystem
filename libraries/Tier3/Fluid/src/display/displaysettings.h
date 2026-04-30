@@ -26,14 +26,12 @@ class DisplaySettings : public QObject,
     QML_SINGLETON
 
     Q_PROPERTY(bool  canSetBrightness  READ canSetBrightness  CONSTANT FINAL)
-    Q_PROPERTY(bool  canSetHighDpi     READ canSetHighDpi     CONSTANT FINAL)
     Q_PROPERTY(bool  canSetScaleFactor READ canSetScaleFactor CONSTANT FINAL)
     Q_PROPERTY(bool  canSetRotation    READ canSetRotation    CONSTANT FINAL)
     Q_PROPERTY(bool  canSetFullscreen  READ canSetFullscreen  CONSTANT FINAL)
     Q_PROPERTY(bool  canHideCursor     READ canHideCursor     CONSTANT FINAL)
     Q_PROPERTY(bool  canHideKeyboard   READ canHideKeyboard   CONSTANT FINAL)
     Q_PROPERTY(int   brightness        READ getBrightness     WRITE setBrightness    NOTIFY brightnessChanged FINAL)
-    Q_PROPERTY(bool  highDpi           READ getHighDpi        WRITE setHighDpi       NOTIFY highDpiChanged FINAL)
     Q_PROPERTY(int   scaleFactor       READ getScaleFactor    WRITE setScaleFactor   NOTIFY scaleFactorChanged FINAL)
     Q_PROPERTY(float rotation          READ getRotation       WRITE setRotation      NOTIFY rotationChanged FINAL)
     Q_PROPERTY(bool  fullscreen        READ getFullscreen     WRITE setFullscreen    NOTIFY fullscreenChanged FINAL)
@@ -50,19 +48,17 @@ public:
     enum Capabilities
     {
         Brightness = 0x01,
-        HighDpi = 0x02,
-        ScaleFactor = 0x04,
-        Rotation = 0x08,
-        Fullscreen = 0x10,
-        HideCursor = 0x20,
-        HideKeyboard = 0x40
+        ScaleFactor = 0x02,
+        Rotation = 0x04,
+        Fullscreen = 0x08,
+        HideCursor = 0x10,
+        HideKeyboard = 0x20
     };
 
     int getCapabilities() const;
 
     bool hasCapability(int capability) const { return getCapabilities() & capability; };
     bool canSetBrightness() const { return hasCapability(Capabilities::Brightness); }
-    bool canSetHighDpi() const { return hasCapability(Capabilities::HighDpi); }
     bool canSetScaleFactor() const { return hasCapability(Capabilities::ScaleFactor); }
     bool canSetRotation() const { return hasCapability(Capabilities::Rotation); }
     bool canSetFullscreen() const { return hasCapability(Capabilities::Fullscreen); }
@@ -70,7 +66,6 @@ public:
     bool canHideKeyboard() const { return hasCapability(Capabilities::HideKeyboard); }
 
     int getBrightness() const;
-    bool getHighDpi() const;
     float getScaleFactor() const;
     float getRotation() const;
     bool getFullscreen() const;
@@ -79,7 +74,6 @@ public:
 
 public slots:
     bool setBrightness(int brightness);
-    bool setHighDpi(bool highDpi);
     bool setScaleFactor(float scaleFactor);
     bool setRotation(float rotation);
     bool setFullscreen(bool fullscreen);
@@ -88,7 +82,6 @@ public slots:
 
 signals:
     void brightnessChanged();
-    void highDpiChanged();
     void scaleFactorChanged();
     void rotationChanged();
     void fullscreenChanged();
@@ -116,7 +109,6 @@ private:
     mutable bool m_lightDevicesInitialized = false;
     mutable bool m_displayDevicesInitialized = false;
     mutable bool m_writeConfigQueued = false;
-    mutable bool m_highDpi = false;
     mutable float m_scaleFactor = 100.0F;
     mutable float m_rotation = 0.0F;
     mutable bool m_fullscreen = false;

@@ -11,9 +11,14 @@ class MaintenanceHelper : public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
+    Q_PROPERTY(bool canOpenUrl READ canOpenUrl CONSTANT FINAL)
+
 protected:
     friend QQmlSingleton<MaintenanceHelper>;
     explicit MaintenanceHelper(QObject *parent = nullptr);
+
+public:
+    static bool canOpenUrl();
 
 public slots:
     void clearLogs();
@@ -21,6 +26,8 @@ public slots:
     void clearCache();
     void clearSettings();
     void clearAll();
+
+    void openLocalFilePath(const QString& path);
 };
 
 #endif // MAINTENANCE_HELPERTYPES_H

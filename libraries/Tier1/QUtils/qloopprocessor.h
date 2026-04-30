@@ -11,6 +11,7 @@ class QLoopProcessor : public QObject
     Q_WRITABLE_VAR_PROPERTY(bool, autoDelete, AutoDelete, true)
     Q_WRITABLE_VAR_PROPERTY(bool, asynchronous, Asynchronous, true)
     Q_WRITABLE_VAR_PROPERTY(int, timeout, Timeout, 16)
+    Q_WRITABLE_VAR_PROPERTY(int, delay, Delay, 0)
 
     Q_READONLY_VAR_PROPERTY(int, index, Index, 0)
     Q_READONLY_VAR_PROPERTY(int, release, Release, 0)

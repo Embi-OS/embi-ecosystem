@@ -87,7 +87,7 @@ QSqlDatabase SqlDbPool::create(const SqlDbProfile& profile, bool force)
 
     QSqlDatabase db = QSqlDatabase::addDatabase(profile.type, threadConnection);
 
-    if(profile.type=="QMYSQL")
+    if(profile.type=="QMYSQL" || profile.type=="QMARIADB")
     {
         db.setHostName(profile.hostName);
         db.setPort(profile.port);

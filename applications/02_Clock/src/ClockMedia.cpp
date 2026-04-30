@@ -1,6 +1,5 @@
 #include "ClockMedia.h"
 #include "ClockDisplay.h"
-#include <QStandardPaths>
 
 ClockMedia::ClockMedia(QObject *parent) :
     AbstractManager(parent),

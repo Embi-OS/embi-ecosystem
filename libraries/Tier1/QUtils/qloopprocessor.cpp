@@ -63,7 +63,7 @@ void QLoopProcessor::iterate()
     }
 
     double elapsed = m_elapsedSinceLastRelease.nsecsElapsed()/1000000.0;
-    if(m_asynchronous && elapsed>m_timeout)
+    if(m_asynchronous && (m_timeout>=0 || elapsed>m_timeout))
     {
         release();
     }
@@ -81,7 +81,10 @@ void QLoopProcessor::release()
     if(m_releaseCallback)
         m_releaseCallback();
 
-    QMetaObject::invokeMethod(this, &QLoopProcessor::iterate, Qt::QueuedConnection);
+    if(m_delay<=0)
+        QMetaObject::invokeMethod(this, &QLoopProcessor::iterate, Qt::QueuedConnection);
+    else
+        QTimer::singleShot(m_delay, this, &QLoopProcessor::iterate);
 }
 
 void QLoopProcessor::end()

@@ -1,5 +1,44 @@
 include_guard(GLOBAL)
 
+function(install_optional_runtime_files TARGET)
+    set(args_options "")
+    set(args_single
+        DESTINATION
+        DIRECTORY
+    )
+    set(args_multi FILES)
+
+    cmake_parse_arguments(PARSE_ARGV 1 arg "${args_options}" "${args_single}" "${args_multi}")
+
+    if(arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown/unexpected arguments: ${arg_UNPARSED_ARGUMENTS}")
+    endif()
+    if(NOT arg_DIRECTORY)
+        message(FATAL_ERROR "install_optional_runtime_files requires DIRECTORY")
+    endif()
+    if(NOT arg_DESTINATION)
+        message(FATAL_ERROR "install_optional_runtime_files requires DESTINATION")
+    endif()
+    if(NOT arg_FILES)
+        message(FATAL_ERROR "install_optional_runtime_files requires FILES")
+    endif()
+
+    set(runtime_files "")
+    foreach(runtime_file IN LISTS arg_FILES)
+        if(IS_ABSOLUTE "${runtime_file}")
+            list(APPEND runtime_files "${runtime_file}")
+        else()
+            list(APPEND runtime_files "${arg_DIRECTORY}/${runtime_file}")
+        endif()
+    endforeach()
+
+    install(FILES ${runtime_files}
+        DESTINATION ${arg_DESTINATION}
+        COMPONENT ${TARGET}
+        OPTIONAL
+    )
+endfunction()
+
 function(create_package)
     set(args_options
         NO_PORTABLE
@@ -71,6 +110,16 @@ function(create_package)
     install(SCRIPT "${deploy_script}"
         COMPONENT ${arg_TARGET}
     )
+
+    if(WIN32 AND TARGET Qt${QT_VERSION_MAJOR}::Core)
+        install_optional_runtime_files(${arg_TARGET}
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            DIRECTORY "$<TARGET_FILE_DIR:Qt${QT_VERSION_MAJOR}::Core>"
+            FILES
+                libmariadb.dll
+                libmysql.dll
+        )
+    endif()
 
     set(package_file_basename
         "${arg_TARGET}_${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_SUFFIX}_${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}"

@@ -11,7 +11,6 @@
 
 namespace {
 
-constexpr auto HighDpiKey = "QT_ENABLE_HIGHDPI_SCALING";
 constexpr auto ScaleFactorKey = "QT_SCALE_FACTOR";
 constexpr auto RotationKey = "QT_QUICK_ROTATION";
 constexpr auto FullscreenKey = "QT_QUICK_FULLSCREEN";
@@ -34,14 +33,12 @@ QString displaySettingsFilePath()
 int platformDisplayCapabilities()
 {
 #ifdef Q_OS_BOOT2QT
-    return DisplaySettings::Capabilities::HighDpi |
-           DisplaySettings::Capabilities::ScaleFactor |
+    return DisplaySettings::Capabilities::ScaleFactor |
            DisplaySettings::Capabilities::Rotation |
            DisplaySettings::Capabilities::HideCursor |
            DisplaySettings::Capabilities::HideKeyboard;
 #elif defined(Q_OS_LINUX) || defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-    return DisplaySettings::Capabilities::HighDpi |
-           DisplaySettings::Capabilities::ScaleFactor |
+    return DisplaySettings::Capabilities::ScaleFactor |
            DisplaySettings::Capabilities::Fullscreen;
 #else
     return 0;
@@ -53,8 +50,6 @@ QStringList displaySettingsKeys()
     QStringList keys;
     const int capabilities = platformDisplayCapabilities();
 
-    if (capabilities & DisplaySettings::Capabilities::HighDpi)
-        keys.append(QString::fromLatin1(HighDpiKey));
     if (capabilities & DisplaySettings::Capabilities::ScaleFactor)
         keys.append(QString::fromLatin1(ScaleFactorKey));
     if (capabilities & DisplaySettings::Capabilities::Rotation)
@@ -125,31 +120,6 @@ bool DisplaySettings::setBrightness(int brightness)
 
     m_brightness = value;
     emit this->brightnessChanged();
-
-    return true;
-}
-
-bool DisplaySettings::getHighDpi() const
-{
-    if(!canSetHighDpi())
-        return false;
-    return m_highDpi;
-}
-
-bool DisplaySettings::setHighDpi(bool highDpi)
-{
-    if(!canSetHighDpi())
-    {
-        FLUIDLOG_WARNING()<<"Cannot set high dpi";
-        return false;
-    }
-
-    if (m_highDpi == highDpi)
-        return false;
-
-    m_highDpi = highDpi;
-    queueWriteConfig();
-    emit this->highDpiChanged();
 
     return true;
 }
@@ -349,12 +319,6 @@ bool DisplaySettings::readConfig() const
         return false;
 
     bool ok = false;
-    if (variables.contains(QString::fromLatin1(HighDpiKey))) {
-        const int value = variables.value(QString::fromLatin1(HighDpiKey)).toInt(&ok);
-        if (ok)
-            m_highDpi = value;
-    }
-
     if (variables.contains(QString::fromLatin1(ScaleFactorKey))) {
         const double value = variables.value(QString::fromLatin1(ScaleFactorKey)).toDouble(&ok);
         if (ok)
@@ -408,8 +372,6 @@ void DisplaySettings::writeConfig()
     }
 
     QByteArrayMap variables;
-    if (m_highDpi)
-        variables.insert(QString::fromLatin1(HighDpiKey), QByteArray::number(m_highDpi));
     if (m_scaleFactor != 100.0F)
         variables.insert(QString::fromLatin1(ScaleFactorKey), QByteArray::number(m_scaleFactor / 100.0F));
     if (m_rotation != 0.0F)

@@ -18,7 +18,7 @@ class SqlDbPreparator : public SqlSchemePreparator
     // SQLite
     Q_WRITABLE_REF_PROPERTY(QString, path, Path, "")
 
-    // MySQL
+    // MySQL, MariaDB
     Q_WRITABLE_REF_PROPERTY(QString, server, Server, "")
     Q_WRITABLE_REF_PROPERTY(QString, userName, UserName, "")
     Q_WRITABLE_REF_PROPERTY(QString, password, Password, "")

@@ -48,7 +48,8 @@ Q_ENUM_CLASS(SqlJoinTypes, SqlJoinType,
 Q_ENUM_CLASS(SqlDatabaseTypes, SqlDatabaseType,
              None,
              SQLite,
-             MySQL,)
+             MySQL,
+             MariaDB,)
 
 Q_ENUM_CLASS(SqlMigrationModes, SqlMigrationMode,
              Manual,

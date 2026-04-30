@@ -23,6 +23,9 @@ SqlDbProfile SqlDbPreparator::createConnectionProfile()
     case SqlDatabaseTypes::MySQL:
         profile.type = "QMYSQL";
         break;
+    case SqlDatabaseTypes::MariaDB:
+        profile.type = "QMARIADB";
+        break;
     default:
         break;
     }
@@ -51,6 +54,9 @@ QString SqlDbPreparator::toString()
         break;
     case SqlDatabaseTypes::MySQL:
         type = "QMYSQL";
+        break;
+    case SqlDatabaseTypes::MariaDB:
+        type = "QMARIADB";
         break;
     default:
         break;
@@ -82,7 +88,7 @@ bool SqlDbPreparator::isValid()
         return false;
     }
 
-    if(getType() == SqlDatabaseTypes::MySQL)
+    if(getType() == SqlDatabaseTypes::MySQL || getType() == SqlDatabaseTypes::MariaDB)
     {
         if(getServer().isEmpty())
         {
