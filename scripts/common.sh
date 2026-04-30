@@ -33,20 +33,6 @@ if [ -f "$CONFIG_FILE" ]; then
     . "$CONFIG_FILE"
 fi
 
-resolve_home_path() {
-    case "$1" in
-        "~")
-            printf '%s\n' "$HOME"
-            ;;
-        "~/"*)
-            printf '%s\n' "$HOME/${1#\~/}"
-            ;;
-        *)
-            printf '%s\n' "$1"
-            ;;
-    esac
-}
-
 # Parse command-line arguments
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -110,9 +96,6 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
-
-QT_ROOT=$(resolve_home_path "$QT_ROOT")
-QT_ROOT_WINDOWS=$(resolve_home_path "$QT_ROOT_WINDOWS")
 
 SANITIZED_PROJECT_NAME=$(printf '%s' "$PROJECT_NAME" | tr '[:space:]' '_' | tr -c 'A-Za-z0-9._-' '_')
 [ -n "$SANITIZED_PROJECT_NAME" ] || SANITIZED_PROJECT_NAME="project"
