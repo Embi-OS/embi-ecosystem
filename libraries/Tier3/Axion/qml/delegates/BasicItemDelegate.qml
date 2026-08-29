@@ -40,8 +40,12 @@ T.ItemDelegate {
 
     property int radius: Style.itemDelegateRadius
 
-    readonly property double backgroundImplicitWidth: Style.itemDelegateMinWidth
-    readonly property double backgroundImplicitHeight: Style.itemDelegateMinHeight
+    highlighted: false
+    property double borderWidth: Style.itemDelegateBorderWidth
+    property color borderColor: root.highlighted ? Style.colorAccent : backgroundColor
+
+    property double backgroundImplicitWidth: Style.itemDelegateMinWidth
+    property double backgroundImplicitHeight: Style.itemDelegateMinHeight
 
     icon.width: 32
     icon.height: 32
@@ -73,6 +77,8 @@ T.ItemDelegate {
 
         radius: root.radius
         color: root.backgroundColor
+        border.width: root.borderWidth
+        border.color: root.borderColor
 
         BasicVeil {
             z: 100

@@ -14,11 +14,6 @@ BasicNavItem {
     property int mainComponentLeftMargin: Style.mainComponentLeftMargin
     property int mainComponentRightMargin: Style.mainComponentRightMargin
 
-    onItemIsActive: {
-        if(stackItemName!=="")
-            console.info("BasicNavWindow active:",stackItemName,stackItemSecondaryName!==""?"-> \""+stackItemSecondaryName+"\"":"")
-    }
-
     onQuitConfirmed: {
         root.state="";
     }

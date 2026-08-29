@@ -39,6 +39,7 @@ PaneTreeView {
             },
             "onClosed": function () {
                 model.destroy()
+                component.destroy()
             },
             "onFormValidated": function(formValues) {
                 AxionHelper.warningRestart()

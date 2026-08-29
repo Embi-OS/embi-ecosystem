@@ -2,9 +2,11 @@
 
 #include "restmanager.h"
 #include "sqlmanager.h"
+#include "hassmanager.h"
 
 #include "ClockApi.h"
 #include "Clock.h"
+#include "ClockAlarmAudio.h"
 #include "ClockDisplay.h"
 #include "ClockMedia.h"
 
@@ -23,7 +25,7 @@ bool A02_ClockManager::init()
 
     registerManager(RestManager::Get());
 
-    if(RestManager::Get()->localhost())
+    if(RestManager::Get()->getLocalApiEnabled())
     {
         SqlManager::Get()->setDbType(SqlDatabaseTypes::SQLite);
         SqlManager::Get()->setDbPath(Paths::database());
@@ -33,8 +35,11 @@ bool A02_ClockManager::init()
         registerManager(ClockApi::Get());
     }
 
+    registerManager(HassManager::Get());
+
     registerManager(ClockDisplay::Get());
     registerManager(ClockMedia::Get());
+    registerManager(ClockAlarmAudio::Get());
     registerManager(Clock::Get());
 
     return true;

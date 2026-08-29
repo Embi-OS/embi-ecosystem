@@ -17,11 +17,14 @@ class QTranslatorLoader : public QObject,
 
 public:
     explicit QTranslatorLoader(QObject* parent=nullptr);
+    ~QTranslatorLoader() override;
 
     void classBegin() override;
     void componentComplete() override;
 
     const QStringList getFileNames(const QString langage) const;
+    static QStringList availableLanguages();
+    static QString normalizedLanguage(const QString& language);
 
 signals:
     void translationReloaded();
@@ -32,6 +35,8 @@ protected slots:
     bool loadFile(const QString &fileName);
 
 private:
+    bool clearTranslations();
+
     QHash<QString,QTranslator*> m_translators;
 
     bool m_completed=false;

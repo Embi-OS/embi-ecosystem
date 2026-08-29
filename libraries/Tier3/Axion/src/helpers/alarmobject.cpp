@@ -7,7 +7,7 @@ AlarmModel::AlarmModel(QObject* parent) :
     QObjectListModel(parent, &AlarmObject::staticMetaObject)
 {
     onInserted<AlarmObject>([this](AlarmObject* alarmObject){
-        connect(alarmObject, &AlarmObject::ringing, this, &AlarmModel::ringing);
+        connect(alarmObject, &AlarmObject::ringing, this, [this, alarmObject](){ emit this->ringing(alarmObject); });
         connect(alarmObject, &AlarmObject::remainingTimeChanged, this, &AlarmModel::invalidateRemainingTimeChange);
     });
 
@@ -75,6 +75,7 @@ QVariantMap AlarmObject::toMap() const
     QVariantMap map;
 
     map.insert("uuid", m_uuid);
+    map.insert("group", m_group);
     map.insert("hour", m_hour);
     map.insert("minute", m_minute);
     map.insert("date", m_date);
@@ -82,6 +83,7 @@ QVariantMap AlarmObject::toMap() const
     map.insert("name", m_name);
     map.insert("repeat", m_repeat);
     map.insert("weekdays", m_weekdays);
+    map.insert("details", m_details);
 
     return map;
 }
@@ -90,6 +92,8 @@ void AlarmObject::fromMap(const QVariantMap& alarmMap)
 {
     if(alarmMap.contains("uuid"))
         setUuid(alarmMap.value("uuid").toString());
+    if(alarmMap.contains("group"))
+        setGroup(alarmMap.value("group").toString());
     if(alarmMap.contains("hour"))
         setHour(alarmMap.value("hour").toInt());
     if(alarmMap.contains("minute"))
@@ -104,6 +108,8 @@ void AlarmObject::fromMap(const QVariantMap& alarmMap)
         setRepeat(alarmMap.value("repeat").toBool());
     if(alarmMap.contains("weekdays"))
         setWeekdays(alarmMap.value("weekdays").toInt());
+    if(alarmMap.contains("details"))
+        setDetails(alarmMap.value("details").toMap());
 }
 
 void AlarmObject::ring()

@@ -33,7 +33,6 @@ LauncherInfosBar {
         grabPermissions: PointerHandler.TakeOverForbidden
         parent: root.rightLayout
         target: root.rightLayout
-        cursorShape: Qt.PointingHandCursor
         onTapped: menu.open()
     }
 
@@ -45,15 +44,15 @@ LauncherInfosBar {
             title: qsTr("Disques / USB")
             onOpened: Filesystem.drives.markDirty()
 
-            section.property: "driveDisplayType"
+            section.property: "driveType"
             section.delegate: BasicLabel {
                 width: (ListView.view as ListView).width
                 topInset: Style.menuItemTopInset
                 bottomInset: Style.menuItemBottomInset
                 leftInset: Style.menuItemLeftInset
                 rightInset: Style.menuItemRightInset
-                required property string section
-                text: qsTr("Disque(s): %1").arg(section)
+                required property int section
+                text: qsTr("Disque(s): %1").arg(FilesystemDriveTypes.displayText(section))
                 font: Style.textTheme.headline7
             }
 
@@ -62,15 +61,15 @@ LauncherInfosBar {
                     delayed: true
                     enabled: diskMenu.opened
                     sourceModel: Filesystem.drives
-                    sortRoleName: "driveDisplayType"
+                    sortRoleName: "driveType"
                 }
                 delegate: BasicMenuItem {
                     required property FilesystemDrive qtObject
                     required property string name
                     required property string driveDevice
                     required property string fileUrl
-                    required property string driveDisplayType
                     required property bool driveIsUsb
+                    required property int driveType // Mandatory for section
                     enabled: driveIsUsb
                     hint: enabled ? qsTr("Ejecter") : ""
                     text: ("%1 (%2)").arg(name).arg(driveDevice)
@@ -82,7 +81,7 @@ LauncherInfosBar {
         BasicMenu {
             id: langMenu
             title: qsTr("Langue")
-            width: 200
+            icon.source: MaterialIcons.translate
 
             Repeater {
                 model: ProxyModel {

@@ -96,18 +96,21 @@ void Helper::write()
 
 static void qtMessageOutput(QtMsgType qtType, const QMessageLogContext& ctx, const QString& msg)
 {
-    int msgType = ctx.category[0]==QS_LOG_TRACEESCAPE ? -1 :
-                  ctx.category[0]==QS_LOG_NOTICEESCAPE ? -2 : qtType;
+    const char *category = ctx.category ? ctx.category : "";
+    const char firstCategoryChar = category[0];
+    int msgType = firstCategoryChar==QS_LOG_TRACEESCAPE ? -1 :
+                  firstCategoryChar==QS_LOG_NOTICEESCAPE ? -2 : qtType;
 
     Level level = levelFromQtMsgType(msgType);
 
-    const QMessageLogContext context(ctx.file, ctx.line, ctx.function, msgType<0 ? ctx.category+1 : ctx.category);
+    const QMessageLogContext context(ctx.file, ctx.line, ctx.function, msgType<0 ? category+1 : category);
     Helper helper(level, context);
     helper.stream()<<qPrintable(msg);
     helper.write();
 }
 
 static Logger* sInstance = 0;
+Q_GLOBAL_STATIC(QMutex, sInstanceMutex)
 
 #ifdef QS_LOG_SEPARATE_THREAD
 class LogWriterRunnable : public QRunnable
@@ -220,6 +223,7 @@ void Logger::init(const QString& path)
 
 Logger& Logger::instance()
 {
+    QMutexLocker lock(sInstanceMutex());
     if (!sInstance)
     {
         sInstance = new Logger;
@@ -231,12 +235,16 @@ Logger& Logger::instance()
 
 void Logger::destroyInstance()
 {
-    if (sInstance)
-    {
-        qInstallMessageHandler(0);
-        delete sInstance;
-        sInstance = 0;
-    }
+    QMutexLocker lock(sInstanceMutex());
+    Logger *instance = sInstance;
+    if (!instance)
+        return;
+
+    qInstallMessageHandler(0);
+    sInstance = 0;
+    lock.unlock();
+
+    delete instance;
 }
 
 Logger::~Logger()
@@ -251,22 +259,26 @@ Logger::~Logger()
 void Logger::addDestination(DestinationPtr destination)
 {
     Q_ASSERT(destination.data());
+    QMutexLocker lock(&d->logMutex);
     d->destList.push_back(destination);
 }
 
 void Logger::removeDestination(DestinationPtr destination)
 {
     Q_ASSERT(destination.data());
+    QMutexLocker lock(&d->logMutex);
     d->destList.removeOne(destination);
 }
 
 void Logger::setLoggingLevel(Level newLevel)
 {
+    QMutexLocker lock(&d->logMutex);
     d->level = newLevel;
 }
 
 Level Logger::loggingLevel() const
 {
+    QMutexLocker lock(&d->logMutex);
     return d->level;
 }
 
@@ -277,11 +289,13 @@ void Logger::clearEverything()
 
 void Logger::addMessageFilter(const QRegularExpression &regex)
 {
+    QMutexLocker lock(&d->logMutex);
     d->messageFilter.append(regex);
 }
 
 void Logger::clearMessageFilter()
 {
+    QMutexLocker lock(&d->logMutex);
     d->messageFilter.clear(); // empty (invalid) regex => no filtering
 }
 
@@ -300,10 +314,22 @@ void Logger::enqueueWrite(const Message& message)
 //! it's useful for processing in the destination.
 void Logger::write(const Message& message)
 {
-    QMutexLocker lock(&d->logMutex);
+    DestinationList destinations;
+    QList<QRegularExpression> messageFilters;
+    Level level;
+
+    {
+        QMutexLocker lock(&d->logMutex);
+        level = d->level;
+        if (level > message.level)
+            return;
+
+        destinations = d->destList;
+        messageFilters = d->messageFilter;
+    }
 
     // If a filter is set and it does match, discard message
-    for(const QRegularExpression& re: std::as_const(d->messageFilter)) {
+    for(const QRegularExpression& re: std::as_const(messageFilters)) {
         if (re.isValid() && !re.pattern().isEmpty()) {
             if (!re.match(message.message).hasMatch()) {
                 return; // skip logging
@@ -311,12 +337,10 @@ void Logger::write(const Message& message)
         }
     }
 
-    if (d->level > message.level)
-        return;
-
-    for (DestinationList::iterator it = d->destList.begin(),
-        endIt = d->destList.end();it != endIt;++it) {
-        (*it)->writeToLog(message);
+    for (DestinationList::iterator it = destinations.begin(),
+        endIt = destinations.end();it != endIt;++it) {
+        if (*it)
+            (*it)->writeToLog(message);
     }
 }
 
@@ -332,10 +356,16 @@ void Logger::enqueueClear()
 
 void Logger::clear()
 {
-    QMutexLocker lock(&d->logMutex);
-    for (DestinationList::iterator it = d->destList.begin(),
-        endIt = d->destList.end();it != endIt;++it) {
-        (*it)->clear();
+    DestinationList destinations;
+    {
+        QMutexLocker lock(&d->logMutex);
+        destinations = d->destList;
+    }
+
+    for (DestinationList::iterator it = destinations.begin(),
+        endIt = destinations.end();it != endIt;++it) {
+        if (*it)
+            (*it)->clear();
     }
 }
 

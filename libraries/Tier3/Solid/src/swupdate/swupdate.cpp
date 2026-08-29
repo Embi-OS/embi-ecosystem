@@ -222,7 +222,7 @@ void Swupdate::onProgressMessage()
         {
             setFile(msg.info);
             setStatus(QString("%1, %2").arg(SwupdateRecoveryStatuses::asString(msg.status), msg.info));
-            SnackbarManager::Get()->show(QVariantMap({{"title", tr("%1").arg(SwupdateRecoveryStatuses::asString(msg.status))}, {"caption", msg.info}}));
+            SnackbarManager::Get()->show(QVariantMap({{"title", SwupdateRecoveryStatuses::asString(msg.status)}, {"caption", msg.info}}));
         }
         else
         {
@@ -236,7 +236,7 @@ void Swupdate::onProgressMessage()
         {
             setVersion(msg.info);
             setStatus(QString("%1, %2").arg(SwupdateRecoveryStatuses::asString(msg.status), msg.info));
-            SnackbarManager::Get()->show(QVariantMap({{"title", tr("%1").arg(SwupdateRecoveryStatuses::asString(msg.status))}, {"caption", msg.info}}));
+            SnackbarManager::Get()->show(QVariantMap({{"title", SwupdateRecoveryStatuses::asString(msg.status)}, {"caption", msg.info}}));
         }
         else
         {

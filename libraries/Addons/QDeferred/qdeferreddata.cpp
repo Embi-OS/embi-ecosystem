@@ -48,8 +48,11 @@ QDeferredProxyObject * QDeferredDataBase::getObjectForThread(QThread * p_currThd
     {
         // subscribe to finish
         QObject::connect(p_currThd, &QThread::finished, p_currThd, [p_currThd]() {
+            QMutexLocker locker(&QDeferredDataBase::s_mutex);
             // if finished, remove
             auto p_objToDelete = QDeferredDataBase::s_threadMap.take(p_currThd);
+            if (!p_objToDelete)
+                return;
             // mark the object for deletion
             p_objToDelete->deleteLater();
         });

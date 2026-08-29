@@ -5,6 +5,8 @@
 #include "QsLog.h"
 
 #include <QUtils>
+#include <QElapsedTimer>
+#include <QHash>
 
 Log::Log(QObject *parent) :
     QObject(parent)
@@ -47,7 +49,10 @@ bool Log::copy(const QString& path)
     return QUtils::Filesystem::copy(Paths::log(), dst, true);
 }
 
+using ElapsedTimers = QHash<QString, QElapsedTimer>;
+
 Q_GLOBAL_STATIC(QElapsedTimer, g_elapsedTimer)
+Q_GLOBAL_STATIC(ElapsedTimers, g_elapsedTimers)
 void Log::startElapsed() const
 {
     g_elapsedTimer->start();
@@ -55,6 +60,35 @@ void Log::startElapsed() const
 double Log::elapsed() const
 {
     return g_elapsedTimer->nsecsElapsed()/1000000.0;
+}
+void Log::startElapsed(const QString& key) const
+{
+    if(key.isEmpty()) {
+        startElapsed();
+        return;
+    }
+
+    QElapsedTimer timer;
+    timer.start();
+    g_elapsedTimers->insert(key, timer);
+}
+double Log::elapsed(const QString& key) const
+{
+    if(key.isEmpty())
+        return elapsed();
+
+    auto it = g_elapsedTimers->constFind(key);
+    if(it==g_elapsedTimers->constEnd() || !it->isValid())
+        return -1.0;
+
+    return it->nsecsElapsed()/1000000.0;
+}
+double Log::endElapsed(const QString& key) const
+{
+    const double result = elapsed(key);
+    if(!key.isEmpty())
+        g_elapsedTimers->remove(key);
+    return result;
 }
 
 #define QMLLOG_TRACE QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC,"\x1B""QML").debug
@@ -93,4 +127,3 @@ void Log::fatal(const QString& message) const
 {
     QMLLOG_FATAL().noquote()<<message;
 }
-

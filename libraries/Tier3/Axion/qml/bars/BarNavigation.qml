@@ -10,7 +10,6 @@ RowLayout {
     required property StandardObjectModel model
     required property int position
     readonly property bool firstRow: !position
-    property bool navigationLocked: false
 
     signal clicked(int navIndex)
 
@@ -25,7 +24,6 @@ RowLayout {
             filterValue: true
         }
         delegate: ButtonNavigation {
-            navigationLocked: root.navigationLocked
             required property StandardObject qtObject
             required property int index
             required highlighted

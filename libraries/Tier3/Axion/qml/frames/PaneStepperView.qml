@@ -5,8 +5,7 @@ import Eco.Tier3.Axion
 BasicPane {
     id: root
 
-    navigationLocked: currentItem?.navigationLocked ?? false
-    navigationEnabled: !loader.loading && (currentItem?.navigationEnabled ?? true)
+    Navigation.guarded: loader.loading || (currentItem?.Navigation.guarded ?? false)
 
     required property StepMachine stepMachine
     readonly property StepElement currentStep: stepMachine?.currentStep ?? null

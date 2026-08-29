@@ -5,9 +5,12 @@
 #include <QVariant>
 #include <QHash>
 #include <QList>
+#include <QStringList>
+#include <QVector>
 #include <QAbstractListModel>
 #include <QQmlParserStatus>
 #include <QDebug>
+#include <functional>
 #include <QDefs>
 
 #include "syncable/qspatchable.h"
@@ -192,8 +195,13 @@ protected slots:
     void onUpdateInhibitTimeChanged(int inhibitTime);
 
 protected:
+    using AdditionalRoleDataGetter = std::function<QVariant(const QVariant& item)>;
+
     void countInvalidate();
     void contentInvalidate();
+
+    bool addAdditionalRole(const QByteArray& name, const QStringList& sourceRoles, AdditionalRoleDataGetter getter);
+    void invalidateAdditionalRole(const QByteArray& name);
 
     bool setStorage(const QVariantList& storage);
     bool setStorage(QVariantList&& storage);
@@ -214,6 +222,12 @@ protected:
     static QVariantList fromModel(const QAbstractItemModel* model, bool* result=nullptr);
 
 private:
+    struct AdditionalRole
+    {
+        QStringList sourceRoles;
+        AdditionalRoleDataGetter getter;
+    };
+
     template<typename T>
     bool setStorageImpl(T&& storage);
 
@@ -223,10 +237,17 @@ private:
     template<typename T>
     bool patchStorageImpl(T&& storage);
 
+    QVector<int> additionalRolesFor(const QVector<int>& sourceRoles) const;
+    void rebuildRoleNames();
+
     bool m_completed=false;
     int m_count=0;
+    QHash<int, QByteArray> m_sourceRoleNames;
+    QHash<QString, int> m_sourceRoleIds;
     QHash<int, QByteArray> m_roleNames;
     QHash<QString, int> m_roleIds;
+    QList<QByteArray> m_additionalRoleNames;
+    QHash<QByteArray, AdditionalRole> m_additionalRoles;
 
     QVariantList m_storage;
     QVariantList m_backup;

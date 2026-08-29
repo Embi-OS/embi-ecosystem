@@ -75,7 +75,7 @@ bool TableViewModel::setData(const QModelIndex &index, const QVariant &value, in
         return false;
 
     if(role==Qt::EditRole || role==ColumnFormattedRole)
-        return setFormattedData(mapToSource(index), value);
+        return setFormattedData(index, value);
 
     if(role<ColumnFormattedRole)
         return setSourceData(index.row(), value, role);
@@ -136,9 +136,15 @@ bool TableViewModel::setSourceData(int row, const QVariant &value, int role) con
 
 QModelIndex TableViewModel::index(int row, int column, const QModelIndex& parent) const
 {
-    if (column >= 0)
-        return createIndex(row, column, QIdentityProxyModel::index(row, 0, parent).internalPointer());
-    return QIdentityProxyModel::index(row, column, parent);
+    if(parent.isValid() || row < 0 || column < 0 || row >= rowCount(parent) || column >= columnCount(parent))
+        return QModelIndex();
+
+    const QModelIndex sourceIndex = QIdentityProxyModel::index(row, 0, parent);
+    return createIndex(row, column, sourceIndex.internalPointer());
+
+    // if (column >= 0)
+    //     return createIndex(row, column, QIdentityProxyModel::index(row, 0, parent).internalPointer());
+    // return QIdentityProxyModel::index(row, column, parent);
 }
 
 QModelIndex TableViewModel::parent(const QModelIndex& child) const
@@ -342,8 +348,8 @@ void TableViewModel::initHeadersRole()
     if(!m_verticalHeaderDisplayRoleName.isEmpty())
     {
         if(setVerticalHeaderDisplayRole(roleForName(m_verticalHeaderDisplayRoleName))) {
-            // if(m_isActive)
-            //     emit this->headerDataChanged(Qt::Vertical, 0, rowCount());
+            // if(m_isActive && columnCount() > 0)
+            //     emit this->headerDataChanged(Qt::Vertical, 0, rowCount() - 1);
         }
     }
 
@@ -353,8 +359,8 @@ void TableViewModel::initHeadersRole()
     if(!m_horizontalHeaderDisplayRoleName.isEmpty())
     {
         if(setHorizontalHeaderDisplayRole(m_columnModel->roleForName(m_horizontalHeaderDisplayRoleName.toUtf8()))) {
-            if(m_isActive)
-                emit this->headerDataChanged(Qt::Horizontal, 0, columnCount());
+            if(m_isActive && columnCount() > 0)
+                emit this->headerDataChanged(Qt::Horizontal, 0, columnCount() - 1);
         }
     }
 }
@@ -375,6 +381,7 @@ void TableViewModel::onColumnModelChanged(TableViewColumnModel* columnModel)
         connect(columnModel, &TableViewColumnModel::columnVisibleChanged, this, &TableViewModel::queueChangeLayout);
         connect(columnModel, &TableViewColumnModel::columnWidthChanged, this, &TableViewModel::queueChangeLayout);
         connect(columnModel, &TableViewColumnModel::countChanged, this, &TableViewModel::columnCountChanged);
+        connect(columnModel, &TableViewColumnModel::columnInvalidated, this, &TableViewModel::onColumnInvalidated);
 
         initHeadersRole();
     }
@@ -412,12 +419,24 @@ void TableViewModel::setSourceModel(QAbstractItemModel* model)
     endResetModel();
 }
 
+void TableViewModel::onColumnInvalidated(int column)
+{
+    if(!m_isActive || rowCount() <= 0 || column < 0 || column >= columnCount())
+        return;
+
+    emit this->dataChanged(index(0, column), index(rowCount()-1, column), {Qt::DisplayRole, ColumnFormattedRole, ColumnColorRole});
+}
+
 void TableViewModel::onColumnDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
 {
     if(!m_isActive)
         return;
 
-    emit this->headerDataChanged(Qt::Horizontal, topLeft.row(), bottomRight.row());
+    if(topLeft.row() < 0 || bottomRight.row() < topLeft.row() || topLeft.row() >= columnCount())
+        return;
+
+    const int rightColumn = qMin(bottomRight.row(), columnCount() - 1);
+    emit this->headerDataChanged(Qt::Horizontal, topLeft.row(), rightColumn);
 
     QVector<int> updatedRoles = roles;
     for (const int role: roles)
@@ -427,7 +446,8 @@ void TableViewModel::onColumnDataChanged(const QModelIndex& topLeft, const QMode
     updatedRoles<<ColumnColorRole;
     updatedRoles<<ColumnObjectRole;
 
-    emit this->dataChanged(index(0, topLeft.row()), index(rowCount()-1, bottomRight.row()), updatedRoles);
+    if(rowCount() > 0)
+        emit this->dataChanged(index(0, topLeft.row()), index(rowCount() - 1, rightColumn), updatedRoles);
 }
 
 void TableViewModel::onSourceDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
@@ -445,15 +465,18 @@ void TableViewModel::onSourceDataChanged(const QModelIndex& topLeft, const QMode
     updatedRoles<<ColumnFormattedRole;
     updatedRoles<<ColumnColorRole;
 
-    const QModelIndex proxyTopLeft = createIndex(topLeft.row(), 0, topLeft.internalPointer());
-    const QModelIndex proxyBottomRight = createIndex(bottomRight.row(), columnCount()-1, topLeft.internalPointer());
+    if(!topLeft.isValid() || !bottomRight.isValid() || columnCount() <= 0)
+        return;
+
+    const QModelIndex proxyTopLeft = index(topLeft.row(), 0);
+    const QModelIndex proxyBottomRight = index(bottomRight.row(), columnCount() - 1);
 
     emit this->dataChanged(proxyTopLeft, proxyBottomRight, updatedRoles);
 }
 
 void TableViewModel::onDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
 {
-    //qDebug()<<"onDataChanged"<<topLeft<<bottomRight<<roles;
+    // qDebug()<<"onDataChanged"<<topLeft<<bottomRight<<roles;
 }
 
 void TableViewModel::queueChangeLayout()

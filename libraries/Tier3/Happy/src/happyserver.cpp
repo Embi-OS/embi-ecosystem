@@ -38,6 +38,8 @@ HappyServer::HappyServer(QObject *parent) :
 
 HappyServer::~HappyServer()
 {
+    HAPPYLOG_INFO()<<qPrintable(QString("%1 destroyed").arg(m_name));
+
     QMultiHashIterator<QString, QWebSocket*> i(m_sockets);
     while(i.hasNext()) {
         i.next();

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtMultimedia
 import Eco.Tier1.Models
@@ -29,25 +30,54 @@ Page {
         SwipeView {
             id: swipeView
             anchors.fill: parent
+            anchors.bottomMargin: pageIndicator.height
+            currentIndex: 2
 
-            W0201_Tab1_AlaramSettings {
-                alarmModel: Clock.alarmModel
+            ViewDelegateLoader {
+                asynchronous: false
+                StandardObject.icon: MaterialIcons.homeAssistant
+                StandardObject.text: "Home-Assistant"
+                W0201_Tab4_HassBedroom {}
             }
-
-            W0201_Tab2_Clock {}
-
-            W0201_Tab3_AudioPlayer {
-                mediaPlayer: ClockMedia.mediaPlayer as MediaPlayer
+            ViewDelegateLoader {
+                active: true
+                asynchronous: false
+                StandardObject.icon: MaterialIcons.alarm
+                StandardObject.text: "Alarm"
+                W0201_Tab1_AlarmSettings {}
             }
-
-            Component.onCompleted: setCurrentIndex(1)
+            ViewDelegateLoader {
+                active: true
+                asynchronous: false
+                StandardObject.icon: MaterialIcons.clockOutline
+                StandardObject.text: "Clock"
+                W0201_Tab2_Clock {}
+            }
+            ViewDelegateLoader {
+                active: true
+                asynchronous: false
+                StandardObject.icon: MaterialIcons.music
+                StandardObject.text: "Music"
+                W0201_Tab3_AudioPlayer {}
+            }
         }
 
         BasicPageIndicator {
+            id: pageIndicator
+            padding: 0
             count: swipeView.count
             currentIndex: swipeView.currentIndex
-            anchors.bottom: swipeView.bottom
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: height/2
             anchors.horizontalCenter: parent.horizontalCenter
+
+            delegate: SvgColorImage {
+                required property int index
+                size: 24
+                icon: swipeView.itemAt(index).StandardObject.icon
+                color: index===pageIndicator.currentIndex  ? pageIndicator.color : Style.colorPrimaryDark
+                opacity: root.enabled ? 1.0 : 0.7
+            }
         }
     }
 }

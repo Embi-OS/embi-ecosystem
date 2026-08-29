@@ -13,12 +13,24 @@ RestManager::RestManager(QObject *parent) :
 
 bool RestManager::init()
 {
+    const auto endpointIsLoopback = [](const QString& baseUrl) {
+        const QString trimmed = baseUrl.trimmed();
+        const QUrl url = QUrl::fromUserInput(trimmed);
+        const QString hostName = url.host();
+
+        if(hostName.compare("localhost", Qt::CaseInsensitive)==0)
+            return true;
+
+        const QHostAddress address(hostName);
+        return address.isLoopback();
+    };
+
 #ifdef Q_OS_WASM
+    m_localApiEnabled = false;
     emscripten::val location = emscripten::val::global("location");
     m_apiBaseUrl = QString::fromStdString(location["hostname"].as<std::string>());
     const QString port = QString::fromStdString(location["port"].as<std::string>());
     m_apiPort = port.isEmpty() ? -1 : port.toInt();
-#endif
 
     const QVariantMap args = AxionHelper::Get()->arguments();
     if(args.contains("apiBaseUrl"))
@@ -33,6 +45,7 @@ bool RestManager::init()
         m_apiTrailingSlash = args.value("apiTrailingSlash").toBool();
     if(args.contains("apiSocketEnabled"))
         m_apiSocketEnabled = args.value("apiSocketEnabled").toBool();
+#else
 
     QSettingsMapper* persistantData = new QSettingsMapper(this);
     persistantData->setSelectPolicy(QVariantMapperPolicies::Manual);
@@ -41,6 +54,9 @@ bool RestManager::init()
     persistantData->select();
     persistantData->waitForSelect();
 
+    const bool hasLocalApiEnabledSetting = persistantData->contains("localApiEnabled");
+
+    persistantData->mapProperty(this,"localApiEnabled");
     persistantData->mapProperty(this,"apiDataMode");
     persistantData->mapProperty(this,"apiBaseUrl");
     persistantData->mapProperty(this,"apiPort");
@@ -48,37 +64,58 @@ bool RestManager::init()
     persistantData->mapProperty(this,"apiSocketEnabled");
     persistantData->mapProperty(this,"apiKey");
 
-    RestSocket::setGloballyEnabled(m_apiSocketEnabled);
+    if(!hasLocalApiEnabledSetting)
+        setLocalApiEnabled(endpointIsLoopback(m_apiBaseUrl));
 
-    const QString trimmed = m_apiBaseUrl.trimmed();
-    const QUrl url = QUrl::fromUserInput(trimmed);
-    const QString hostName = url.host();
-    const QHostAddress address = QHostAddress(hostName);
-    m_isLocalhost = address.isLoopback() || hostName=="localhost";
+#endif
 
-    m_client = new RestClient(RestHelper::defaultConnection, this);
-    m_client->setBaseUrl(m_apiBaseUrl);
-    m_client->setPort(m_apiPort);
-    m_client->setDataMode(m_apiDataMode);
-    m_client->setTrailingSlash(m_apiTrailingSlash);
+    RestDataModes::Enum clientApiDataMode = m_apiDataMode;
+    QString clientApiBaseUrl = m_apiBaseUrl;
+    int clientApiPort = m_apiPort;
+    bool clientApiTrailingSlash = m_apiTrailingSlash;
+    bool clientApiSocketEnabled = m_apiSocketEnabled;
+    QString clientApiKey = m_apiKey;
 
-    if(!m_apiKey.isEmpty())
+#ifndef Q_OS_WASM
+    if(m_localApiEnabled)
     {
-        m_client->addGlobalHeader("Authorization", QString("Bearer %1").arg(m_apiKey).toUtf8());
-        connect(this, &RestManager::apiKeyChanged, [this](const QString& apiKey){
-            if(apiKey.isEmpty())
-                m_client->removeGlobalHeader("Authorization");
-            else
-                m_client->addGlobalHeader("Authorization", QString("Bearer %1").arg(apiKey).toUtf8());
-        });
+        clientApiDataMode = RestDataModes::Json;
+        clientApiBaseUrl = QHostAddress(QHostAddress::LocalHost).toString();
+        clientApiPort = 32768;
+        clientApiTrailingSlash = true;
+        clientApiSocketEnabled = true;
+        clientApiKey.clear();
     }
 
-    return true;
-}
+    const QString trimmed = clientApiBaseUrl.trimmed();
+    const QUrl url = QUrl::fromUserInput(trimmed);
+    const QString hostName = url.host();
+    const bool hostIsLocalhost = hostName.compare("localhost", Qt::CaseInsensitive)==0;
 
-bool RestManager::localhost() const
-{
-    return m_isLocalhost;
+    if(hostIsLocalhost)
+    {
+        QUrl clientUrl = url;
+        clientUrl.setHost(QHostAddress(QHostAddress::LocalHost).toString());
+        clientApiBaseUrl = clientUrl.toString();
+    }
+#endif
+
+    RestSocket::setGloballyEnabled(clientApiSocketEnabled);
+
+    m_client = new RestClient(RestHelper::defaultConnection, this);
+    m_client->setBaseUrl(clientApiBaseUrl);
+    m_client->setPort(clientApiPort);
+    m_client->setDataMode(clientApiDataMode);
+    m_client->setTrailingSlash(clientApiTrailingSlash);
+    if(!clientApiKey.isEmpty())
+        m_client->addGlobalHeader("Authorization", QString("Bearer %1").arg(clientApiKey).toUtf8());
+
+    RestRequestBuilder builder = m_client->builder();
+    const QUrl effectiveUrl = builder.buildUrl();
+    setApiEffectiveUrl(QString("%1 - %2").arg(effectiveUrl.toString(), RestDataModes::asString(m_client->getDataMode())));
+    RESTLOG_INFO()<<"RestClient configuration:"<<m_apiEffectiveUrl;
+
+    return true;
 }
 
 void RestManager::authenticate(const QString& identifier, const QString& password)

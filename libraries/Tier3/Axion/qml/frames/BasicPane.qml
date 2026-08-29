@@ -20,8 +20,6 @@ T.Page {
     Component.onCompleted: isCompleted=true
 
     property bool editable: true
-    property bool navigationLocked: false
-    property bool navigationEnabled: true
 
     property double inset: 0
     topInset: inset

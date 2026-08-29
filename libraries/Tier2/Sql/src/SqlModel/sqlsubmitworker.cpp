@@ -64,7 +64,7 @@ bool SqlSubmitWorker::doRun()
 
 bool SqlSubmitWorker::abort()
 {
-    return waitForFinished();
+    return true;
 }
 
 bool SqlSubmitWorker::waitForFinished(int timeout, QEventLoop::ProcessEventsFlags flags)

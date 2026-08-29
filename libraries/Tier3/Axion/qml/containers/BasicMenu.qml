@@ -30,6 +30,10 @@ T.Menu {
     modal: true // Back darker
     focus: true
 
+    icon.width: Style.menuItemIconWidth
+    icon.height: Style.menuItemIconWidth
+    icon.color: enabled ? Style.colorWhite : ColorUtils.transparent(Style.colorWhite, 0.6)
+
     T.Overlay.modal: BasicOverlay {}
     T.Overlay.modeless: BasicOverlay {}
 

@@ -57,6 +57,7 @@ BasicDialog {
             relativeBackgroundColor: root.color
             textFont: root.font
             text: root.infos
+            textWrapMode: Text.Wrap
             textMaximumLineCount: 0
             captionFont: root.font
             caption: root.traces

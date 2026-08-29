@@ -242,7 +242,15 @@ bool RestSubmitWorker::doRun()
 
 bool RestSubmitWorker::abort()
 {
-    return waitForFinished();
+    if(!m_running)
+        return true;
+
+    if(m_reply.isNull())
+        return true;
+
+    m_reply->abort();
+
+    return true;
 }
 
 bool RestSubmitWorker::waitForFinished(int timeout, QEventLoop::ProcessEventsFlags flags)

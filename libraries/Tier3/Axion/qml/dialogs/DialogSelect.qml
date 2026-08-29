@@ -1,4 +1,5 @@
 import QtQuick
+import Eco.Tier1.Models
 import Eco.Tier3.Axion
 
 BasicDialog {
@@ -18,6 +19,8 @@ BasicDialog {
     property alias textRole: formComboBox.textRole
     property alias valueRole: formComboBox.valueRole
     property alias value: formComboBox.currentValue
+    property alias authorizeEmpty: formComboBox.authorizeEmpty
+    property alias emptyText: formComboBox.emptyText
 
     property bool warning: false
 

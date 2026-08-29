@@ -4,7 +4,7 @@ import Eco.Tier3.Axion
 BasicDialog {
     id: root
 
-    title: qsTr("Information")
+    title: qsTr("Informations")
     message: ""
     property string buttonReject: ""
     property string buttonAccept: qsTr("Fermer")

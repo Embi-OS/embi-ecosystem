@@ -121,7 +121,7 @@ bool SqlSelectWorker::doRun()
 
 bool SqlSelectWorker::abort()
 {
-    return waitForFinished();
+    return true;
 }
 
 bool SqlSelectWorker::waitForFinished(int timeout, QEventLoop::ProcessEventsFlags flags)

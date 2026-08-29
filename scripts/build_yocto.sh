@@ -4,9 +4,9 @@ set -e
 # Yocto/kas defaults (can be overridden in build.conf)
 YOCTO_DIR="$PROJECT_PARENT/_YoctoBuilds"
 YOCTO_KAS_FILE="embi-kas/latest.yml"
-YOCTO_MACHINE="apalis-imx8"
+YOCTO_MACHINE="raspberrypi-armv8"
 YOCTO_IMAGE_NAME="embi-image"
-YOCTO_IMAGE_EXTENSION="tezi.tar"
+YOCTO_IMAGE_EXTENSION="wic.xz"
 KAS_BIN="kas"
 
 # Load common config and helpers
@@ -38,7 +38,7 @@ KAS_BUILD_CMD=(
     "PRODUCT_VERSION_SUFFIX=$PROJECT_VERSION_SUFFIX"
     "PRODUCT_VERSION_CODENAME=$PROJECT_VERSION_CODENAME"
     "PRODUCT_IMAGE_BRANCH=$PROJECT_BRANCH"
-    "$KAS_BIN" build "$KAS_CONFIG_ARG"
+    "$KAS_BIN" build --update "$KAS_CONFIG_ARG"
 )
 
 log "Starting Yocto build with kas (non-deterministic hash warnings will be ignored)"
@@ -59,6 +59,7 @@ QBSP_DIR="$YOCTO_BUILD_DIR/tmp/deploy/qbsp"
 # Verify that expected artifacts were produced (patterns are globs)
 ARTIFACT_PATTERNS=(
     "$IMAGE_DIR/$YOCTO_IMAGE_NAME-$PROJECT_BRANCH-$YOCTO_MACHINE.swu"
+    "$IMAGE_DIR/$YOCTO_IMAGE_NAME-$PROJECT_BRANCH-$YOCTO_MACHINE.spdx.tar.zst"
     "$IMAGE_DIR/$YOCTO_IMAGE_NAME-$PROJECT_BRANCH-$YOCTO_MACHINE.$YOCTO_IMAGE_EXTENSION"
 )
 log "Yocto build completed. Verifying expected Yocto artifacts..."

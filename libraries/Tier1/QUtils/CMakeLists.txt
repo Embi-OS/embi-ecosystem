@@ -11,6 +11,8 @@ embi_add_qml_module(${PROJECT_NAME}
     STATIC
     PRIVATE_QT_LIBRARIES
         Concurrent
+    QT_LIBRARIES
+        Xml
     LIBRARIES
         QDefs
         QJsonVariant

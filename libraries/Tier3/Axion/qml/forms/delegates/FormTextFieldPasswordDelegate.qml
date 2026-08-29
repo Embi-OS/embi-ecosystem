@@ -11,6 +11,8 @@ FormObject {
 
     warning: !acceptableInput
 
+    readonly property string currentPassword: currentValue
+
     delegate: FormTextFieldPassword {
         fitLabel: root.fitLabel
         labelWidthRatio: root.labelWidthRatio

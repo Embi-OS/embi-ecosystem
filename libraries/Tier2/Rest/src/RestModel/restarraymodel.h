@@ -69,11 +69,17 @@ signals:
 protected:
     bool runSelectWorker(QSWorker* worker);
 
-    QSWorker* createSelectWorker();
+    virtual bool applySelectReply(const QVariant& reply, QString* errorMessage);
+    virtual void clearSelectData();
+
+    virtual QSWorker* createSelectWorker();
 
     QPointer<QSWorker> m_selectWorker;
 
     bool m_invalidateQueued = false;
+
+private:
+    bool m_selectReplyAccepted = false;
 };
 
 #endif // RESTARRAYMODEL_H

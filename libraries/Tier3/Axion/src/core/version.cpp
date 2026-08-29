@@ -1,6 +1,8 @@
 #include "version.h"
 #include "axion_log.h"
 
+#include <QQmlEngine>
+
 Version::Version(QObject *parent) :
     QObject(parent),
     m_globalVersion(PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH),
@@ -33,6 +35,9 @@ void Version::dumpInfos() const
 
 QString Version::about() const
 {
+    if(auto engine = qmlEngine(this))
+        engine->markCurrentFunctionAsTranslationBinding();
+
     QStringList about;
     if(!m_productName.isEmpty())
         about += tr("Produit: %1").arg(m_productName);

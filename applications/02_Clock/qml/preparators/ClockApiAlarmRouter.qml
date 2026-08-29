@@ -18,4 +18,11 @@ HappyFullRouter {
     VarHappyField     { name: "date";           type: SqlColumnTypes.Date}
     VarHappyField     { name: "repeat";         type: SqlColumnTypes.Boolean}
     VarHappyField     { name: "weekdays";       type: SqlColumnTypes.Integer}
+    VarHappyField     { name: "details";        type: SqlColumnTypes.Json}
+
+    ForeignHappyField {
+        name: "group"; type: SqlColumnTypes.Uuid
+        foreignName: "api_group"
+        foreignField: "uuid"
+    }
 }

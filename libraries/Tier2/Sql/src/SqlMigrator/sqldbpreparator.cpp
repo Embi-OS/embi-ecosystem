@@ -12,11 +12,11 @@ bool SqlDbPreparator::execute()
     return SqlSchemePreparator::run(getConnectionName(), getCanDrop());
 }
 
-SqlDbProfile SqlDbPreparator::createConnectionProfile()
+SqlDbProfile SqlDbPreparator::createConnectionProfile(const QVariantMap& settings)
 {
     SqlDbProfile profile;
 
-    switch(getType()) {
+    switch(settings.value("dbType").toInt()) {
     case SqlDatabaseTypes::SQLite:
         profile.type = "QSQLITE";
         break;
@@ -30,17 +30,51 @@ SqlDbProfile SqlDbPreparator::createConnectionProfile()
         break;
     }
 
-    profile.name = m_name;
-    profile.connectionName = m_connectionName;
-    profile.path = m_path;
-    profile.hostName = m_server;
-    profile.userName = m_userName;
-    profile.password = m_password;
-    profile.port = m_port;
-    profile.timeout = m_timeout;
-    profile.connectOptions = m_connectOptions;
+    profile.name = settings.value("dbName").toString();
+    profile.connectionName = settings.value("dbConnectionName", SqlDefaultConnection).toString();
+    profile.path = settings.value("dbPath").toString();
+    profile.hostName = settings.value("dbServer").toString();
+    profile.userName = settings.value("dbUserName").toString();
+    profile.password = settings.value("dbPassword").toString();
+    profile.port = settings.value("dbPort", 3306).toInt();
+    profile.timeout = settings.value("dbTimeout", 10000).toInt();
+    profile.connectOptions = settings.value("dbConnectOptions", "MYSQL_OPT_RECONNECT=1; MYSQL_OPT_CONNECT_TIMEOUT=3").toString();
 
     return profile;
+}
+
+QString SqlDbPreparator::connectionProfileError(const SqlDbProfile& profile)
+{
+    if(profile.type.isEmpty())
+        return tr("Type de base de données non supporté.");
+
+    if(profile.name.isEmpty() && (profile.type != "QSQLITE" || profile.path.isEmpty()))
+        return tr("Le nom de la base de données est requis.");
+
+    if(profile.type == "QSQLITE" && profile.path.isEmpty() && profile.name != ":memory:")
+        return tr("Le chemin de la base SQLite est requis.");
+
+    if((profile.type == "QMYSQL" || profile.type == "QMARIADB") && profile.hostName.isEmpty())
+        return tr("Le serveur de base de données est requis.");
+
+    return {};
+}
+
+SqlDbProfile SqlDbPreparator::createConnectionProfile()
+{
+    QVariantMap settings;
+    settings.insert("dbType", getType());
+    settings.insert("dbName", getName());
+    settings.insert("dbConnectionName", getConnectionName());
+    settings.insert("dbPath", getPath());
+    settings.insert("dbServer", getServer());
+    settings.insert("dbUserName", getUserName());
+    settings.insert("dbPassword", getPassword());
+    settings.insert("dbPort", getPort());
+    settings.insert("dbTimeout", getTimeout());
+    settings.insert("dbConnectOptions", getConnectOptions());
+
+    return createConnectionProfile(settings);
 }
 
 QString SqlDbPreparator::toString()

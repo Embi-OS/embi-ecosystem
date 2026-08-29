@@ -15,4 +15,5 @@ HappyServer {
     }
 
     ClockApiAlarmRouter {}
+    ClockApiGroupRouter {}
 }

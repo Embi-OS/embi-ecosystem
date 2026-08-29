@@ -15,7 +15,7 @@
 class QPasswordHasher : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
+    QML_NAMED_ELEMENT(PasswordHasher)
 
     Q_WRITABLE_VAR_PROPERTY(int, iterations, Iterations, 100000)
     Q_WRITABLE_VAR_PROPERTY(int, saltLength, SaltLength, 16)

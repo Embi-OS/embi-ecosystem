@@ -7,6 +7,11 @@ ColorUtils::ColorUtils(QObject *parent) :
 
 }
 
+bool ColorUtils::isColorValid(const QColor &color)
+{
+    return color.isValid();
+}
+
 QColor ColorUtils::invert(const QColor &color)
 {
     static int r, g, b;
@@ -83,6 +88,31 @@ float ColorUtils::chroma(const QColor &color)
 QString ColorUtils::name(const QColor &color, int argb)
 {
     return color.name(argb ? QColor::HexArgb : QColor::HexRgb).toUpper();
+}
+
+QColor ColorUtils::fromName(const QString &name)
+{
+    return QColor(name);
+}
+
+QColor ColorUtils::fromHsv(int h, int s, int v, int a)
+{
+    return QColor::fromHsv(h, s, v, a);
+}
+
+QColor ColorUtils::fromHsvF(float h, float s, float v, float a)
+{
+    return QColor::fromHsvF(h, s, v, a);
+}
+
+QColor ColorUtils::toHsv(const QColor &color)
+{
+    return color.toHsv();
+}
+
+QColor ColorUtils::toRgb(const QColor &color)
+{
+    return color.toRgb();
 }
 
 ColorUtils::XYZColor ColorUtils::colorToXYZ(const QColor &color)

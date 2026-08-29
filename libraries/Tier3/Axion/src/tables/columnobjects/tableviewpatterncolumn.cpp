@@ -17,7 +17,7 @@ void TableViewPatternColumn::updateRoles(const TableViewModel& viewModel)
     m_string = m_pattern;
     m_captures.clear();
     m_roleNames.clear();
-    m_subRoleNames.clear();
+    m_subRoleNamesNames.clear();
     m_roles.clear();
     m_precisions.clear();
 

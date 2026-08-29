@@ -34,9 +34,9 @@ PaneTreeView {
     FormObjectModel {
         id: treeModel
         editable: root.editable
-        target: LocaleSettings
 
         FormComboBoxDelegate {
+            target: LocaleSettings
             visible: LocaleSettings.canSetLocale
             label: qsTr("Locale")
             infos: qsTr("Réglage langue et format")
@@ -45,10 +45,29 @@ PaneTreeView {
             textRole: "display"
             valueRole: "name"
             targetProperty: "locale"
-            onAccepted: AxionHelper.warningRestart()
+            onAccepted: AxionHelper.warningReboot()
+        }
+        FormComboBoxDelegate {
+            target: LanguageSettings
+            label: qsTr("Langue")
+            infos: qsTr("Langue utilisée par l'application")
+            options: LanguageModel {}
+            textRole: "display"
+            valueRole: "name"
+            targetProperty: "language"
         }
         SeparatorTreeDelegate {}
 
+        InfoTreeDelegate {
+            text: qsTr("Langue active")
+            info: LanguageSettings.effectiveLanguage
+        }
+
+        SeparatorTreeDelegate {}
+        InfoTreeDelegate {
+            text: qsTr("Locale active");
+            info: root.locale.name
+        }
         InfoTreeDelegate {
             text: qsTr("Language");
             info: root.locale.nativeLanguageName

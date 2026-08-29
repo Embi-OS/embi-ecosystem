@@ -19,12 +19,26 @@ QString SqlDbProfile::toString() const
 QVariantMap SqlDbProfile::toMap() const
 {
     QVariantMap map;
+    map.insert("type", type);
     map.insert("name", name);
-    map.insert("userName", userName);
-    map.insert("password", password);
-    map.insert("hostName", hostName);
-    map.insert("port", port);
-    map.insert("connectOptions", connectOptions);
+
+    if(type=="QSQLITE")
+    {
+        if(!path.isEmpty())
+            map.insert("path", path);
+    }
+    else if(type=="QMYSQL" || type=="QMARIADB")
+    {
+        map.insert("hostName", hostName);
+        map.insert("port", port);
+        if(!userName.isEmpty())
+            map.insert("userName", userName);
+        if(!password.isEmpty())
+            map.insert("password", password);
+        if(!connectOptions.isEmpty())
+            map.insert("connectOptions", connectOptions);
+    }
+
     return map;
 }
 

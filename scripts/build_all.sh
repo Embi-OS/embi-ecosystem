@@ -11,7 +11,7 @@ log "============== Build started ==============="
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # "$SCRIPT_DIR/build_linux.sh" "$@"
-"$SCRIPT_DIR/build_b2qt.sh" "$@"
+# "$SCRIPT_DIR/build_b2qt.sh" "$@"
 "$SCRIPT_DIR/build_wasm.sh" "$@"
 "$SCRIPT_DIR/build_yocto.sh" "$@"
 

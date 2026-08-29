@@ -315,7 +315,7 @@ void RestSocket::handleDisconnected()
                                       ? (!closeReason.isEmpty()
                                              ? QString("%1\n%2 (%3)").arg(m_url, closeReason).arg(int(closeCode))
                                              : QString("%1\nSocket closed (%2)").arg(m_url).arg(int(closeCode)))
-                                      : tr("Socket disconnected"))
+                                      : QString("Socket disconnected"))
                                : m_error;
 
     if(!intentionalClose) {
@@ -365,7 +365,7 @@ void RestSocket::handleOpenTimeout()
     if(m_socket->state() != QAbstractSocket::ConnectingState)
         return;
 
-    const QString reason = tr("Socket connection timeout after %1 ms").arg(m_openTimeoutMs);
+    const QString reason = QString("Socket connection timeout after %1 ms").arg(m_openTimeoutMs);
 
     setPhase(RestSocketPhases::Faulted);
     setError(reason);
@@ -458,7 +458,7 @@ void RestSocket::reconnectNow(const QString& reason)
 
     m_manualClose = false;
     m_rebindAfterClose = true;
-    m_socket->close(QWebSocketProtocol::CloseCodeGoingAway, reason.isEmpty() ? tr("Socket reconnect requested") : reason.left(123));
+    m_socket->close(QWebSocketProtocol::CloseCodeGoingAway, reason.isEmpty() ? QString("Socket reconnect requested") : reason.left(123));
 }
 
 qint64 RestSocket::sendTextMessage(const QString &message)
@@ -564,7 +564,7 @@ void RestSocket::open()
 
     if(!url.isValid() || url.isEmpty()) {
         setPhase(RestSocketPhases::Faulted);
-        setError(tr("Invalid socket url: %1").arg(url.toString()));
+        setError(QString("Invalid socket url: %1").arg(url.toString()));
         setStatus(RestSocketStates::Error);
         emit this->error();
         return;
@@ -582,7 +582,7 @@ void RestSocket::open()
     if(socketState != QAbstractSocket::UnconnectedState) {
         m_manualClose = false;
         m_rebindAfterClose = true;
-        m_socket->close(QWebSocketProtocol::CloseCodeGoingAway, tr("Socket rebind"));
+        m_socket->close(QWebSocketProtocol::CloseCodeGoingAway, QString("Socket rebind"));
         return;
     }
 

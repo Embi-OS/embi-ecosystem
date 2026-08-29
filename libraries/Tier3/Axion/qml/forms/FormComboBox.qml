@@ -14,7 +14,6 @@ BasicFormBackground {
     property alias textRole: comboBox.textRole
     property alias valueRole: comboBox.valueRole
     property alias authorizeEmpty: comboBox.authorizeEmpty
-    property alias authorizeCustom: comboBox.editable
     property alias currentIndex: comboBox.currentIndex
     property alias currentValue: comboBox.currentValue
     property alias count: comboBox.count
@@ -61,10 +60,8 @@ BasicFormBackground {
     }
 
     placeholder: qsTr("Sélectionner un élément")
-    errorMessage: validator ? validator.ExtraValidator.errorMessage : ""
 
-    warning: authorizeCustom ? !acceptableInput :
-             !authorizeEmpty ? (currentIndex<0 || currentIndex>=count) : false
+    warning: !authorizeEmpty ? (currentIndex<0 || currentIndex>=count) : false
     highlighted: comboBoxOpened || comboBoxActiveFocus
 
     BasicComboBox {

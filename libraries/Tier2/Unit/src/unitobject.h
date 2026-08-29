@@ -53,8 +53,9 @@ class PercentUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit PercentUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit PercentUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::Percent, parent)
+    {}
 };
 
 class AngleUnit : public UnitObject
@@ -62,8 +63,9 @@ class AngleUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit AngleUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit AngleUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::Angle, parent)
+    {}
 };
 
 class AngularVelocityUnit : public UnitObject
@@ -71,8 +73,9 @@ class AngularVelocityUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit AngularVelocityUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit AngularVelocityUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::AngularVelocity, parent)
+    {}
 };
 
 class ForceUnit : public UnitObject
@@ -80,8 +83,9 @@ class ForceUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit ForceUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit ForceUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::Force, parent)
+    {}
 };
 
 class LengthUnit : public UnitObject
@@ -89,8 +93,9 @@ class LengthUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit LengthUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit LengthUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::Length, parent)
+    {}
 };
 
 class TimeUnit : public UnitObject
@@ -98,8 +103,9 @@ class TimeUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit TimeUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit TimeUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::Time, parent)
+    {}
 };
 
 class MassUnit : public UnitObject
@@ -107,8 +113,9 @@ class MassUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit MassUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit MassUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::Mass, parent)
+    {}
 };
 
 class TorquePerTimeUnit : public UnitObject
@@ -116,8 +123,9 @@ class TorquePerTimeUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit TorquePerTimeUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit TorquePerTimeUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::TorquePerTime, parent)
+    {}
 };
 
 class TorqueUnit : public UnitObject
@@ -125,8 +133,9 @@ class TorqueUnit : public UnitObject
     Q_OBJECT
     QML_ELEMENT
 public:
-    explicit TorqueUnit(QObject *parent = nullptr);
-    static UnitCategoryObject* makeCategory();
+    explicit TorqueUnit(QObject *parent = nullptr):
+        UnitObject(UnitCategories::Torque, parent)
+    {}
 };
 
 #endif // UNITOBJECT_H

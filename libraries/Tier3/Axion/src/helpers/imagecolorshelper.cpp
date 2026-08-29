@@ -135,6 +135,9 @@ ImageColorsHelper::ImageColorsHelper(QObject *parent):
 void ImageColorsHelper::setSource(const QVariant &source)
 {
 #ifdef IMAGE_COLOR_HELPER_THREADED
+    if (m_inhibit && (m_futureSourceImageData || m_futureImageData))
+        return;
+
     if (m_futureSourceImageData) {
         m_futureSourceImageData->cancel();
         m_futureSourceImageData->deleteLater();

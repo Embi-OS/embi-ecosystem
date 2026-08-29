@@ -44,6 +44,7 @@ Item {
                          root.type===DialogTypes.Date ? dialogDate :
                          root.type===DialogTypes.DateRange ? dialogDateRange :
                          root.type===DialogTypes.Time ? dialogTime :
+                         root.type===DialogTypes.Color ? dialogColor :
                          root.type===DialogTypes.FileTree ? dialogFileTree :
                          root.type===DialogTypes.Input ? dialogInput :
                          root.type===DialogTypes.Select ? dialogSelect :
@@ -340,6 +341,45 @@ Item {
     }
 
     Component {
+        id: dialogColor
+        DialogColorPicker {
+            fullscreen: root.fullscreen
+            animation: root.animation
+
+            buttonReject: root.buttonReject
+            buttonAccept: root.buttonAccept
+
+            selectedColor: root.settings?.selectedColor ?? Style.colorAccent
+            colorModel: root.settings?.colorModel ?? null
+            paletteEnabled: root.settings?.paletteEnabled ?? true
+            saturationEnabled: root.settings?.saturationEnabled ?? true
+            hueEnabled: root.settings?.hueEnabled ?? true
+            alphaEnabled: root.settings?.alphaEnabled ?? false
+            swatchEnabled: root.settings?.swatchEnabled ?? false
+            hexEnabled: root.settings?.hexEnabled ?? false
+
+            onAboutToHide: root.onAboutToHide()
+            onAboutToShow: root.onAboutToShow()
+            onClosed: root.onClosed()
+            onOpened: root.onOpened()
+
+            onAccepted: root.onAccepted()
+            onApplied: root.onApplied()
+            onDiscarded: root.onDiscarded()
+            onHelpRequested: root.onHelpRequested()
+            onRejected: root.onRejected()
+            onReset: root.onReset()
+
+            onColorSelected: (color) => {
+                if(root.dialogObject.diagnose)
+                    DialogManager.diagnose(root.severity, "ColorSelected: "+color)
+                root.dialogObject.colorSelected(color);
+                root.settings?.onColorSelected(color);
+            }
+        }
+    }
+
+    Component {
         id: dialogFileTree
         DialogFileTree {
             fullscreen: root.fullscreen
@@ -453,6 +493,8 @@ Item {
     Component {
         id: dialogSelect
         DialogSelect {
+            id: selectDialog
+
             fullscreen: root.fullscreen
             animation: root.animation
 
@@ -468,6 +510,8 @@ Item {
             valueRole: root.settings?.valueRole ?? ""
             infos: root.settings?.infos ?? ""
             placeholder: root.settings?.placeholder ?? ""
+            authorizeEmpty: root.settings?.authorizeEmpty ?? false
+            emptyText: root.settings?.emptyText ?? ""
             warning: root.settings?.warning ?? false
 
             onAboutToHide: root.onAboutToHide()
@@ -549,9 +593,10 @@ Item {
             name: root.settings?.name ?? ""
             repeat: root.settings?.repeat ?? false
             weekdays: root.settings?.weekdays ?? 0
-
+            details: root.settings?.details ?? ({})
             showRepeat: root.settings?.showRepeat ?? true
             showName: root.settings?.showName ?? true
+            detailsFormComponent: root.settings?.detailsFormComponent ?? null
 
             onAboutToHide: root.onAboutToHide()
             onAboutToShow: root.onAboutToShow()

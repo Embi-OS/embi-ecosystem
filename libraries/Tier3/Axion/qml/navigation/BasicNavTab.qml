@@ -4,11 +4,8 @@ import Eco.Tier3.Axion
 Item {
     id: root
 
-    required property string stackItemName
-    property string stackItemSecondaryName: ""
-
-    property bool navigationLocked: false
-    property bool navigationEnabled: true
+    Navigation.name: ""
+    Navigation.secondaryName: ""
 
     signal itemIsReady()
 
@@ -25,7 +22,6 @@ Item {
     }
 
     onItemIsReady: {
-        console.info("BasicNavTab active:",stackItemName,stackItemSecondaryName!==""?"-> \""+stackItemSecondaryName+"\"":"")
         root.isReady=true
     }
 }

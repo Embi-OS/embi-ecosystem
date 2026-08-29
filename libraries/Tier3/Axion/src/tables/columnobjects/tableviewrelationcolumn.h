@@ -22,6 +22,9 @@ public:
 
     QVariant data(int row, const TableViewModel& viewModel) final override;
 
+protected slots:
+    void onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>());
+
 protected:
     void onModelAboutToChanged(QAbstractItemModel* oldModel, QAbstractItemModel* newModel);
     void onModelChanged(QAbstractItemModel* model);

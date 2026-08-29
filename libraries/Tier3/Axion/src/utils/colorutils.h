@@ -21,6 +21,7 @@ protected:
     explicit ColorUtils(QObject *parent = nullptr);
 
 public:
+    Q_INVOKABLE static bool isColorValid(const QColor &color);
     Q_INVOKABLE static QColor invert(const QColor &color);
     Q_INVOKABLE static QColor complement(const QColor &color);
     Q_INVOKABLE static QColor transparent(const QColor &color, float alpha);
@@ -30,6 +31,12 @@ public:
     Q_INVOKABLE static QColor lightDark(const QColor &background, const QColor &lightColor, const QColor &darkColor);
     Q_INVOKABLE static float chroma(const QColor &color);
     Q_INVOKABLE static QString name(const QColor &color, int argb=true);
+    Q_INVOKABLE static QColor fromName(const QString &name);
+
+    Q_INVOKABLE static QColor fromHsv(int h, int s, int v, int a = 255);
+    Q_INVOKABLE static QColor fromHsvF(float h, float s, float v, float a = 1.0);
+    Q_INVOKABLE static QColor toHsv(const QColor &color);
+    Q_INVOKABLE static QColor toRgb(const QColor &color);
 
     struct XYZColor {
         float x = 0;

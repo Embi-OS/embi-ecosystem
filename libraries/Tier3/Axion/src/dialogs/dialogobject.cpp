@@ -182,6 +182,16 @@ QMetaObject::Connection DialogObject::onTimeSelected(std::function<void(const QT
     }, connection);
 }
 
+QMetaObject::Connection DialogObject::onColorSelected(std::function<void(const QColor& color)> callback, const Qt::ConnectionType &connection)
+{
+    if(!callback)
+        return {};
+
+    return connect(this, &DialogObject::colorSelected, this, [callback](const QColor& color){
+        callback(color);
+    }, connection);
+}
+
 QMetaObject::Connection DialogObject::onPathSelected(std::function<void(const QString& path)> callback, const Qt::ConnectionType &connection)
 {
     if(!callback)

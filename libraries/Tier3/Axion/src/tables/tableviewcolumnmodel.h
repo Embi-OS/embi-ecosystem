@@ -28,11 +28,13 @@ signals:
     void activeRoleNamesChanged();
     void columnVisibleChanged(int column, bool visible);
     void columnWidthChanged(int column, int width);
+    void columnInvalidated(int column);
 
 private slots:
     void onColumnVisibleChanged(bool visible);
     void onColumnEssentialChanged(bool visible);
     void onColumnWidthChanged(int width);
+    void onColumnInvalidated();
 };
 
 #endif // TABLEVIEWCOLUMNMODEL_H

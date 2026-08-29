@@ -6,7 +6,7 @@ import L02_Clock
 Item {
     id: root
 
-    required property MediaPlayer mediaPlayer
+    readonly property MediaPlayer mediaPlayer: ClockMedia.mediaPlayer as MediaPlayer
 
 //──────────────────────────────────────────────────────────────────────
 // Déclaration des composants de la page

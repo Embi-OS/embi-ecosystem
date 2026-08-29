@@ -28,10 +28,6 @@ bool HappyServerWorker::start(HappyServer* server)
     m_thread = new QThread(this);
     m_server->moveToThread(m_thread);
     connect(m_thread, &QThread::started, m_server, [this] {
-#if defined(Q_OS_BOOT2QT) && defined(Q_DEVICE_APALIS_IMX8) && defined(Q_MANUAL_CORE_AFFINITY)
-        QUtils::resetCoreAffinity();
-#endif
-
         m_server->init();
         m_server->start();
     }, Qt::QueuedConnection);

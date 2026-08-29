@@ -13,11 +13,6 @@
 namespace QUtils
 {
 
-void printCoreAffinity(int pid=0);
-void resetCoreAffinity(int pid=0);
-void setCoreAffinity(int coreNo, int pid=0);
-void setAppMainCoreAffinity(int coreNo);
-
 bool await(int msecs, QEventLoop::ProcessEventsFlags flags = QEventLoop::AllEvents);
 
 #if QT_CONFIG(process)

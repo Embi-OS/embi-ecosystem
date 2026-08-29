@@ -213,7 +213,7 @@ QVariantMap QModelMapper::fromModel(bool* result)
 
     if(!m_modelIndex.isValid())
     {
-        QUTILSLOG_WARNING()<<"Invalid model index";
+        QUTILSLOG_WARNING()<<"Invalid model index"<<m_modelIndex;
         if(result)
             *result=false;
         return QVariantMap();

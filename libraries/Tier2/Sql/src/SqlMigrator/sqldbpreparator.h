@@ -33,6 +33,8 @@ public:
 
     bool execute();
 
+    static SqlDbProfile createConnectionProfile(const QVariantMap& settings);
+    static QString connectionProfileError(const SqlDbProfile& profile);
     SqlDbProfile createConnectionProfile();
     QString toString();
 };

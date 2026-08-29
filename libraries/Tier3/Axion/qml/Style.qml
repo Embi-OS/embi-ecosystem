@@ -35,6 +35,7 @@ QtObject {
     readonly property int backgroundAspect: Theme.backgroundAspect
     readonly property string backgroundImage: Theme.backgroundImage
 
+    readonly property color colorNull: null
     readonly property color colorBlack: dynamicColorBlack
     readonly property color colorBlackFade: ColorUtils.transparent(colorBlack, 0.4)
     readonly property color colorWhite: dynamicColorWhite
@@ -328,7 +329,7 @@ QtObject {
     // Table
     readonly property double tableCellWidth: 64
     readonly property double tableCellHeight: 32
-    readonly property double tableCellBorderWidth: Style.fine ? 1 : 2
+    readonly property double tableCellBorderWidth: root.fine ? 1 : 2
     readonly property double tableCellHeightCompact: 32
     readonly property double tableCellHeightStandard: 40
     readonly property double tableCellHeightMedium: 48
@@ -376,6 +377,7 @@ QtObject {
     readonly property double itemDelegatePadding: root.dense ? 8 : 12
     readonly property double itemDelegateInset: 0
     readonly property double itemDelegateWidth: root.dense ? 24 : 32
+    readonly property double itemDelegateBorderWidth: root.fine ? 1 : 2
 
     // Slider
     readonly property double sliderSize: root.fine ? 6 : 10

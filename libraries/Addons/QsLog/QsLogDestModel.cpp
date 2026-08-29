@@ -1,11 +1,17 @@
 #include "QsLogDestModel.h"
 
 #include "QsLog.h"
+#include <QMetaObject>
+#include <algorithm>
+
+namespace {
+constexpr int DefaultMessageLimit = 1000;
+}
 
 QsLogging::ModelDestination::ModelDestination(QObject *parent) :
     QAbstractListModel(parent),
     m_logLevel(QsLogging::ModelDestination::NoticeLevel),
-    m_limit(0)
+    m_limit(DefaultMessageLimit)
 {
     connect(this, &QAbstractItemModel::rowsInserted, this, &QsLogging::ModelDestination::countInvalidate);
     connect(this, &QAbstractItemModel::rowsRemoved, this, &QsLogging::ModelDestination::countInvalidate);
@@ -23,9 +29,9 @@ QsLogging::ModelDestination::ModelDestination(QObject *parent) :
     m_roleNames[ColorRole] ="color";
 
     m_functorDest = DestinationFactory::MakeFunctorDestination([this](const QsLogging::Message& message) mutable {
-        addEntry(message);
+        QMetaObject::invokeMethod(this, &QsLogging::ModelDestination::addEntry, message);
     }, [this]() mutable {
-        clear();
+        QMetaObject::invokeMethod(this, &QsLogging::ModelDestination::clear);
     });
 
     m_functorDest->setLoggingLevel(QsLogging::Level(m_logLevel));
@@ -54,7 +60,7 @@ QVariant QsLogging::ModelDestination::data(const QModelIndex &index, int role) c
     if(index.row() < 0 || index.row() >= m_messages.size())
         return QVariant();
 
-    const QsLogging::Message message = m_messages.at(index.row());
+    const QsLogging::Message &message = m_messages.at(index.row());
 
     switch (role) {
     case Qt::DisplayRole:
@@ -127,11 +133,10 @@ void QsLogging::ModelDestination::invalidate()
 
     if(m_limit > 0 && rowCount() > m_limit)
     {
-        beginRemoveRows(QModelIndex(), 0, rowCount()-m_limit);
-        while (m_limit > 0 && rowCount() > m_limit)
-        {
+        const int removeCount = rowCount() - m_limit;
+        beginRemoveRows(QModelIndex(), 0, removeCount - 1);
+        for (int i = 0; i < removeCount; ++i)
             m_messages.removeFirst();
-        }
         endRemoveRows();
     }
 
@@ -223,6 +228,7 @@ int QsLogging::ModelDestination::getLimit() const
 
 void QsLogging::ModelDestination::setLimit(int limit)
 {
+    limit = (std::max)(0, limit);
     if (m_limit == limit)
         return;
     m_limit = limit;

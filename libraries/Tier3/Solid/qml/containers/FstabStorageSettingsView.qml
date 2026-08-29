@@ -92,6 +92,7 @@ PaneListView {
             },
             "onClosed": function() {
                 model.destroy();
+                component.destroy();
             },
             "onFormValidated": function(formValues) {
                 onFormValidated(formValues)

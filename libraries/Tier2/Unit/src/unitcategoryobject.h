@@ -10,16 +10,20 @@ class UnitTypeObject : public QObject
 {
     Q_OBJECT
     QML_ELEMENT
-    QML_UNCREATABLE("")
 
-    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, UnitCategories::NoCategory)
-    Q_CONSTANT_VAR_PROPERTY(UnitTypes::Enum, type, UnitTypes::NoUnit)
-    Q_CONSTANT_REF_PROPERTY(QString, name, "")
-    Q_CONSTANT_REF_PROPERTY(QString, abbreviation, "")
-    Q_CONSTANT_FUZ_PROPERTY(double, ratio, 1.0)
-    Q_CONSTANT_REF_PROPERTY(QString, display, "")
+    Q_WRITABLE_VAR_PROPERTY(UnitCategories::Enum, category, Category, UnitCategories::NoCategory)
+    Q_WRITABLE_VAR_PROPERTY(UnitTypes::Enum, type, Type, UnitTypes::NoUnit)
+    Q_WRITABLE_REF_PROPERTY(QString, name, Name, "")
+    Q_WRITABLE_REF_PROPERTY(QString, abbreviation, Abbreviation, "")
+    Q_WRITABLE_FUZ_PROPERTY(double, ratio, Ratio, 1.0)
+    Q_PROPERTY(QString display READ display NOTIFY displayChanged)
 
 public:
+    explicit UnitTypeObject(QObject *parent = nullptr) :
+        UnitTypeObject(UnitCategories::NoCategory, UnitTypes::NoUnit, QString(), QString(), 1.0, parent)
+    {
+    };
+
     explicit UnitTypeObject(UnitCategories::Enum category,
                             UnitTypes::Enum type,
                             const QString& name,
@@ -31,22 +35,29 @@ public:
         m_type(type),
         m_name(name),
         m_abbreviation(abbreviation),
-        m_ratio(ratio),
-        m_display(QString("%1 [%2]").arg(m_name, m_abbreviation))
+        m_ratio(ratio)
     {
+        connect(this, &UnitTypeObject::nameChanged, this, &UnitTypeObject::displayChanged);
+        connect(this, &UnitTypeObject::abbreviationChanged, this, &UnitTypeObject::displayChanged);
     };
+
+    QString display() const { return QString("%1 [%2]").arg(m_name, m_abbreviation); }
+
+signals:
+    void displayChanged();
 };
 
 class UnitCategoryObject : public QObjectListModel
 {
     Q_OBJECT
     QML_ELEMENT
-    QML_UNCREATABLE("")
+    Q_DEFAULT_PROPERTY(content)
 
-    Q_CONSTANT_VAR_PROPERTY(UnitCategories::Enum, category, UnitCategories::NoCategory)
-    Q_CONSTANT_VAR_PROPERTY(UnitTypes::Enum, defaultType, UnitTypes::NoUnit)
+    Q_WRITABLE_VAR_PROPERTY(UnitCategories::Enum, category, Category, UnitCategories::NoCategory)
+    Q_WRITABLE_VAR_PROPERTY(UnitTypes::Enum, defaultType, DefaultType, UnitTypes::NoUnit)
 
 public:
+    explicit UnitCategoryObject(QObject *parent = nullptr);
     explicit UnitCategoryObject(UnitCategories::Enum category, QObject *parent = nullptr);
 
     Q_INVOKABLE bool checkCategoryCompatibility(const UnitCategories::Enum& category) const;

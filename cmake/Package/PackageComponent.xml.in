@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>@PACKAGECOMPONENT_DISPLAY_NAME@</DisplayName>
+    <Description>@PACKAGECOMPONENT_DESCRIPTION@</Description>
+    <Name>@PACKAGECOMPONENT_NAME@</Name>
+    <Version>@PACKAGECOMPONENT_VERSION@</Version>
+    <ReleaseDate>@PACKAGECOMPONENT_RELEASE_DATE@</ReleaseDate>
+    <Default>true</Default>
+</Package>

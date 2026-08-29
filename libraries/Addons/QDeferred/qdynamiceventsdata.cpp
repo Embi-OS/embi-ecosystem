@@ -25,7 +25,7 @@ QDynamicEventsProxyEvent::QDynamicEventsProxyEvent() : QEvent(QDYNAMICEVENTSPROX
 // define static members and methods of base class
 QMutex                                          QDynamicEventsDataBase::s_mutex;
 QHash< QThread *, QDynamicEventsProxyObject * > QDynamicEventsDataBase::s_threadMap;
-qlonglong                                       QDynamicEventsDataBase::s_funcId = 0;
+std::atomic<qlonglong>                          QDynamicEventsDataBase::s_funcId{0};
 
 QDynamicEventsProxyObject * QDynamicEventsDataBase::getObjectForThread(QThread * p_currThd)
 {
@@ -36,8 +36,11 @@ QDynamicEventsProxyObject * QDynamicEventsDataBase::getObjectForThread(QThread *
     {
         // subscribe to finish
         QObject::connect(p_currThd, &QThread::finished, p_currThd, [p_currThd]() {
+            QMutexLocker locker(&QDynamicEventsDataBase::s_mutex);
             // if finished, remove
             auto p_objToDelete = QDynamicEventsDataBase::s_threadMap.take(p_currThd);
+            if (!p_objToDelete)
+                return;
             // mark the object for deletion
             p_objToDelete->deleteLater();
         });

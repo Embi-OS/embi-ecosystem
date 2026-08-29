@@ -12,3 +12,4 @@
 #include "qmodelmapper.h"
 #include "qobjectmapper.h"
 #include "qvariantproperty.h"
+#include "qobjecthelper.h"

@@ -91,11 +91,13 @@ Window {
         width: root.contentWidth
         height: root.contentHeight
 
-        delay: 0
+        delay: 200
         asynchronous: false
         sourceModule: "Eco.Tier3.Axion"
         sourceName: "Splashscreen"
         onLoaded: {
+            if(root.backend.registered)
+                return
             DeviceInfo.dumpInfos();
             root.backend.init();
             root.backend.postInit();
@@ -119,10 +121,12 @@ Window {
         onError: root.applicationError()
         onLoaded: {
             root.applicationLoaded();
-            splashScreenLoader.active = false;
+            // splashScreenLoader.active = false;
 
             // Prevent app to be destroyed
-            appLoader.active = true
+            // appLoader.active = true
+            splashScreenLoader.visible = Qt.binding(() => !root.backend.ready)
+            appLoader.active = Qt.binding(() => root.backend.ready)
         }
     }
 }

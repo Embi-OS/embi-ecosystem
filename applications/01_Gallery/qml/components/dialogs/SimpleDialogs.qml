@@ -29,6 +29,7 @@ Item {
         RawButton {onClicked: root.showDate();        text: ("Dialog calendar");     color: Style.blue;        icon.source: MaterialIcons.calendar;      Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: dialogDateRange.open(); text: ("Dialog date range");   color: Style.oxfordBlue;  icon.source: MaterialIcons.calendarBadge; Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showTime();        text: ("Dialog time");         color: Style.indigo;      icon.source: MaterialIcons.clock;         Layout.fillWidth: true; Layout.fillHeight: true }
+        RawButton {onClicked: root.showColor();       text: ("Dialog color");        color: Style.orange;      icon.source: MaterialIcons.palette;       Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showFileTree();    text: ("Dialog file tree");    color: Style.deepPurple;  icon.source: MaterialIcons.folder;        Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: dialogForm.open();      text: ("Form no manager");     color: Style.pink;        icon.source: MaterialIcons.formTextbox;   Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: dialogInput.open();     text: ("Input no manager");    color: Style.cyan;        icon.source: MaterialIcons.formTextbox;   Layout.fillWidth: true; Layout.fillHeight: true }
@@ -60,6 +61,7 @@ Item {
             formValues: formValues,
             onClosed: function() {
                 model.destroy();
+                component.destroy();
             },
             onFormValidated: function(formValues) {
                 console.log(formValues.textField)
@@ -108,6 +110,15 @@ Item {
             selectedTime: new Date(),
             onTimeSelected: function(time) {
                 console.log(time)
+            }
+        });
+    }
+
+    function showColor() {
+        DialogManager.showColor({
+            selectedColor: Style.colorAccent,
+            onColorSelected: function(color) {
+                console.log(color)
             }
         });
     }

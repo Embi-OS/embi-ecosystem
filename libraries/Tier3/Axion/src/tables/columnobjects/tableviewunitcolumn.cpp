@@ -45,7 +45,7 @@ QVariant TableViewUnitColumn::sourceUnitData(int row, const TableViewModel& view
         return variant;
 
     bool ok = true;
-    const QVariant& nestedVariant = qVariantGetNestedValue(variant, m_unitSubRoleNames);
+    const QVariant nestedVariant = qVariantGetNestedValue(variant, m_unitSubRoleNames, &ok);
     if(!ok) {
         AXIONLOG_DEBUG()<<getUnitRoleName()<<"does not exist";
     }

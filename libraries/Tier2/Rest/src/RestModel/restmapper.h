@@ -57,11 +57,23 @@ protected:
     bool runSelectWorker(QSWorker* worker);
     bool runSubmitWorker(QSWorker* worker);
 
-    QSWorker* createSelectWorker();
-    QSWorker* createSubmitWorker();
+    virtual bool hasSelectTarget() const;
+    virtual bool hasSubmitTarget() const;
+
+    virtual bool applySelectReply(const QVariant& reply, QString* errorMessage);
+    virtual void clearSelectData();
+    virtual bool applySubmitReply(int status, const QVariant& reply, QString* errorMessage);
+    virtual void restoreSubmitData();
+
+    virtual QSWorker* createSelectWorker();
+    virtual QSWorker* createSubmitWorker();
 
     QPointer<QSWorker> m_selectWorker;
     QPointer<QSWorker> m_submitWorker;
+
+private:
+    bool m_selectReplyAccepted = false;
+    bool m_submitReplyAccepted = false;
 };
 
 #endif // RESTMAPPER_H

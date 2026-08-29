@@ -4,7 +4,15 @@
 #include <QModels>
 #include <QDefs>
 #include <QStorageInfo>
+
 #include "filesystemmountwatcher.h"
+
+QString filesystemDriveTypesDisplayText(const int value);
+Q_ENUM_CLASS_I18N(FilesystemDriveTypes, FilesystemDriveType, filesystemDriveTypesDisplayText,
+                  System,
+                  Network,
+                  Usb,
+                  Standard)
 
 class FilesystemDriveModel;
 class FilesystemDrive : public QObject
@@ -20,7 +28,7 @@ class FilesystemDrive : public QObject
     Q_CONSTANT_VAR_PROPERTY(qint64, driveBytesTotal, 0)
     Q_CONSTANT_REF_PROPERTY(QByteArray, driveDevice, "")
     Q_CONSTANT_REF_PROPERTY(QString, driveDisplayName, "")
-    Q_CONSTANT_REF_PROPERTY(QString, driveDisplayType, "")
+    Q_CONSTANT_VAR_PROPERTY(FilesystemDriveTypes::Enum, driveType, FilesystemDriveTypes::Standard)
     Q_CONSTANT_REF_PROPERTY(QByteArray, driveFileSystemType, "")
     Q_CONSTANT_VAR_PROPERTY(bool, driveIsReadOnly, false)
     Q_CONSTANT_VAR_PROPERTY(bool, driveIsReady, false)

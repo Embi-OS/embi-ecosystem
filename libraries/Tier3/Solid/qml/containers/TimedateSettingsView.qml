@@ -7,6 +7,8 @@ import Eco.Tier3.Solid
 PaneTreeView {
     id: root
 
+    Navigation.guarded: barActions.state!=="" && treeModel.isDirty
+
     title: qsTr("Réglage date et heure")
 
     model: proxyModel
@@ -20,6 +22,7 @@ PaneTreeView {
     }
 
     footer: FormEditControlBar {
+        id: barActions
         formModel: treeModel
         editable: root.editable
     }

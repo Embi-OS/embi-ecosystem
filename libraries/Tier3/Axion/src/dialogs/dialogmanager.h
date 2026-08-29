@@ -42,6 +42,7 @@ public slots:
     DialogObject* showDate(const QVariant& settings={});
     DialogObject* showDateRange(const QVariant& settings={});
     DialogObject* showTime(const QVariant& settings={});
+    DialogObject* showColor(const QVariant& settings={});
     DialogObject* showFileTree(const QVariant& settings={});
     DialogObject* showInput(const QVariant& settings={});
     DialogObject* showSelect(const QVariant& settings={});

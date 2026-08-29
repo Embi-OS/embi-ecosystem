@@ -52,6 +52,7 @@ T.ComboBox {
                 width: parent ? parent.width : 0
                 onClicked: {
                     root.popup.close()
+                    root.currentIndex = -1
                     root.activated(-1)
                 }
             }
@@ -60,6 +61,7 @@ T.ComboBox {
 
     component ComboBoxItem: BasicLabelDelegate {
         font: Style.menuItemFont
+        textFormat: Text.AutoText
 
         topInset: Style.menuItemTopInset
         bottomInset: Style.menuItemBottomInset
@@ -94,23 +96,11 @@ T.ComboBox {
         color: root.pressed ? Style.colorPrimaryLight : Style.colorWhite
     }
 
-    contentItem: BasicTextField {
-        text: root.editable ? root.editText : root.displayText
-
-        enabled: root.editable
-        autoScroll: root.editable
-        readOnly: root.down
-        inputMethodHints: root.inputMethodHints
-        validator: root.validator
-        selectByMouse: root.selectTextByMouse
+    contentItem: Text {
+        text: root.displayText==="" ? root.placeholderText : root.displayText
+        color:root.displayText==="" ? root.placeholderTextColor : root.colorValue
         font: root.font
-        placeholderText: root.placeholderText
-        placeholderTextColor: root.placeholderTextColor
-
-        color: root.colorValue
         verticalAlignment: Text.AlignVCenter
-        onTextEdited: root.textEdited(text)
-        onEditingFinished: root.editingFinished(text)
     }
 
     background: Rectangle {

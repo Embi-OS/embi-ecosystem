@@ -13,7 +13,7 @@ Page {
         menuIcon: MaterialIcons.menu
         onAboutClicked: AxionHelper.showAbout()
         onPowerClicked: powerPopup.open()
-        onLangChanged: AxionHelper.warningRestart()
+        onLangChanged: AxionHelper.warningReboot()
         onMenuClicked: drawer.open()
     }
 

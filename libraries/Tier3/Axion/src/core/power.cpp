@@ -7,10 +7,43 @@
 #define APPCONTROLLER_CMD "appcontroller"
 #endif
 
+Power::AcionOnQuit Power::s_actionOnQuit = Power::None;
+QString Power::s_executable = QString();
+QStringList Power::s_args = QStringList();
+QString Power::s_workingPath = QString();
+
 Power::Power(QObject *parent) :
     QObject(parent)
 {
 
+}
+
+void Power::init()
+{
+    s_actionOnQuit = None;
+    s_executable = QCoreApplication::applicationFilePath();
+    s_args = QCoreApplication::arguments().mid(1);
+    s_workingPath = QDir::currentPath();
+}
+
+void Power::init(int argc, char *argv[])
+{
+    s_actionOnQuit = None;
+    s_executable = QString::fromLocal8Bit(argv[0]);
+    s_args.clear();
+    for (int i = 1; i < argc; ++i)
+        s_args << QString::fromLocal8Bit(argv[i]);
+    s_workingPath = QDir::currentPath();
+}
+
+void Power::unInit()
+{
+    if(canRestart() && s_actionOnQuit==RestartOnQuit)
+        doRestart();
+    else if(canShutdown() && s_actionOnQuit==ShutdownOnQuit)
+        doShutdown();
+    else if(canReboot() && s_actionOnQuit==RebootOnQuit)
+        doReboot();
 }
 
 int Power::getCapabilities()
@@ -48,9 +81,8 @@ void Power::quit()
 
     AXIONLOG_INFO()<<"Quit app...";
 
-    QMetaObject::invokeMethod(qApp, []() {
-        qApp->quit();
-    }, Qt::QueuedConnection);
+    s_actionOnQuit = None;
+    QMetaObject::invokeMethod(qApp, &QCoreApplication::quit, Qt::QueuedConnection);
 }
 
 void Power::restart()
@@ -65,21 +97,8 @@ void Power::restart()
 
     AXIONLOG_INFO()<<"Restart app..."<<qApp->applicationFilePath();
 
-#if defined(Q_OS_BOOT2QT)
-    QMetaObject::invokeMethod(qApp, []() {
-        qApp->quit();
-        QProcess::startDetached(QStringLiteral(APPCONTROLLER_CMD), {QStringLiteral("--restart")});
-    }, Qt::QueuedConnection);
-#elif (defined(Q_OS_WIN) || defined(Q_OS_LINUX))
-    QMetaObject::invokeMethod(qApp, []() {
-        const QString applicationPath = QCoreApplication::applicationFilePath();
-        if (applicationPath.isEmpty())
-            return;
-
-        qApp->quit();
-        QProcess::startDetached(applicationPath, QCoreApplication::arguments().mid(1));
-    }, Qt::QueuedConnection);
-#endif
+    s_actionOnQuit = RestartOnQuit;
+    QMetaObject::invokeMethod(qApp, &QCoreApplication::quit, Qt::QueuedConnection);
 }
 
 void Power::shutdown()
@@ -94,12 +113,8 @@ void Power::shutdown()
 
     AXIONLOG_INFO()<<"Shutdown device...";
 
-#if defined(Q_OS_BOOT2QT)
-    QMetaObject::invokeMethod(qApp, []() {
-        qApp->quit();
-        QProcess::startDetached(QStringLiteral("shutdown"), {QStringLiteral("now")});
-    }, Qt::QueuedConnection);
-#endif
+    s_actionOnQuit = ShutdownOnQuit;
+    QMetaObject::invokeMethod(qApp, &QCoreApplication::quit, Qt::QueuedConnection);
 }
 
 void Power::reboot()
@@ -114,12 +129,8 @@ void Power::reboot()
 
     AXIONLOG_INFO()<<"Reboot device...";
 
-#if defined(Q_OS_BOOT2QT)
-    QMetaObject::invokeMethod(qApp, []() {
-        qApp->quit();
-        QProcess::startDetached(QStringLiteral("reboot"), {});
-    }, Qt::QueuedConnection);
-#endif
+    s_actionOnQuit = RebootOnQuit;
+    QMetaObject::invokeMethod(qApp, &QCoreApplication::quit, Qt::QueuedConnection);
 }
 
 void Power::suspend(bool deep)
@@ -167,4 +178,27 @@ bool Power::isAlwaysOn()
         return false;
 
     return false;
+}
+
+void Power::doRestart()
+{
+#if defined(Q_OS_BOOT2QT)
+    QProcess::startDetached(QStringLiteral(APPCONTROLLER_CMD), {QStringLiteral("--restart")});
+#elif (defined(Q_OS_WIN) || defined(Q_OS_LINUX))
+    if (s_executable.isEmpty())
+        return;
+    QProcess::startDetached(s_executable, s_args, s_workingPath);
+#endif
+}
+void Power::doShutdown()
+{
+#if defined(Q_OS_BOOT2QT)
+    QProcess::startDetached(QStringLiteral("shutdown"), {QStringLiteral("now")});
+#endif
+}
+void Power::doReboot()
+{
+#if defined(Q_OS_BOOT2QT)
+    QProcess::startDetached(QStringLiteral("reboot"), {});
+#endif
 }

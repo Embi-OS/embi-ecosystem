@@ -8,8 +8,7 @@ import Eco.Tier3.Axion
 BasicPane {
     id: root
 
-    navigationLocked: currentItem?.navigationLocked ?? false
-    navigationEnabled: !loader.loading && (currentItem?.navigationEnabled ?? true)
+    Navigation.guarded: loader.loading || (currentItem?.Navigation.guarded ?? false)
 
     readonly property int currentIndex: proxyModel.count>0 ? proxyModel.mapToSource(listView.currentIndex) : -1
     required property StandardObjectModel model
@@ -61,7 +60,7 @@ BasicPane {
             SplitView.preferredWidth: itemContainer.maxImplicitWidth + verticalScrollerWidth
 
             opacity: enabled ? 1.0 : 0.5
-            enabled: root.navigationEnabled && !root.navigationLocked
+            enabled: !root.Navigation.guarded
             spacing: 0
 
             section.property: "group"

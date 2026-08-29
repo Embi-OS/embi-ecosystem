@@ -6,20 +6,18 @@ allFileRecurseRelative(ALL_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 allFileRecurseRelative(ALL_IMG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/*)
 
-set(APP_NAME A${PROJECT_NAME})
-set(LIB_NAME L${PROJECT_NAME})
-
 embi_add_application(${PROJECT_NAME}
     APP_NAME
-        ${APP_NAME}
+        A${PROJECT_NAME}
     LIB_NAME
-        ${LIB_NAME}
+        L${PROJECT_NAME}
     LIBRARIES
         Axion
         Happy
         Fluid
         Solid
         Media
+        Hass
         Postman
         Database
     QML_DEPENDENCIES
@@ -28,6 +26,7 @@ embi_add_application(${PROJECT_NAME}
         Eco.Tier3.Fluid
         Eco.Tier3.Solid
         Eco.Tier3.Media
+        Eco.Tier3.Hass
         Eco.Tier3.Postman
         Eco.Tier3.Database
     SRC_FILES
@@ -41,3 +40,6 @@ embi_add_application(${PROJECT_NAME}
     OUTPUT_DIRECTORY_PREFIX
         /samples
 )
+
+embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})
+create_package(TARGET A${PROJECT_NAME})

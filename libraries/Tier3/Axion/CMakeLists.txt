@@ -5,6 +5,8 @@ include(GenerateIconsClass)
 
 project(Axion)
 
+find_package(Qt6 REQUIRED COMPONENTS ShaderTools)
+
 generateIconsClass(FiletypesIcons FILETYPES_ICONS_FILES
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/images/filetypes/*
     OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/utils
@@ -24,6 +26,7 @@ allFileRecurseRelative(ALL_FONTS_FILES ${CMAKE_CURRENT_SOURCE_DIR}/fonts/*)
 embi_add_qml_module(${PROJECT_NAME}
     URI Eco.Tier3.Axion
     STATIC
+    BIG_RESOURCES
     QT_LIBRARIES
         QuickTemplates2
         QuickControls2

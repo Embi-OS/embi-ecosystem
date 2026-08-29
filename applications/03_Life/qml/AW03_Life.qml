@@ -96,7 +96,6 @@ ApplicationWindow {
 
             Button {
                 text: timer.running ? "Pause" : "Play"
-                Layout.fillWidth: false
                 onClicked: timer.running = !timer.running
             }
         }

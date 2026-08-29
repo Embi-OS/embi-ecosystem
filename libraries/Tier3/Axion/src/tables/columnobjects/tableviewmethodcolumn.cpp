@@ -5,7 +5,7 @@
 TableViewMethodColumn::TableViewMethodColumn(QObject* parent):
     TableViewColumn(parent)
 {
-
+    connect(this, &TableViewMethodColumn::cachedChanged, this, &TableViewMethodColumn::invalidateCache);
 }
 
 void TableViewMethodColumn::componentComplete()
@@ -40,8 +40,6 @@ QVariant TableViewMethodColumn::data(int row, const TableViewModel& viewModel)
     if (m_cached) {
         m_cache[modelIndex] = ret;
     }
-
-    m_cache[modelIndex] = ret;
 
     return ret;
 }

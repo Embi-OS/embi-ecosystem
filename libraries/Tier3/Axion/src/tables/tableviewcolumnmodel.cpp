@@ -7,6 +7,7 @@ TableViewColumnModel::TableViewColumnModel(QObject* parent) :
         connect(object, &TableViewColumn::essentialChanged, this, &TableViewColumnModel::onColumnEssentialChanged);
         connect(object, &TableViewColumn::visibleChanged, this, &TableViewColumnModel::onColumnVisibleChanged);
         connect(object, &TableViewColumn::widthChanged, this, &TableViewColumnModel::onColumnWidthChanged);
+        connect(object, &TableViewColumn::invalidated, this, &TableViewColumnModel::onColumnInvalidated);
 
         connect(this, &TableViewColumnModel::roleNameSeparatorChanged, object, &TableViewColumn::setRoleNameSeparator);
         object->setRoleNameSeparator(m_roleNameSeparator);
@@ -98,4 +99,17 @@ void TableViewColumnModel::onColumnWidthChanged(int width)
         return;
 
     emit this->columnWidthChanged(index, width);
+}
+
+void TableViewColumnModel::onColumnInvalidated()
+{
+    TableViewColumn* column = qobject_cast<TableViewColumn*>(sender());
+    if(!column)
+        return;
+
+    int index = indexOf(column);
+    if(index<0)
+        return;
+
+    emit this->columnInvalidated(index);
 }

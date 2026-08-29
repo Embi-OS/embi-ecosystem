@@ -781,7 +781,7 @@ void QModelHelper::removeMapper(QObject* mapper)
 //────────────────────────────────────────────────────────────────────────────────────────────────
 
 QModelHelperPropertyMap::QModelHelperPropertyMap(int row, int column, const QModelIndex& parentIndex, QAbstractItemModel* model, QObject* parent) :
-    QQmlPropertyMap(parent),
+    QQmlPropertyMap(this, parent),
     m_row(row),
     m_column(column),
     m_parent(parentIndex),

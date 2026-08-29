@@ -2,6 +2,8 @@
 #define QPROPERTYDEFS_H
 
 #include <QObject>
+#include <QBindable>
+#include <QObjectBindableProperty>
 #include <QQmlEngine>
 #include <QQmlProperty>
 
@@ -33,6 +35,16 @@
         if(m_##name==nullptr) \
             return m_default##Name; \
         return m_##name; \
+    }
+
+#define _Q_BINDABLE_PROPERTY_GETTER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
+    RET_TYPE get##Name (void) const { \
+            return m_##name.value(); \
+    }
+
+#define _Q_BINDABLE_PROPERTY_BINDABLE_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
+    QBindable<PROP_TYPE> bindable##Name (void) { \
+            return QBindable<PROP_TYPE>(&m_##name); \
     }
 
 #define _Q_ABSTRACT_GETTER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
@@ -72,6 +84,20 @@
         if (qFuzzyCompare(m_##name, name)) return false; \
         m_##name = (VAR_TYPE)name; \
         emit name##Changed (m_##name); \
+        return true; \
+    }
+
+#define _Q_BINDABLE_PROPERTY_SETTER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
+    bool set##Name (ARG_TYPE name) { \
+        if (m_##name.value() == name) return false; \
+        m_##name.setValue (name); \
+        return true; \
+    }
+
+#define _Q_BINDABLE_PROPERTY_FUZ_SETTER_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
+    bool set##Name (ARG_TYPE name) { \
+        if (qFuzzyCompare(m_##name.value(), name)) return false; \
+        m_##name.setValue ((VAR_TYPE)name); \
         return true; \
     }
 
@@ -177,6 +203,42 @@
     protected:      _Q_PROPERTY_MEMBER_IMPL       (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
     private:
 
+#define _Q_BINDABLE_PROPERTY_MEMBER_IMPL(OWNER, name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(OWNER, VAR_TYPE, m_##name, __VA_ARGS__, &OWNER::name##Changed)
+
+#define _Q_BINDABLE_CALLABLE_PROPERTY_IMPL(OWNER, name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, SETTER_IMPL, ...) \
+    private: \
+    Q_PROPERTY (PROP_TYPE name READ get##Name WRITE set##Name RESET reset##Name NOTIFY name##Changed BINDABLE bindable##Name PROP_PARAMS) \
+    public:         _Q_BINDABLE_PROPERTY_GETTER_IMPL       (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public:         _Q_BINDABLE_PROPERTY_BINDABLE_IMPL     (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public Q_SLOTS: SETTER_IMPL                            (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public Q_SLOTS: _Q_PROPERTY_RESET_IMPL                 (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    Q_SIGNALS:      _Q_PROPERTY_SIGNAL_IMPL                (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    protected:      _Q_BINDABLE_PROPERTY_MEMBER_IMPL       (OWNER, name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    private:
+
+#define _Q_BINDABLE_WRITABLE_PROPERTY_IMPL(OWNER, name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, SETTER_IMPL, ...) \
+    private: \
+    Q_PROPERTY (PROP_TYPE name READ get##Name WRITE set##Name RESET reset##Name NOTIFY name##Changed BINDABLE bindable##Name PROP_PARAMS) \
+    public:         _Q_BINDABLE_PROPERTY_GETTER_IMPL       (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public:         _Q_BINDABLE_PROPERTY_BINDABLE_IMPL     (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public:         SETTER_IMPL                            (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public:         _Q_PROPERTY_RESET_IMPL                 (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    Q_SIGNALS:      _Q_PROPERTY_SIGNAL_IMPL                (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    protected:      _Q_BINDABLE_PROPERTY_MEMBER_IMPL       (OWNER, name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    private:
+
+#define _Q_BINDABLE_READONLY_PROPERTY_IMPL(OWNER, name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, SETTER_IMPL, ...) \
+    private: \
+    Q_PROPERTY (PROP_TYPE name READ get##Name NOTIFY name##Changed BINDABLE bindable##Name PROP_PARAMS) \
+    public:         _Q_BINDABLE_PROPERTY_GETTER_IMPL       (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public:         _Q_BINDABLE_PROPERTY_BINDABLE_IMPL     (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public:         SETTER_IMPL                            (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    public:         _Q_PROPERTY_RESET_IMPL                 (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    Q_SIGNALS:      _Q_PROPERTY_SIGNAL_IMPL                (name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    protected:      _Q_BINDABLE_PROPERTY_MEMBER_IMPL       (OWNER, name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, __VA_ARGS__) \
+    private:
+
 #define _Q_CONSTANT_PROPERTY_IMPL(name, Name, VAR_TYPE, PROP_TYPE, ARG_TYPE, SIG_TYPE, RET_TYPE, PROP_PARAMS, ...) \
     private: \
     Q_PROPERTY (PROP_TYPE name READ name PROP_PARAMS) \
@@ -220,6 +282,24 @@ private: \
 #define Q_READONLY_REF_PROPERTY(TYPE, name, Name, ...)  _Q_READONLY_PROPERTY_IMPL     (name, Name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  FINAL,            __VA_ARGS__)
 #define Q_CONSTANT_REF_PROPERTY(TYPE, name, ...)        _Q_CONSTANT_PROPERTY_IMPL     (name, name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  CONSTANT FINAL,   __VA_ARGS__)
 #define Q_ABSTRACT_REF_PROPERTY(TYPE, name)             _Q_ABSTRACT_PROPERTY_IMPL     (name, name, TYPE,     TYPE,      const TYPE&,  const TYPE&,  const TYPE&,  CONSTANT FINAL,   {})
+
+#define Q_BINDABLE_REQUIRED_VAR_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL REQUIRED, _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_CALLABLE_VAR_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_CALLABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL,          _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_VAR_PROPERTY(OWNER, TYPE, name, Name, ...)          _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL,          _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_WRITABLE_VAR_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL,          _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_READONLY_VAR_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_READONLY_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL,          _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+
+#define Q_BINDABLE_REQUIRED_FUZ_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL REQUIRED, _Q_BINDABLE_PROPERTY_FUZ_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_CALLABLE_FUZ_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_CALLABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL,          _Q_BINDABLE_PROPERTY_FUZ_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_FUZ_PROPERTY(OWNER, TYPE, name, Name, ...)          _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL,          _Q_BINDABLE_PROPERTY_FUZ_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_WRITABLE_FUZ_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL,          _Q_BINDABLE_PROPERTY_FUZ_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_READONLY_FUZ_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_READONLY_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, TYPE, TYPE, TYPE, FINAL,          _Q_BINDABLE_PROPERTY_FUZ_SETTER_IMPL, __VA_ARGS__)
+
+#define Q_BINDABLE_REQUIRED_REF_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, const TYPE&, const TYPE&, const TYPE&, FINAL REQUIRED, _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_CALLABLE_REF_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_CALLABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, const TYPE&, const TYPE&, const TYPE&, FINAL,          _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_REF_PROPERTY(OWNER, TYPE, name, Name, ...)          _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, const TYPE&, const TYPE&, const TYPE&, FINAL,          _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_WRITABLE_REF_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_WRITABLE_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, const TYPE&, const TYPE&, const TYPE&, FINAL,          _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
+#define Q_BINDABLE_READONLY_REF_PROPERTY(OWNER, TYPE, name, Name, ...) _Q_BINDABLE_READONLY_PROPERTY_IMPL (OWNER, name, Name, TYPE, TYPE, const TYPE&, const TYPE&, const TYPE&, FINAL,          _Q_BINDABLE_PROPERTY_SETTER_IMPL, __VA_ARGS__)
 
 #define Q_REQUIRED_PTR_PROPERTY(TYPE, name, Name, ...)  _Q_WRITABLE_PTR_PROPERTY_IMPL (name, Name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        FINAL REQUIRED,   __VA_ARGS__)
 #define Q_CALLABLE_PTR_PROPERTY(TYPE, name, Name, ...)  _Q_CALLABLE_PTR_PROPERTY_IMPL (name, Name, TYPE*,    TYPE*,     TYPE*,        TYPE*,        TYPE*,        FINAL,            __VA_ARGS__)

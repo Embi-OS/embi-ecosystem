@@ -6,14 +6,11 @@ allFileRecurseRelative(ALL_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 allFileRecurseRelative(ALL_CELLS_FILES ${CMAKE_CURRENT_SOURCE_DIR}/cells/*)
 
-set(APP_NAME A${PROJECT_NAME})
-set(LIB_NAME L${PROJECT_NAME})
-
 embi_add_application(${PROJECT_NAME}
     APP_NAME
-        ${APP_NAME}
+        A${PROJECT_NAME}
     LIB_NAME
-        ${LIB_NAME}
+        L${PROJECT_NAME}
     PRIVATE_QT_LIBRARIES
         Concurrent
     LIBRARIES
@@ -28,9 +25,12 @@ embi_add_application(${PROJECT_NAME}
         /samples
 )
 
-qt_add_resources(${LIB_NAME} "${LIB_NAME}_cells"
+qt_add_resources(L${PROJECT_NAME} "L${PROJECT_NAME}_cells"
     BASE "cells"
     PREFIX "/cells"
     FILES
         ${ALL_CELLS_FILES}
 )
+
+embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})
+create_package(TARGET A${PROJECT_NAME})

@@ -20,7 +20,10 @@ QVariantList QVariantReader::readList()
 
     enterContainer();
     while (!hasError() && hasNext()) {
-        list.append(read());
+        QVariant value = read();
+        if (hasError())
+            break;
+        list.append(std::move(value));
     }
     if (!hasError())
         leaveContainer();
@@ -38,7 +41,14 @@ QVariantMap QVariantReader::readMap()
     enterContainer();
     while (!hasError() && hasNext()) {
         QString key = readString();
-        map.insert(std::move(key), read());
+        if (hasError())
+            break;
+
+        QVariant value = read();
+        if (hasError())
+            break;
+
+        map.insert(std::move(key), std::move(value));
     }
     if (!hasError())
         leaveContainer();

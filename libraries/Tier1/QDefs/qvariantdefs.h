@@ -2,6 +2,7 @@
 #define QVARIANTDEFS_H
 
 #include <QString>
+#include <QColor>
 #include <QVariant>
 #include <QJSValue>
 
@@ -300,6 +301,9 @@ inline bool qVariantEquals(const QVariant &left, const QVariant &right, Qt::Case
             return left.toString().localeAwareCompare(right.toString())==0;
         else
             return left.toString().compare(right.toString(), cs)==0;
+    }
+    else if (left.userType() == QMetaType::QColor) {
+        return left.value<QColor>().rgba()==right.value<QColor>().rgba();
     }
     return left == right;
 }

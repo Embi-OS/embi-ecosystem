@@ -7,14 +7,23 @@ FormObject {
     id: root
 
     formType: FormTypes.Color
-    defaultValue: "#FF0000"
+    defaultValue: "#000000"
 
     required property AbstractItemModel colorsModel
-    property bool displayName: false
     property bool mandatory: true
-    readonly property int currentIndex: root.colorsModel.ModelHelper.contentIsEmpty ? -1 : root.colorsModel.ModelHelper.indexOf("color",root.currentValue)
+    readonly property color currentColor: currentValue
+    readonly property int currentIndex: root.colorsModel.ModelHelper.contentIsEmpty ? -1 : root.colorsModel.ModelHelper.indexOf("color",root.currentColor)
 
-    warning: mandatory && currentIndex<0
+    property bool paletteOnly: false
+
+    property bool paletteEnabled: true
+    property bool saturationEnabled: !paletteOnly
+    property bool hueEnabled: !paletteOnly
+    property bool alphaEnabled: false
+    property bool swatchEnabled: false
+    property bool hexEnabled: !paletteOnly
+
+    warning: mandatory && paletteOnly && currentIndex<0
 
     delegate: FormColor {
         fitLabel: root.fitLabel
@@ -24,13 +33,19 @@ FormObject {
         enabled: root.enabled
         warning: root.warning
 
-        displayName: root.displayName
         label: root.label
         infos: root.infos
         placeholder: root.placeholder
         colorsModel: root.colorsModel
         color: root.currentValue
 
-        onAccepted: (color) => root.changeValue(color)
+        paletteEnabled: root.paletteEnabled
+        saturationEnabled: root.saturationEnabled
+        hueEnabled: root.hueEnabled
+        alphaEnabled: root.alphaEnabled
+        swatchEnabled: root.swatchEnabled
+        hexEnabled: root.hexEnabled
+
+        onAccepted: (color) => {root.changeValue(color); console.log(root.currentValue, root.currentColor, root.currentIndex)}
     }
 }

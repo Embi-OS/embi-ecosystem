@@ -29,12 +29,15 @@ public:
     Q_INVOKABLE QString obscure(const QString &str) const;
     Q_INVOKABLE QString realToString(double n, int precision=6, char format='F') const;
     Q_INVOKABLE QString intToString(qint64 n, int size=-1, char fill='0') const;
+    Q_INVOKABLE QString qmlTypeName(const QVariant& variant) const;
 
     Q_INVOKABLE QByteArray variantToLog(const QVariant& variant, bool compact=false) const;
-    Q_INVOKABLE QByteArray variantToJson(const QVariant& variant, bool compact=true) const;
-    Q_INVOKABLE QVariant jsonToVariant(const QByteArray& json);
+    Q_INVOKABLE QByteArray variantToJson(const QVariant& variant, bool compact=true, int doublePrecision=QLocale::FloatingPointShortest) const;
+    Q_INVOKABLE QVariant jsonToVariant(const QByteArray& json) const;
     Q_INVOKABLE QByteArray variantToCbor(const QVariant& variant, int opt = 0) const;
-    Q_INVOKABLE QVariant cborToVariant(const QByteArray& cbor);
+    Q_INVOKABLE QVariant cborToVariant(const QByteArray& cbor) const;
+    Q_INVOKABLE QVariantMap objectToVariant(const QObject* object) const;
+    Q_INVOKABLE bool variantToObject(const QVariantMap& variant, QObject* object) const;
 };
 
 #endif // FORMATUTILS_H

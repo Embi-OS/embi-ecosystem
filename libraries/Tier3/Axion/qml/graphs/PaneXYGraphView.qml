@@ -61,6 +61,7 @@ BasicPane {
         BasicBusyIndicator {
             Layout.alignment: Qt.AlignVCenter
             visible: root.running
+            size: 40
         }
 
         BasicToolButton {

@@ -1,19 +1,16 @@
 include(Common)
-include(CreatePackage)
+include(Package/CreatePackage)
 
 project(01_Gallery)
 
 allFileRecurseRelative(ALL_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 
-set(APP_NAME A${PROJECT_NAME})
-set(LIB_NAME L${PROJECT_NAME})
-
 embi_add_application(${PROJECT_NAME}
     APP_NAME
-        ${APP_NAME}
+        A${PROJECT_NAME}
     LIB_NAME
-        ${LIB_NAME}
+        L${PROJECT_NAME}
     LIBRARIES
         Axion
     QML_DEPENDENCIES
@@ -22,10 +19,13 @@ embi_add_application(${PROJECT_NAME}
         ${ALL_SRC_FILES}
     QML_FILES
         ${ALL_QML_FILES}
+    QMLCACHEGEN_VERBOSE
+        OFF
     DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src
     OUTPUT_DIRECTORY_PREFIX
         /samples
 )
 
-create_package(TARGET ${APP_NAME})
+embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})
+create_package(TARGET A${PROJECT_NAME})

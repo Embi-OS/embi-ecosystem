@@ -81,6 +81,7 @@ class ImageColorsHelper : public QObject
 
     Q_WRITABLE_REF_PROPERTY(QColor, backgroundColor, BackgroundColor, Qt::black)
     Q_WRITABLE_REF_PROPERTY(QColor, textColor, TextColor, Qt::white)
+    Q_WRITABLE_VAR_PROPERTY(bool, inhibit, Inhibit, false)
     Q_READONLY_VAR_PROPERTY(bool, isReady, IsReady, false)
 
     /**

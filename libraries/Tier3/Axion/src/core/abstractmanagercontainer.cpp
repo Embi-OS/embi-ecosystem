@@ -25,6 +25,8 @@ AbstractManagerContainer::AbstractManagerContainer(const QMetaObject* metaObject
 
 bool AbstractManagerContainer::init()
 {
+    setRegistered(true);
+
     return true;
 }
 
@@ -59,6 +61,8 @@ bool AbstractManagerContainer::unInit()
 {
     bool ret = true;
 
+    setReady(false);
+
     auto iterator = m_managers->modelIterator<AbstractManager>();
     iterator.toBack();
     while(iterator.hasPrevious())
@@ -74,8 +78,6 @@ bool AbstractManagerContainer::unInit()
             ret = false;
         AXIONLOG_INFO()<<qLogLine('-');
     }
-
-    setReady(false);
 
     return ret;
 }

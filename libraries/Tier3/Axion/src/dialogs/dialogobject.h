@@ -11,6 +11,7 @@ Q_ENUM_CLASS(DialogTypes, DialogType,
              Busy,
              Date,
              DateRange,
+             Color,
              Time,
              FileTree,
              Input,
@@ -73,6 +74,7 @@ public:
     QMetaObject::Connection onDateSelected(std::function<void(const QDate& date)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onDateRangeSelected(std::function<void(const QDate& fromDate, const QDate& toDate)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onTimeSelected(std::function<void(const QTime& time)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
+    QMetaObject::Connection onColorSelected(std::function<void(const QColor& color)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onPathSelected(std::function<void(const QString& path)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onInputAccepted(std::function<void(const QString& value)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
     QMetaObject::Connection onInputApplied(std::function<void(const QString& value)> callback, const Qt::ConnectionType &connection = Qt::AutoConnection);
@@ -106,6 +108,7 @@ signals:
     void dateSelected(const QDate& date);
     void dateRangeSelected(const QDate& fromDate, const QDate& toDate);
     void timeSelected(const QTime& time);
+    void colorSelected(const QColor& color);
     void pathSelected(const QString& path);
     void inputAccepted(const QString& value);
     void inputApplied(const QString& value);

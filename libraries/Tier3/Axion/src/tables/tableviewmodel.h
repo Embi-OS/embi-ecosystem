@@ -100,6 +100,7 @@ protected slots:
     void onColumnModelAboutToChange(TableViewColumnModel* oldColumnModel, TableViewColumnModel* newColumnModel);
     void onColumnModelChanged(TableViewColumnModel* columnModel);
 
+    void onColumnInvalidated(int column);
     void onColumnDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>());
     void onSourceDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>());
     void onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>());

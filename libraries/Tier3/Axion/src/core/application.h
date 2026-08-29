@@ -12,7 +12,7 @@ class Application
 {
 public:
     Application(int &argc, char **argv, const QString& applicationName=QString());
-    ~Application();
+    virtual ~Application();
 
     virtual int run(QAnyStringView uri, QAnyStringView typeName);
 
@@ -21,7 +21,7 @@ public:
     static const QMap<QString, QByteArray>& environmentVariable();
 
 private:
-    void installTranslators();
+    void setupLanguageSettings();
 
     QScopedPointer<QApplication> m_application;
     QScopedPointer<QQmlApplicationEngine> m_engine;

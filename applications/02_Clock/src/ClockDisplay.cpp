@@ -7,8 +7,11 @@ ClockDisplay::ClockDisplay(QObject *parent) :
     m_brightnessAnimation(new QPropertyAnimation(this)),
     m_timer(new QTimer(this))
 {
-    m_brightnessAnimation->setTargetObject(DisplaySettings::Get());
-    m_brightnessAnimation->setPropertyName("brightness");
+    if(DisplaySettings::Get()->canSetBrightness())
+    {
+        m_brightnessAnimation->setTargetObject(DisplaySettings::Get());
+        m_brightnessAnimation->setPropertyName("brightness");
+    }
 
     m_timer->setSingleShot(true);
 

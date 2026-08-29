@@ -20,18 +20,20 @@ enum {
 };
 
 QJsonVariantReader::QJsonVariantReader(QIODevice *device):
-    QJsonVariantReader(device->readAll())
+    QJsonVariantReader(device ? device->readAll() : QByteArray())
 {
-
+    if (!device)
+        setError(QJsonParseError::IllegalValue);
 }
 
 QJsonVariantReader::QJsonVariantReader(const QByteArray &data):
-    m_lastError(QJsonParseError::NoError),
     m_buffer(data),
     json(m_buffer.constData()),
     ptr(m_buffer.constData()),
     end(m_buffer.constData() + m_buffer.size())
 {
+    m_error.error = QJsonParseError::NoError;
+    m_error.offset = 0;
     skipByteOrderMark();
     skipWhitespace();
 }
@@ -62,8 +64,13 @@ bool QJsonVariantReader::atEnd()
 
 bool QJsonVariantReader::enterContainer()
 {
+    if (ptr >= end) {
+        setError(QJsonParseError::IllegalValue);
+        return false;
+    }
+
     if(*ptr!=BeginArray && *ptr!=BeginObject) {
-        m_lastError = QJsonParseError::IllegalValue;
+        setError(QJsonParseError::IllegalValue);
         return false;
     }
     ++ptr; // skip '{' or '['
@@ -71,8 +78,13 @@ bool QJsonVariantReader::enterContainer()
 }
 bool QJsonVariantReader::leaveContainer()
 {
+    if (ptr >= end) {
+        setError(QJsonParseError::MissingObject);
+        return false;
+    }
+
     if(*ptr!=EndArray && *ptr!=EndObject) {
-        m_lastError = QJsonParseError::IllegalValue;
+        setError(QJsonParseError::IllegalValue);
         return false;
     }
     ++ptr; // skip '}' or ']'
@@ -81,6 +93,9 @@ bool QJsonVariantReader::leaveContainer()
 
 QVariantReader::Type QJsonVariantReader::type() const
 {
+    if (ptr >= end)
+        return QJsonVariantReader::Invalid;
+
     switch (*ptr) {
     case BeginArray:
         return QJsonVariantReader::List;
@@ -112,7 +127,7 @@ QString QJsonVariantReader::readString()
 QVariant QJsonVariantReader::readValue()
 {
     if (ptr >= end) {
-        m_lastError = QJsonParseError::IllegalValue;
+        setError(QJsonParseError::IllegalValue);
         return QVariant();
     }
 
@@ -120,7 +135,7 @@ QVariant QJsonVariantReader::readValue()
     case 'n':
         ++ptr;
         if (end - ptr < 3) {
-            m_lastError = QJsonParseError::IllegalValue;
+            setError(QJsonParseError::IllegalValue);
             return QVariant();
         }
         if (*ptr++ == 'u' &&
@@ -129,12 +144,12 @@ QVariant QJsonVariantReader::readValue()
             next();
             return QVariant::fromValue(nullptr);
         }
-        m_lastError = QJsonParseError::IllegalValue;
+        setError(QJsonParseError::IllegalValue);
         return QVariant();
     case 't':
         ++ptr;
         if (end - ptr < 3) {
-            m_lastError = QJsonParseError::IllegalValue;
+            setError(QJsonParseError::IllegalValue);
             return QVariant();
         }
         if (*ptr++ == 'r' &&
@@ -143,12 +158,12 @@ QVariant QJsonVariantReader::readValue()
             next();
             return QVariant(true);
         }
-        m_lastError = QJsonParseError::IllegalValue;
+        setError(QJsonParseError::IllegalValue);
         return QVariant();
     case 'f':
         ++ptr;
         if (end - ptr < 4) {
-            m_lastError = QJsonParseError::IllegalValue;
+            setError(QJsonParseError::IllegalValue);
             return QVariant();
         }
         if (*ptr++ == 'a' &&
@@ -158,18 +173,18 @@ QVariant QJsonVariantReader::readValue()
             next();
             return QVariant(false);
         }
-        m_lastError = QJsonParseError::IllegalValue;
+        setError(QJsonParseError::IllegalValue);
         return QVariant();
     case Quote:
         return parseString();
     case ValueSeparator:
         // Essentially missing value, but after a colon, not after a comma
         // like the other MissingObject errors.
-        m_lastError = QJsonParseError::IllegalValue;
+        setError(QJsonParseError::IllegalValue);
         return QVariant();
     case EndObject:
     case EndArray:
-        m_lastError = QJsonParseError::MissingObject;
+        setError(QJsonParseError::MissingObject);
         return QVariant();
     default:
         return parseNumber();
@@ -204,8 +219,13 @@ bool QJsonVariantReader::skipWhitespace()
 
 QString QJsonVariantReader::parseString()
 {
+    if (ptr >= end) {
+        setError(QJsonParseError::MissingObject);
+        return QString();
+    }
+
     if(*ptr!=Quote) {
-        m_lastError = QJsonParseError::MissingObject;
+        setError(QJsonParseError::MissingObject);
         return QString();
     }
     ++ptr;
@@ -222,7 +242,7 @@ QString QJsonVariantReader::parseString()
     if (ptr < end && *ptr == '"')
         ++ptr;
     else {
-        m_lastError = QJsonParseError::UnterminatedString;
+        setError(QJsonParseError::UnterminatedString);
         return QString();
     }
 
@@ -247,7 +267,15 @@ QVariant QJsonVariantReader::parseNumber()
     // int = zero / ( digit1-9 *DIGIT )
     if (ptr < end && *ptr == '0') {
         ++ptr;
+        if (ptr < end && QUtf8::isAsciiDigit(*ptr)) {
+            setError(QJsonParseError::IllegalNumber);
+            return QVariant();
+        }
     } else {
+        if (ptr >= end || !QUtf8::isAsciiDigit(*ptr)) {
+            setError(QJsonParseError::IllegalNumber);
+            return QVariant();
+        }
         while (ptr < end && QUtf8::isAsciiDigit(*ptr))
             ++ptr;
     }
@@ -255,6 +283,10 @@ QVariant QJsonVariantReader::parseNumber()
     // frac = decimal-point 1*DIGIT
     if (ptr < end && *ptr == '.') {
         ++ptr;
+        if (ptr >= end || !QUtf8::isAsciiDigit(*ptr)) {
+            setError(QJsonParseError::IllegalNumber);
+            return QVariant();
+        }
         while (ptr < end && QUtf8::isAsciiDigit(*ptr)) {
             isInt = isInt && *ptr == '0';
             ++ptr;
@@ -267,13 +299,12 @@ QVariant QJsonVariantReader::parseNumber()
         ++ptr;
         if (ptr < end && (*ptr == '-' || *ptr == '+'))
             ++ptr;
+        if (ptr >= end || !QUtf8::isAsciiDigit(*ptr)) {
+            setError(QJsonParseError::IllegalNumber);
+            return QVariant();
+        }
         while (ptr < end && QUtf8::isAsciiDigit(*ptr))
             ++ptr;
-    }
-
-    if (json >= end) {
-        m_lastError = QJsonParseError::TerminationByNumber;
-        return QVariant();
     }
 
     const QByteArray number = QByteArray::fromRawData(start, ptr - start);
@@ -291,25 +322,31 @@ QVariant QJsonVariantReader::parseNumber()
     double d = number.toDouble(&ok);
 
     if (!ok) {
-        m_lastError = QJsonParseError::IllegalNumber;
+        setError(QJsonParseError::IllegalNumber);
         return QVariant();
     }
 
     return QVariant(d);
 }
 
-QJsonParseError QJsonVariantReader::error() const
+void QJsonVariantReader::setError(QJsonParseError::ParseError error, qint64 offset)
 {
-    QJsonParseError error;
-    error.error = lastError();
-    error.offset = currentOffset();
-    return error;
+    if (m_error.error != QJsonParseError::NoError)
+        return;
+
+    m_error.error = error;
+    m_error.offset = offset >= 0 ? offset : currentOffset();
 }
 
 QVariant QJsonVariantReader::fromJson(const QByteArray& json, QJsonParseError* error)
 {
     QJsonVariantReader reader(json);
     QVariant variant = reader.read();
+    if (!reader.hasError()) {
+        reader.skipWhitespace();
+        if (!reader.atEnd())
+            reader.setError(QJsonParseError::GarbageAtEnd);
+    }
     if(error)
         *error = reader.error();
     return variant;
@@ -319,6 +356,11 @@ QVariant QJsonVariantReader::fromJson(QIODevice* device, QJsonParseError* error)
 {
     QJsonVariantReader reader(device);
     QVariant variant = reader.read();
+    if (!reader.hasError()) {
+        reader.skipWhitespace();
+        if (!reader.atEnd())
+            reader.setError(QJsonParseError::GarbageAtEnd);
+    }
     if(error)
         *error = reader.error();
     return variant;

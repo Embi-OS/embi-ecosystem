@@ -397,7 +397,9 @@ QVariant QObjectListModel::readProperty(const QObject* object, int propertyIndex
 bool QObjectListModel::writeProperty(QObject *object, int propertyIndex, const QVariant &value) const
 {
     const QMetaProperty property = m_metaObj->property(propertyIndex);
-    return property.write(object, value);
+    if(property.write(object, value))
+        return true;
+    return property.write(object, QVariant(property.metaType()));
 }
 
 void QObjectListModel::onObjectDestroyed(QObject* item)

@@ -5,8 +5,10 @@ import Eco.Tier3.Axion
 Item {
     id: root
 
-    property string stackItemName: ""
-    property string stackItemSecondaryName: ""
+    Navigation.guarded: false
+    Navigation.name: ""
+    Navigation.effectiveName: Navigation.name
+    Navigation.secondaryName: ""
     property StandardObjectModel navModels: StandardObjectModel{}
 
     readonly property BasicStackView stack: StackView.view as BasicStackView
@@ -41,13 +43,11 @@ Item {
     signal extraButtonClicked(var exValue)
     signal backButtonClicked()
 
-    property bool navigationLocked: false
-    property bool navigationEnabled: true
-
     property bool isCompleted: false
     property bool isReady: false
     Component.onCompleted: {
         root.isCompleted=true
+        root.itemIsActive()
     }
 
     Component.onDestruction: {
@@ -56,7 +56,6 @@ Item {
     }
 
     onItemIsReady: {
-        console.info("BasicNavItem active:",stackItemName,stackItemSecondaryName!==""?"-> \""+stackItemSecondaryName+"\"":"")
         root.isReady=true
     }
 
@@ -69,7 +68,6 @@ Item {
         case StackView.Activating:
             break;
         case StackView.Active:
-            Qt.callLater(itemIsActive);
             if(stackIndex !== stackIndexTmp) {
                 stackIndexTmp = stackIndex;
                 Qt.callLater(itemIsReady);
@@ -115,10 +113,7 @@ Item {
         if(!root.isStackActive)
             return;
 
-        if(root.navigationLocked) {
-            DialogManager.showWarning(qsTr("Impossible de quitter la page maintenant!"));
-        }
-        else if(!root.navigationEnabled) {
+        if(root.Navigation.guarded) {
             showQuitDialog();
         }
         else {

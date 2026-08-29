@@ -8,7 +8,7 @@ Item {
     NumericClock {
         id: clock
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: -20
+        anchors.verticalCenterOffset: -controls.height/2
         implicitHeight: root.height/3
         size: root.height/3
 
@@ -33,7 +33,10 @@ Item {
         spacing: 10
 
         FabButton {
-            font: Style.textTheme.title2
+            spacing: 12
+            padding: 24+Style.buttonInset
+            backgroundImplicitSize: 96
+            font: Style.textTheme.title1
             visible: ClockDisplay.state===ClockDisplayStates.On
             highlighted: true
             text: qsTr("Veille")
@@ -41,14 +44,20 @@ Item {
             onClicked: ClockDisplay.gotoSleep()
         }
         FabButton {
-            font: Style.textTheme.title2
-            visible: Clock.ringing
+            spacing: 12
+            padding: 24+Style.buttonInset
+            backgroundImplicitSize: 96
+            font: Style.textTheme.title1
+            visible: Clock.ringing && Clock.snoozeAvailable
             text: qsTr("Snooze")
             icon.source: MaterialIcons.alarmSnooze
             onClicked: Clock.snooze()
         }
         FabButton {
-            font: Style.textTheme.title2
+            spacing: 12
+            padding: 24+Style.buttonInset
+            backgroundImplicitSize: 96
+            font: Style.textTheme.title1
             visible: Clock.ringing || Clock.snoozed
             text: qsTr("Alarme Off")
             icon.source: MaterialIcons.alarmOff

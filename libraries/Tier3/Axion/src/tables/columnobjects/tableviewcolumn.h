@@ -51,6 +51,8 @@ class TableViewColumn : public QObject,
     Q_WRITABLE_VAR_PROPERTY(int, role, Role, Qt::DisplayRole)
     Q_WRITABLE_REF_PROPERTY(QString, roleType, RoleType, "")
 
+    Q_WRITABLE_VAR_PROPERTY(int, textFormat, TextFormat, Qt::PlainText)
+
     Q_WRITABLE_REF_PROPERTY(QVariant, defaultValue, DefaultValue, {})
 
 public:

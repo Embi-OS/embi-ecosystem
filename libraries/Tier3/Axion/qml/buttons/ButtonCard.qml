@@ -90,7 +90,6 @@ Rectangle {
     HoverHandler {
         id: hoverHandler
         enabled: tapHandler.enabled
-        cursorShape: Qt.PointingHandCursor
     }
 
     BasicVeil {

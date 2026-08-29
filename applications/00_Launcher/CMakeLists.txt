@@ -6,14 +6,11 @@ allFileRecurseRelative(ALL_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 allFileRecurseRelative(ALL_IMG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/*)
 
-set(APP_NAME A${PROJECT_NAME})
-set(LIB_NAME L${PROJECT_NAME})
-
 embi_add_application(${PROJECT_NAME}
     APP_NAME
-        ${APP_NAME}
+        A${PROJECT_NAME}
     LIB_NAME
-        ${LIB_NAME}
+        L${PROJECT_NAME}
     LIBRARIES
         Axion
         Fluid
@@ -31,3 +28,6 @@ embi_add_application(${PROJECT_NAME}
     DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})
+

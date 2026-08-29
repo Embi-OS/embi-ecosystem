@@ -84,6 +84,7 @@ PaneListView {
             "formModel": model,
             "onClosed": function() {
                 model.destroy();
+                component.destroy();
             },
             "onFormValidated": function(formValues) {
                 service.setupIpv4Config()

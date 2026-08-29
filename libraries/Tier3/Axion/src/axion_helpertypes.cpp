@@ -164,10 +164,6 @@ void AxionHelper::registerComponents(QQmlEngine& engine)
 {
     AxionHelper::registerImageProvider(engine);
     AxionHelper::registerFontsPath();
-
-#if defined(Q_DEVICE_APALIS_IMX8) && defined(Q_MANUAL_CORE_AFFINITY)
-    QUtils::setAppMainCoreAffinity(4);
-#endif
 }
 
 void AxionHelper::registerImageProvider(QQmlEngine& engine)

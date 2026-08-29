@@ -69,7 +69,7 @@ QVariant TableViewResultColumn::sourceResultData(int row, const TableViewModel& 
         return variant;
 
     bool ok = true;
-    const QVariant& nestedVariant = qVariantGetNestedValue(variant, m_resultSubRoleNames);
+    const QVariant nestedVariant = qVariantGetNestedValue(variant, m_resultSubRoleNames, &ok);
     if(!ok) {
         AXIONLOG_DEBUG()<<getResultRoleName()<<"does not exist";
     }

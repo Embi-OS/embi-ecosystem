@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>@PACKAGECONFIG_IFW_PACKAGE_NAME@</Name>
+    <Version>@PACKAGECONFIG_PACKAGE_VERSION@</Version>
+    <Title>@PACKAGECONFIG_PACKAGE_NAME@</Title>
+    <Publisher>@PACKAGECONFIG_PACKAGE_VENDOR@</Publisher>
+    <StartMenuDir>@PACKAGECONFIG_PACKAGE_NAME@</StartMenuDir>
+    <MaintenanceToolName>MaintenanceTool</MaintenanceToolName>
+    <AllowSpaceInPath>true</AllowSpaceInPath>
+    <TargetDir>@PACKAGECONFIG_IFW_TARGET_DIRECTORY@</TargetDir>
+@PACKAGECONFIG_IFW_ADMIN_TARGET_DIRECTORY_ELEMENT@
+    <WizardStyle>@PACKAGECONFIG_IFW_PACKAGE_WIZARD_STYLE@</WizardStyle>
+    <WizardDefaultWidth>@PACKAGECONFIG_IFW_PACKAGE_WIZARD_DEFAULT_WIDTH@</WizardDefaultWidth>
+    <WizardDefaultHeight>@PACKAGECONFIG_IFW_PACKAGE_WIZARD_DEFAULT_HEIGHT@</WizardDefaultHeight>
+@PACKAGECONFIG_IFW_PACKAGE_STYLE_SHEET_ELEMENT@
+    <TitleColor>@PACKAGECONFIG_IFW_PACKAGE_TITLE_COLOR@</TitleColor>
+</Installer>

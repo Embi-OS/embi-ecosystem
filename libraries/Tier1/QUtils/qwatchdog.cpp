@@ -13,11 +13,6 @@
 # include <Windows.h>
 #endif
 
-#if defined(Q_OS_BOOT2QT) && defined(Q_DEVICE_APALIS_IMX8) && defined(Q_MANUAL_CORE_AFFINITY)
-# include <sched.h>
-# include <sys/syscall.h>
-#endif
-
 #ifndef APPCONTROLLER_CMD
 #define APPCONTROLLER_CMD "appcontroller"
 #endif
@@ -90,18 +85,19 @@ private:
 
     void restart()
     {
-#ifdef Q_OS_WIN
-#else
         QUTILSLOG_INFO()<<"Restarting application...";
-        qApp->exit();
 #if defined(Q_OS_BOOT2QT)
+        qApp->exit();
         QProcess::startDetached(QStringLiteral(APPCONTROLLER_CMD), {QStringLiteral("--restart")});
 #elif defined(Q_OS_LINUX)
-        const QString applicationPath = QCoreApplication::applicationFilePath();
-        const QStringList applicationArguments = QCoreApplication::arguments().mid(1);
-        if (!applicationPath.isEmpty())
-            QProcess::startDetached(applicationPath, applicationArguments);
-#endif
+        const QString executable = QCoreApplication::applicationFilePath();
+        if (executable.isEmpty())
+            return;
+        const QStringList args = qApp->arguments().mid(1);
+        const QString workingPath = QDir::currentPath();
+
+        qApp->exit();
+        QProcess::startDetached(executable, args, workingPath);
 #endif
     }
 
@@ -171,21 +167,6 @@ void QWatchdog::start(int frequency_msecs)
     m_watchDogThread->start();
 
     connect(m_watchDogThread, &QThread::started, m_worker, [this, frequency_msecs] {
-
-        // Ensure that watchdog is running on any core
-#if defined(Q_OS_BOOT2QT) && defined(Q_DEVICE_APALIS_IMX8) && defined(Q_MANUAL_CORE_AFFINITY)
-        int pid = syscall(SYS_gettid);
-        cpu_set_t mask;
-        CPU_ZERO(&mask);
-        for (int i = 0; i < CPU_SETSIZE; i++) {
-            CPU_SET(i, &mask);
-        }
-        if (sched_setaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
-            qCritical() << "Error while executing sched_setaffinity to reset affinity";
-            assert(false);
-        }
-#endif
-
         m_worker->start(frequency_msecs);
     });
 }

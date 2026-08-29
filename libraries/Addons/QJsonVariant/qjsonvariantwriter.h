@@ -2,14 +2,15 @@
 #define QJSONVARIANTWRITER_H
 
 #include <QVariant>
+#include <QLocale>
 #include <QByteArray>
 
 class QIODevice;
 class QJsonVariantWriter
 {
 public:
-    explicit QJsonVariantWriter(QIODevice *device, bool compact=true);
-    explicit QJsonVariantWriter(QByteArray *data, bool compact=true);
+    explicit QJsonVariantWriter(QIODevice *device, bool compact=true, int doublePrecision=QLocale::FloatingPointShortest);
+    explicit QJsonVariantWriter(QByteArray *data, bool compact=true, int doublePrecision=QLocale::FloatingPointShortest);
     ~QJsonVariantWriter();
     Q_DISABLE_COPY(QJsonVariantWriter)
 
@@ -33,8 +34,8 @@ public:
     void writeRaw(const QByteArray &ba);
     void writeVariant(const QVariant &v);
 
-    static QByteArray fromVariant(const QVariant& variant, bool compact = true);
-    static void fromVariant(const QVariant& variant, QIODevice* device, bool compact = true);
+    static QByteArray fromVariant(const QVariant& variant, bool compact = true, int doublePrecision = QLocale::FloatingPointShortest);
+    static void fromVariant(const QVariant& variant, QIODevice* device, bool compact = true, int doublePrecision = QLocale::FloatingPointShortest);
 
     static QByteArray escapedString(QStringView s);
     static QByteArray fromVariantDebug(const QVariant& variant, bool compact = true);
@@ -42,8 +43,11 @@ public:
 private:
     QIODevice *m_device;
     bool m_deleteDevice;
+    bool m_showType;
+    bool m_writeError;
 
     bool m_compact;
+    int m_doublePrecision;
     int m_indent;
     int m_nestLevel;
 };

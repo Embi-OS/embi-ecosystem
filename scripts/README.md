@@ -32,6 +32,7 @@ Concrete examples:
 ./scripts/mysql_linux.sh --qt-version 6.8.7 --rebuild
 ./scripts/mysql_windows.sh --qt-version 6.8.7 --rebuild
 
+./scripts/gitlab_release.sh --project-version 25.10.0
 ./scripts/build_windows.sh --optimization --project-version-suffix stable --project-version 25.10.0
 ```
 
@@ -50,6 +51,7 @@ Notes
 - Build outputs are written under `../_AutoBuilds`
 - `build_wasm.sh` sources `emsdk_env.sh` if present
 - `build_yocto.sh` expects an existing kas workspace in `YOCTO_DIR` and runs `kas build "$YOCTO_KAS_FILE"`
+- Installer packaging defaults to `PACKAGE_CPACK_THREADS=0` and `PACKAGE_IFW_ARCHIVE_COMPRESSION=1` for faster packaging. Override them with extra CMake arguments if needed.
 - The MySQL driver scripts require Qt Sources for the exact Qt version/kit being used.
 - Linux MySQL builds require MySQL/MariaDB client development files, for example `default-libmysqlclient-dev`, `mysql-devel`, or `mariadb-devel`. The script copies the resolved MySQL/MariaDB runtime `.so` into the Qt kit `lib` directory for packaging.
 - Windows MySQL builds require MySQL Server development files or MariaDB Connector/C. The script copies `libmysql.dll` or `libmariadb.dll` into the Qt kit `bin` directory for QtCreator runs. Packaged applications must still deploy the DLL next to the executable or make it available in `PATH`.

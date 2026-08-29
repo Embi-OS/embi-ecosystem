@@ -18,12 +18,16 @@ BasicDialog {
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; enabled: root.isValid; text: root.buttonAccept; highlighted: true }
     ]
 
-    property alias hour: timePicker.selectedHour
-    property alias minute: timePicker.selectedMinute
+    property int hour: 0
+    property int minute: 0
     property date date: DateTimeUtils.currentDateTime()
     property alias name: nameField.text
     property alias repeat: alarmRepeat.checked
     property int weekdays: 0
+    property var details: ({})
+    property Component detailsFormComponent: null
+    property string detailsButtonText: qsTr("Son et options")
+    property string detailsTitle: qsTr("Options de l'alarme")
 
     property bool showRepeat: true
     property bool showName: true
@@ -32,8 +36,10 @@ BasicDialog {
     readonly property bool isValid: (root.repeat ? root.weekdays : DateTimeUtils.isDateAfter(dateSelected,DateTimeUtils.systemDateTime))
     property bool dateAuto: false
 
+    Component.onCompleted: root.evaluateDate(root.date)
+
     onAccepted: {
-        root.alarmValidated({
+        const alarmMap = {
             "hour": root.hour,
             "minute": root.minute,
             "date": root.repeat ? "" : root.date,
@@ -41,6 +47,29 @@ BasicDialog {
             "name": root.showName ? root.name : "",
             "repeat": root.showRepeat ? root.repeat : false,
             "weekdays": root.repeat ? root.weekdays : 0,
+            "details": root.details
+        }
+        root.alarmValidated(alarmMap)
+    }
+
+    function editDetails() {
+        if(!root.detailsFormComponent)
+            return
+
+        const formModel = root.detailsFormComponent.createObject(root)
+        if(!formModel)
+            return
+
+        DialogManager.showForm({
+            "title": root.detailsTitle,
+            "formModel": formModel,
+            "formValues": root.details,
+            "onClosed": function() {
+                formModel.destroy()
+            },
+            "onFormValidated": function(formValues) {
+                root.details = formValues
+            }
         })
     }
 
@@ -88,7 +117,12 @@ BasicDialog {
                 id: timePicker
                 Layout.alignment: Qt.AlignHCenter
                 showSeconds: false
-                onAccepted: root.evaluateDate(root.date)
+                selectedTime: new Date(0,0,0,root.hour,root.minute,0)
+                onTimeChanged: (time) => {
+                    root.hour = time.getHours()
+                    root.minute = time.getMinutes()
+                    root.evaluateDate(root.date)
+                }
             }
 
             RowLayout {
@@ -113,8 +147,8 @@ BasicDialog {
                     flat: true
                     onClicked: {
                         DialogManager.showDate({
-                            selectedDate: root.date,
-                            onDateSelected: function(date) {
+                            "selectedDate": root.date,
+                            "onDateSelected": function(date) {
                                 root.dateAuto=false
                                 root.evaluateDate(date)
                             }
@@ -147,6 +181,16 @@ BasicDialog {
                 Layout.fillWidth: true
                 placeholder: qsTr("Nom")
             }
+
+            TextButton {
+                visible: root.detailsFormComponent !== null
+                Layout.alignment: Qt.AlignRight
+                flat: true
+                round: true
+                text: root.detailsButtonText
+                onClicked: root.editDetails()
+            }
+
         }
     }
 }

@@ -31,6 +31,7 @@ PaneTreeView {
             "formObject": RestManager,
             "onClosed": function() {
                 model.destroy();
+                component.destroy();
             },
             "onFormValidated": function(formValues) {
                 AxionHelper.warningRestart()
@@ -48,6 +49,7 @@ PaneTreeView {
             "formModel": model,
             "onClosed": function() {
                 model.destroy();
+                component.destroy();
             },
             "onFormValidated": function(formValues) {
                 const authIdentifier = formValues.identifier
@@ -61,11 +63,8 @@ PaneTreeView {
 
     StandardObjectModel {
         id: treeModel
-        InfoTreeDelegate {text: "API data mode"; info: RestDataModes.asString(RestManager.apiDataMode) }
-        InfoTreeDelegate {text: "API url"; info: RestManager.apiBaseUrl }
-        InfoTreeDelegate {text: "API port"; info: RestManager.apiPort }
-        InfoTreeDelegate {text: "API trailing slash"; info: RestManager.apiTrailingSlash }
-        InfoTreeDelegate {text: "API web socket"; info: RestManager.apiSocketEnabled }
+        InfoTreeDelegate {text: "API interne"; info: RestManager.localApiEnabled }
+        InfoTreeDelegate {text: "API effective url"; info: RestManager.apiEffectiveUrl }
         FormLabelDelegate {label: "API global headers"; value: RestManager.client.globalHeaders; valueType: FormValueTypes.Map; visible: root.editable }
         FormLabelDelegate {label: "API global parameters"; value: RestManager.client.globalParameters; valueType: FormValueTypes.Map; visible: root.editable }
         FormButtonDelegate {

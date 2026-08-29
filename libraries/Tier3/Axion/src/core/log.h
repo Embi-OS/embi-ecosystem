@@ -21,6 +21,9 @@ protected:
 public:
     Q_INVOKABLE void startElapsed() const;
     Q_INVOKABLE double elapsed() const;
+    Q_INVOKABLE void startElapsed(const QString& key) const;
+    Q_INVOKABLE double elapsed(const QString& key) const;
+    Q_INVOKABLE double endElapsed(const QString& key) const;
 
     Q_INVOKABLE void trace(const QString& message) const;
     Q_INVOKABLE void debug(const QString& message) const;

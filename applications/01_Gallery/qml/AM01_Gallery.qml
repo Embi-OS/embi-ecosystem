@@ -73,12 +73,14 @@ Page {
                 }
                 BasicMenuSeparator {}
                 BasicMenuItem {
-                    text: "Quit"
-                    onClicked: Qt.quit()
+                    icon.source: MaterialIcons.informationOutline
+                    text: "About"
+                    onClicked: AxionHelper.showAbout()
                 }
                 BasicMenuItem {
-                    text: "Exit"
-                    onClicked: Qt.exit(1)
+                    icon.source: MaterialIcons.power
+                    text: "Shutdown / Reboot"
+                    onClicked: powerPopup.open()
                 }
             }
         }
@@ -93,6 +95,11 @@ Page {
             anchors.fill: parent
             StandardObject.icon: MaterialIcons.atom
             StandardObject.text: "Axion"
+        }
+
+        DialogPower {
+            id: powerPopup
+            suspendVisible: false
         }
 
         LoaderDialogManager {

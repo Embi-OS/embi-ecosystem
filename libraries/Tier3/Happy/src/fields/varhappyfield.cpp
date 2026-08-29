@@ -63,7 +63,7 @@ QVariant VarHappyField::formatWrite(const QVariant& value, bool* ok) const
     switch (m_type) {
     case SqlColumnTypes::Json:
         if(!value.isNull()) {
-            return QString::fromUtf8(QUtils::Json::variantToJson(value));
+            return QString::fromUtf8(QUtils::Json::variantToJson(value, true, 6));
         }
     case SqlColumnTypes::Boolean:
         return value.toBool();

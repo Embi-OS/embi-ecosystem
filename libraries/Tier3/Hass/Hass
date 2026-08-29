@@ -1,0 +1,4 @@
+#include "hasssocket.h"
+#include "hasssocketattached.h"
+#include "hassentitymodel.h"
+#include "hassentitymapper.h"

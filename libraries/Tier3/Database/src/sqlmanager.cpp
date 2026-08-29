@@ -1,6 +1,7 @@
 #include "sqlmanager.h"
 #include "dialogs/snackbarmanager.h"
 #include "dialogs/dialogmanager.h"
+#include "sql_log.h"
 
 #include <QtConcurrentRun>
 
@@ -32,6 +33,7 @@ bool SqlManager::init()
     if(m_preparatorModule.isEmpty() || m_preparatorName.isEmpty())
     {
         SqlDbProfile profile = createConnectionProfile();
+        SQLLOG_INFO()<<"SqlManager configuration:"<<profile;
         SqlDbManager::Get()->openConnection(profile);
         return true;
     }
@@ -50,6 +52,8 @@ bool SqlManager::init()
     preparator->setPassword(m_dbPassword);
     preparator->setPort(m_dbPort);
     preparator->setConnectOptions(m_dbConnectOptions);
+
+    SQLLOG_INFO()<<"SqlManager configuration:"<<preparator->createConnectionProfile();
 
     bool result = SqlDbManager::Get()->open(preparator.data());
 

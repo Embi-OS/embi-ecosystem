@@ -31,8 +31,8 @@ public:
     QString readString() final override;
     QVariant readValue() final override;
 
-    QJsonParseError::ParseError lastError() const { return m_lastError; }
-    QJsonParseError error() const;
+    QJsonParseError::ParseError lastError() const { return m_error.error; }
+    QJsonParseError error() const { return m_error; }
     int errorCode() final override { return error().error; }
     QString errorString() final override { return error().errorString(); }
 
@@ -44,8 +44,9 @@ private:
     inline bool skipWhitespace();
     inline QString parseString();
     inline QVariant parseNumber();
+    void setError(QJsonParseError::ParseError error, qint64 offset = -1);
 
-    QJsonParseError::ParseError m_lastError;
+    QJsonParseError m_error;
 
     QByteArray m_buffer;
     const char *json;

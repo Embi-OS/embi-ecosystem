@@ -32,3 +32,12 @@ embi_add_qml_module(${PROJECT_NAME}
     DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+allFileRecurseRelative(ALL_RINGTONES_FILES ${CMAKE_CURRENT_SOURCE_DIR}/ringtones/*)
+qt_add_resources(${PROJECT_NAME} "${PROJECT_NAME}_ringtones"
+    BASE "ringtones"
+    PREFIX "/ringtones"
+    BIG_RESOURCES
+    FILES
+        ${ALL_RINGTONES_FILES}
+)

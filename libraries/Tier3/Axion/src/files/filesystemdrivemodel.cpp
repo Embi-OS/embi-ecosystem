@@ -8,6 +8,17 @@
 #include <QtConcurrentRun>
 #endif
 
+QString filesystemDriveTypesDisplayText(const int value)
+{
+    switch(value) {
+    case FilesystemDriveTypes::System:   return FilesystemDrive::tr("Système");
+    case FilesystemDriveTypes::Network:  return FilesystemDrive::tr("Réseau");
+    case FilesystemDriveTypes::Usb:      return FilesystemDrive::tr("USB");
+    case FilesystemDriveTypes::Standard: return FilesystemDrive::tr("Standard");
+    default: return QString();
+    }
+}
+
 FilesystemDrive::FilesystemDrive(const QStorageInfo& storage, const QFileInfo& info, QObject* parent) :
     FilesystemDrive (storage, info, QString(), parent)
 {
@@ -39,14 +50,14 @@ FilesystemDrive::FilesystemDrive(const QStorageInfo& storage, const QFileInfo& i
     m_driveRootPath = storage.rootPath();
     m_driveSubVolume = storage.subvolume();
 
-    if(m_driveIsRoot || m_driveIsRoot || m_driveIsConfig || m_driveIsOverlay)
-        m_driveDisplayType = tr("Système");
+    if(m_driveIsRoot || m_driveIsBoot || m_driveIsConfig || m_driveIsOverlay)
+        m_driveType = FilesystemDriveTypes::System;
     else if(m_driveIsNetwork)
-        m_driveDisplayType = tr("Réseau");
+        m_driveType = FilesystemDriveTypes::Network;
     else if(m_driveIsUsb)
-        m_driveDisplayType = tr("USB");
+        m_driveType = FilesystemDriveTypes::Usb;
     else
-        m_driveDisplayType = tr("Standard");
+        m_driveType = FilesystemDriveTypes::Standard;
 
     m_fileInfo = info;
     m_fileUrl = QUrl::fromLocalFile(info.absoluteFilePath()).toString();

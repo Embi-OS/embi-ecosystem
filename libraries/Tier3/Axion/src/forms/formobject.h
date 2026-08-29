@@ -64,6 +64,7 @@ class FormObject : public QStandardObject
     Q_WRITABLE_PTR_PROPERTY(QValidator, validator, Validator, nullptr)
 
     Q_READONLY_REF_PROPERTY(QVariant, currentValue, CurrentValue, {})
+    Q_READONLY_REF_PROPERTY(QVariant, workingValue, WorkingValue, {})
     Q_READONLY_VAR_PROPERTY(bool, acceptableInput, AcceptableInput, true)
 
     // Can be forwarded by model

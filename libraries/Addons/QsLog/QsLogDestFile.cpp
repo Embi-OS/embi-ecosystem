@@ -29,6 +29,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QtGlobal>
+#include <algorithm>
 #include <iostream>
 
 const int QsLogging::SizeRotationStrategy::MaxBackupCount = 10;
@@ -52,7 +53,7 @@ void QsLogging::SizeRotationStrategy::setInitialInfo(const QFile &file)
 
 void QsLogging::SizeRotationStrategy::includeMessageInCalculation(const QString &message)
 {
-    mCurrentSizeInBytes += message.toUtf8().size();
+    mCurrentSizeInBytes += message.toUtf8().size() + 1;
 }
 
 bool QsLogging::SizeRotationStrategy::shouldRotate()
@@ -76,7 +77,7 @@ void QsLogging::SizeRotationStrategy::rotate()
      for (int i = 1;i <= mBackupsCount;++i) {
          const QString backupFileName = logNamePattern.arg(i);
          if (QFile::exists(backupFileName))
-             lastExistingBackupIndex = qMin(i, mBackupsCount - 1);
+             lastExistingBackupIndex = (std::min)(i, mBackupsCount - 1);
          else
              break;
      }
@@ -117,7 +118,7 @@ void QsLogging::SizeRotationStrategy::setMaximumSizeInBytes(qint64 size)
 void QsLogging::SizeRotationStrategy::setBackupCount(int backups)
 {
     Q_ASSERT(backups >= 0);
-    mBackupsCount = qMin(backups, SizeRotationStrategy::MaxBackupCount);
+    mBackupsCount = (std::min)(backups, SizeRotationStrategy::MaxBackupCount);
 }
 
 
@@ -130,25 +131,32 @@ QsLogging::FileDestination::FileDestination(const QString& filePath, RotationStr
 
 void QsLogging::FileDestination::clear()
 {
+    mOutputStream.setDevice(NULL);
+    mFile.close();
     mFile.remove();
     init();
 }
 
 void QsLogging::FileDestination::write(const Message& message)
 {
+    if (!mFile.isOpen())
+        return;
+
     formatMessage(message);
     mRotationStrategy->includeMessageInCalculation(message.display);
     if (mRotationStrategy->shouldRotate()) {
         mOutputStream.setDevice(NULL);
         mFile.close();
         mRotationStrategy->rotate();
-        if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag()))
+        if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag())) {
             std::cerr<<"QsLog: could not reopen log file "<<qPrintable(mFile.fileName());
+            return;
+        }
         mRotationStrategy->setInitialInfo(mFile);
         mOutputStream.setDevice(&mFile);
     }
 
-    mOutputStream<<message.display<<Qt::endl;
+    mOutputStream<<message.display<<'\n';
     mOutputStream.flush();
 }
 
@@ -157,17 +165,23 @@ bool QsLogging::FileDestination::isValid()
     return mFile.isOpen();
 }
 
-void QsLogging::FileDestination::init()
+bool QsLogging::FileDestination::init()
 {
+    mOutputStream.setDevice(NULL);
+
     const QFileInfo fileInfo(mFile.fileName());
     const QString path = fileInfo.absolutePath();
     if (!path.isEmpty() && !QDir().mkpath(path)) {
         std::cerr<<"QsLog: could not create log path "<<qPrintable(path);
-        return;
+        return false;
     }
 
-    if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag()))
+    if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag())) {
         std::cerr<<"QsLog: could not open log file "<<qPrintable(mFile.fileName());
+        return false;
+    }
+
     mOutputStream.setDevice(&mFile);
     mRotationStrategy->setInitialInfo(mFile);
+    return true;
 }

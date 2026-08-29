@@ -15,7 +15,7 @@ Manual prerequisites:
 
 Configuration:
   Edit scripts/mysql.conf or pass common options such as:
-    --qt-root ~/Qt --qt-version 6.8.7 --rebuild
+    --qt-root /opt/Qt --qt-version 6.8.7 --rebuild
 
 Optional CMake overrides can be appended, for example:
   ./scripts/mysql_linux.sh -DMySQL_ROOT=/usr/local/mysql
@@ -166,7 +166,7 @@ run_cmd "$LINUX_CMAKE_BIN" -G "$GENERATOR" -S "$LINUX_SOURCE_SQLDRIVERS_DIR" -B 
     -DMySQL_INCLUDE_DIR:PATH="$MYSQL_INCLUDE_DIR" \
     -DMySQL_LIBRARY:FILEPATH="$MYSQL_LIBRARY" \
     -DQT_GENERATE_SBOM:BOOL=OFF \
-    $EXTRA_ARGS
+    "${EXTRA_ARGS[@]}"
 
 run_cmd "$LINUX_CMAKE_BIN" --build "$LINUX_BUILD_DIR" --target all
 [ -w "$LINUX_PREFIX_PATH" ] || error_exit "Qt kit is not writable: $LINUX_PREFIX_PATH. Install the built driver with: sudo \"$LINUX_CMAKE_BIN\" --install \"$LINUX_BUILD_DIR\""

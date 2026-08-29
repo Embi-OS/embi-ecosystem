@@ -4,6 +4,7 @@
 #include <QCborArray>
 #include <QCborMap>
 #include <QIODevice>
+#include <limits>
 
 static void variantToCbor(const QVariant &value, QCborStreamWriter &writer, int opt);
 
@@ -54,7 +55,7 @@ static inline void variantValueToCbor(const QVariant &value, QCborStreamWriter &
         writer.append(value.toLongLong());
         break;
     case QMetaType::ULongLong:
-        if (value.toULongLong() <= static_cast<uint64_t>(std::numeric_limits<qint64>::max())) {
+        if (value.toULongLong() <= static_cast<uint64_t>((std::numeric_limits<qint64>::max)())) {
             writer.append(value.toLongLong());
             break;
         }
@@ -96,6 +97,7 @@ void variantToCbor(const QVariant &value, QCborStreamWriter &writer, int opt)
 
 QCborVariantWriter::QCborVariantWriter(QIODevice *device, int options):
     m_device(new QCborStreamWriter(device)),
+    m_writeError(true),
     m_options(options)
 {
 
@@ -103,6 +105,7 @@ QCborVariantWriter::QCborVariantWriter(QIODevice *device, int options):
 
 QCborVariantWriter::QCborVariantWriter(QByteArray *data, int options):
     m_device(new QCborStreamWriter(data)),
+    m_writeError(true),
     m_options(options)
 {
 
@@ -120,31 +123,53 @@ QCborStreamWriter* QCborVariantWriter::device() const
 
 void QCborVariantWriter::start()
 {
-    m_device->device()->open(QIODevice::WriteOnly | QIODevice::Unbuffered);
+    m_writeError = false;
+    QIODevice *device = m_device ? m_device->device() : nullptr;
+    if (!device) {
+        m_writeError = true;
+    } else if (device->isOpen()) {
+        m_writeError = !device->isWritable();
+    } else {
+        m_writeError = !device->open(QIODevice::WriteOnly | QIODevice::Unbuffered);
+    }
 }
 void QCborVariantWriter::startArray()
 {
+    if (m_writeError)
+        return;
     m_device->startArray();
 }
 void QCborVariantWriter::startArray(quint64 count)
 {
+    if (m_writeError)
+        return;
     m_device->startArray(count);
 }
 void QCborVariantWriter::endArray()
 {
-    m_device->endArray();
+    if (m_writeError)
+        return;
+    if (!m_device->endArray())
+        m_writeError = true;
 }
 void QCborVariantWriter::startMap()
 {
+    if (m_writeError)
+        return;
     m_device->startMap();
 }
 void QCborVariantWriter::startMap(quint64 count)
 {
+    if (m_writeError)
+        return;
     m_device->startMap(count);
 }
 void QCborVariantWriter::endMap()
 {
-    m_device->endMap();
+    if (m_writeError)
+        return;
+    if (!m_device->endMap())
+        m_writeError = true;
 }
 
 void QCborVariantWriter::writeKeyValue(QLatin1StringView key, const QVariant& value)
@@ -165,30 +190,50 @@ void QCborVariantWriter::writeKeyValue(QUtf8StringView key, const QVariant& valu
 
 void QCborVariantWriter::writeString(QLatin1StringView s)
 {
+    if (m_writeError)
+        return;
     m_device->append(s);
 }
 void QCborVariantWriter::writeString(QStringView s)
 {
+    if (m_writeError)
+        return;
     m_device->append(s);
 }
 void QCborVariantWriter::writeString(QUtf8StringView s)
 {
+    if (m_writeError)
+        return;
     m_device->appendTextString(s.data(), s.size());
 }
 void QCborVariantWriter::writeRaw(const char *data, qint64 len)
 {
-    m_device->device()->write(data, len);
+    if (!data || m_writeError)
+        return;
+    QIODevice *device = m_device->device();
+    if (!device || device->write(data, len) != len)
+        m_writeError = true;
 }
 void QCborVariantWriter::writeRaw(const char *data)
 {
-    m_device->device()->write(data);
+    if (!data || m_writeError)
+        return;
+    QIODevice *device = m_device->device();
+    if (!device || device->write(data) < 0)
+        m_writeError = true;
 }
 void QCborVariantWriter::writeRaw(const QByteArray &data)
 {
-    m_device->device()->write(data);
+    if (m_writeError)
+        return;
+    QIODevice *device = m_device->device();
+    if (!device || device->write(data) != data.size())
+        m_writeError = true;
 }
 void QCborVariantWriter::writeVariant(const QVariant &v)
 {
+    if (m_writeError)
+        return;
     ::variantToCbor(v, *m_device, m_options);
 }
 
@@ -212,4 +257,3 @@ void QCborVariantWriter::fromVariant(const QVariant& variant, QIODevice* device,
     writer.start();
     writer.writeVariant(variant);
 }
-

@@ -1,15 +1,10 @@
 #include "ClockMedia.h"
-#include "ClockDisplay.h"
-
 ClockMedia::ClockMedia(QObject *parent) :
     AbstractManager(parent),
     m_volumeAnimation(new QPropertyAnimation(this))
 {
     m_volumeAnimation->setPropertyName("volume");
-    m_volumeAnimation->setDuration(5000);
     m_volumeAnimation->setEasingCurve(QEasingCurve::Linear);
-    m_volumeAnimation->setStartValue(0.0);
-    m_volumeAnimation->setEndValue(1.0);
 
     connect(this, &ClockMedia::mediaPlayerAboutToChange, this, &ClockMedia::onMediaPlayerAboutToChange);
     connect(this, &ClockMedia::mediaPlayerChanged, this, &ClockMedia::onMediaPlayerChanged);
@@ -17,42 +12,42 @@ ClockMedia::ClockMedia(QObject *parent) :
 
 bool ClockMedia::init()
 {
-    connect(ClockDisplay::Get(), &ClockDisplay::stateChanged, this, [this](ClockDisplayState state){
-        if(state==ClockDisplayStates::On) {
-            if(m_volumeAnimation->state()!=QAbstractAnimation::Running)
-                return;
-
-            m_volumeAnimation->stop();
-            if(m_mediaPlayer->audioOutput()->volume()>m_defaultVolume/100.0)
-                m_mediaPlayer->audioOutput()->setVolume(m_defaultVolume/100.0);
-        }
-    });
-
-    QSettingsMapper* persistantData = new QSettingsMapper(this);
-    persistantData->setSelectPolicy(QVariantMapperPolicies::Manual);
-    persistantData->setSubmitPolicy(QVariantMapperPolicies::Delayed);
-    persistantData->setSettingsCategory(managerName());
-    persistantData->select();
-    persistantData->waitForSelect();
-
-    persistantData->mapProperty(this,"wakeTimeout");
-    persistantData->mapProperty(this,"defaultVolume");
-
     return true;
 }
 
-void ClockMedia::startMedia()
+void ClockMedia::startMedia(int volume, int fadeInDuration, ClockAlarmMediaStartModes::Enum startMode)
 {
     if(!m_mediaPlayer)
-        return;
-
-    MediaItemModelAttached::wrap(m_mediaPlayer)->getPlaylist()->autoNext();
-
-    if(ClockDisplay::Get()->getState()==ClockDisplayStates::Waking)
     {
-        m_volumeAnimation->setDuration(m_wakeTimeout * 60 * 1000);
+        qWarning() << "[ClockMedia] Cannot start media: no media player";
+        return;
+    }
+
+    qTrace() << "[ClockMedia] Starting media" << m_mediaPlayer->source() << "volume" << volume
+            << "fade-in" << fadeInDuration << "seconds" << "start mode" << startMode;
+
+    if(startMode == ClockAlarmMediaStartModes::Next)
+        MediaItemModelAttached::wrap(m_mediaPlayer)->getPlaylist()->autoNext();
+
+    QAudioOutput* audioOutput = m_mediaPlayer->audioOutput();
+    if(!audioOutput)
+    {
+        qWarning() << "[ClockMedia] Cannot start media: no audio output";
+        return;
+    }
+
+    const qreal targetVolume = qBound(0, volume, 100) / 100.0;
+    m_volumeAnimation->stop();
+    if(fadeInDuration > 0)
+    {
+        audioOutput->setVolume(0.0);
+        m_volumeAnimation->setDuration(fadeInDuration * 1000);
+        m_volumeAnimation->setStartValue(0.0);
+        m_volumeAnimation->setEndValue(targetVolume);
         m_volumeAnimation->start();
     }
+    else
+        audioOutput->setVolume(targetVolume);
 
     QMetaObject::invokeMethod(m_mediaPlayer, &QMediaPlayer::play, Qt::QueuedConnection);
 }
@@ -62,6 +57,7 @@ void ClockMedia::stopMedia()
     if(!m_mediaPlayer)
         return;
 
+    qTrace() << "[ClockMedia] Stopping media" << m_mediaPlayer->source();
     m_mediaPlayer->stop();
     m_volumeAnimation->stop();
 }
@@ -82,12 +78,21 @@ void ClockMedia::onMediaPlayerChanged(QMediaPlayer* mediaPlayer)
     if(!mediaPlayer)
         return;
 
+    qTrace() << "[ClockMedia] Media player attached" << mediaPlayer << "source" << mediaPlayer->source();
     connect(mediaPlayer, &QMediaPlayer::errorOccurred, this, &ClockMedia::handleMediaPlayerError);
+    connect(mediaPlayer, &QMediaPlayer::mediaStatusChanged, this, [mediaPlayer](QMediaPlayer::MediaStatus status) {
+        qTrace() << "[ClockMedia] Media status" << status << mediaPlayer->source();
+    });
+    connect(mediaPlayer, &QMediaPlayer::playbackStateChanged, this, [mediaPlayer](QMediaPlayer::PlaybackState state) {
+        qTrace() << "[ClockMedia] Playback state" << state << mediaPlayer->source();
+    });
 
     m_volumeAnimation->setTargetObject(mediaPlayer->audioOutput());
 }
 
 void ClockMedia::handleMediaPlayerError(QMediaPlayer::Error error, const QString &errorString)
 {
-    qWarning()<<error<<errorString;
+    QMediaPlayer* mediaPlayer = qobject_cast<QMediaPlayer*>(sender());
+    qWarning() << "[ClockMedia] Media player error" << error << errorString
+               << "source" << (mediaPlayer ? mediaPlayer->source() : QUrl());
 }

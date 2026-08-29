@@ -8,29 +8,25 @@ RowLayout {
     property bool wrap: true
     property int visibleItemCount: 3
 
-    property alias selectedHour: hourTumbler.currentIndex
-    property alias selectedMinute: minuteTumbler.currentIndex
-    property alias selectedSecond: secondTumbler.currentIndex
-
     property date selectedTime: new Date()
+    readonly property int selectedHour: hourTumbler.currentIndex
+    readonly property int selectedMinute: minuteTumbler.currentIndex
+    readonly property int selectedSecond: secondTumbler.currentIndex
 
-    signal accepted(date time)
+    signal timeChanged(date time)
 
-    property bool _pendingEvaluate: true
-    function evaluate() {
-        if(_pendingEvaluate)
+    property bool _updatingSelectedTime: false
+
+    function updateSelectedTime() {
+        if(_updatingSelectedTime)
             return;
-        _pendingEvaluate = true;
+        _updatingSelectedTime = true;
 
-        root.selectedTime = new Date(0,0,0,hourTumbler.currentIndex, minuteTumbler.currentIndex, secondTumbler.currentIndex);
-        root.accepted(root.selectedTime);
+        const seconds = root.showSeconds ? secondTumbler.currentIndex : 0;
+        root.selectedTime = new Date(0,0,0,hourTumbler.currentIndex, minuteTumbler.currentIndex, seconds);
+        root.timeChanged(root.selectedTime);
 
-        _pendingEvaluate = false;
-    }
-
-    Component.onCompleted: {
-        _pendingEvaluate = false
-        evaluate()
+        _updatingSelectedTime = false;
     }
 
     Item {
@@ -49,7 +45,7 @@ RowLayout {
         }
         onMovingChanged: {
             if(!moving)
-                root.evaluate()
+                root.updateSelectedTime()
         }
     }
 
@@ -71,7 +67,7 @@ RowLayout {
         }
         onMovingChanged: {
             if(!moving)
-                root.evaluate()
+                root.updateSelectedTime()
         }
     }
 
@@ -87,14 +83,14 @@ RowLayout {
         wrap: root.wrap
         visibleItemCount: root.visibleItemCount
         model: 60
-        currentIndex: visible ? root.selectedTime.getSeconds() : -1
+        currentIndex: root.selectedTime.getSeconds()
         delegate: LabelTumbler {
             required property int index
             text: FormatUtils.intToString(index,2)
         }
         onMovingChanged: {
             if(!moving)
-                root.evaluate()
+                root.updateSelectedTime()
         }
     }
 

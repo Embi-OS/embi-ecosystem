@@ -1,29 +1,26 @@
 #include "localesettings.h"
 #include "solid_log.h"
 
-#include "qtranslatorloader.h"
-
 #if !defined(QT_NO_DBUS) && (defined(Q_OS_BOOT2QT) || defined(Q_OS_LINUX))
 #include "locale1interface.h"
 #endif
 
+#if !defined(QT_NO_DBUS) && (defined(Q_OS_BOOT2QT) || defined(Q_OS_LINUX))
 LocaleSettings::LocaleSettings(QObject *parent) :
     QObject(parent),
-#if !defined(QT_NO_DBUS) && (defined(Q_OS_BOOT2QT) || defined(Q_OS_LINUX))
     m_interface(new OrgFreedesktopLocale1Interface(QStringLiteral("org.freedesktop.locale1"),
                                                    QStringLiteral("/org/freedesktop/locale1"),
-                                                   QDBusConnection::systemBus(), this)),
+                                                   QDBusConnection::systemBus(), this))
+#else
+LocaleSettings::LocaleSettings(QObject *parent) :
+    QObject(parent)
 #endif
-    m_translator(new QTranslatorLoader(this))
 {
     if (!m_interface) {
         SOLIDLOG_WARNING() << "Could not find a localesettings backend matching this platform";
     }
 
-    m_translator->componentComplete();
     QLocale::setDefault(QLocale(getLocale()));
-
-    reloadTranslator();
 }
 
 void LocaleSettings::init()
@@ -66,12 +63,6 @@ bool LocaleSettings::setLocale(const QString& locale)
 
     QLocale::setDefault(QLocale(locale));
     emit this->localeChanged();
-    return reloadTranslator();
-}
-
-bool LocaleSettings::reloadTranslator()
-{
-    m_translator->setLanguage(QLocale(getLocale()).name().split("_").at(0));
     return true;
 }
 
@@ -83,4 +74,3 @@ void LocaleSettings::updateLocale()
 
     m_interface->SetLocale(newLocale, true);
 }
-

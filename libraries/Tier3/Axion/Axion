@@ -21,5 +21,3 @@
 
 #include "tables/tableviewcolumnmodel.h"
 #include "tables/tableviewmodel.h"
-
-#include "helpers/alarmobject.h"

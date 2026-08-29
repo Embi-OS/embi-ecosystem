@@ -10,6 +10,7 @@ include(Common)
 
 add_subdirectory(Axion)
 add_subdirectory(Postman)
+add_subdirectory(Hass)
 
 if(NOT EMSCRIPTEN)
 

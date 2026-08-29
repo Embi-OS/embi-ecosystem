@@ -11,7 +11,7 @@ Item {
         id: dialogsColor
         title: "ColorDialog"
 
-        options: dontUseNativeDialog.checked ? SystemColorDialog.DontUseNativeDialog : 0
+        options: SystemColorDialog.ShowAlphaChannel | (dontUseNativeDialog.checked ? SystemColorDialog.DontUseNativeDialog : 0)
     }
 
     SystemFileDialog {

@@ -40,6 +40,7 @@ public:
 
 private:
     QCborStreamWriter *m_device;
+    bool m_writeError;
 
     int m_options;
 };

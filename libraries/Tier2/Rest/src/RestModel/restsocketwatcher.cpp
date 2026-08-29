@@ -113,7 +113,7 @@ void RestSocketWatcher::handleSocketDisconnected()
         return;
     }
 
-    const QString reason = m_socket->getError().isEmpty() ? tr("Socket disconnected") : m_socket->getError();
+    const QString reason = m_socket->getError().isEmpty() ? QString("Socket disconnected") : m_socket->getError();
     setDisconnected(reason);
 }
 
@@ -144,7 +144,7 @@ void RestSocketWatcher::onPingTimeout()
         return;
     }
 
-    const QString reason = tr("Socket ping timeout");
+    const QString reason = QString("Socket ping timeout");
     RESTLOG_CRITICAL()<<"Socket ping error after"<<m_pingTimeoutCount<<"retries";
     setDisconnected(reason);
 

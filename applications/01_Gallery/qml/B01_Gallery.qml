@@ -212,6 +212,7 @@ BasicPane {
             property string file
             readonly property string loadedFile: file || "Placeholder"
             property Item userItem
+            property Component userComponent
 
             DebugRectangle {
                 anchors.fill: loader.userItem
@@ -222,12 +223,20 @@ BasicPane {
             function doLoad(file: string) {
                 if (userItem)
                     userItem.destroy()
+
+                if(userComponent) {
+                    userComponent.destroy()
+                    userComponent = null
+                }
+
                 var component = Qt.createComponent("L01_Gallery", file, Component.PreferSynchronous, loader);
                 if(component.status!==Component.Ready) {
                     console.error("Failed to load:", file)
                     console.warn(component.errorString())
+                    component.destroy()
                     return;
                 }
+                userComponent = component
                 isLoading=true
                 var incubator = component.incubateObject(loader, {
                     "visible": true,

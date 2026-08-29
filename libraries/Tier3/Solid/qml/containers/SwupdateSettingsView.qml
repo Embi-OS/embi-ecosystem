@@ -24,6 +24,7 @@ PaneTreeView {
             "formObject": swupdateSettings,
             "onClosed": function () {
                 model.destroy()
+                component.destroy()
             },
             "onFormValidated": function(formValues) {
                 Swupdate.restart()

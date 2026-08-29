@@ -4,36 +4,13 @@
 #include <QDefs>
 #include <QModels>
 
-class AlarmModel : public QObjectListModel
-{
-    Q_OBJECT
-    QML_ELEMENT
-
-    Q_WRITABLE_VAR_PROPERTY(bool, enabled, Enabled, false)
-
-    Q_READONLY_VAR_PROPERTY(int, msToNextRingTime, MsToNextRingTime, 0)
-    Q_READONLY_REF_PROPERTY(QDateTime, nextRingDateTime, NextRingDateTime, {})
-    Q_READONLY_REF_PROPERTY(QString, nextTimeRing, NextTimeRing, {})
-
-public:
-    explicit AlarmModel(QObject* parent = nullptr);
-
-    Q_INVOKABLE void create(const QVariantMap& alarmMap);
-
-signals:
-    void remainingTimeChanged();
-    void ringing();
-
-private slots:
-    void invalidateRemainingTimeChange();
-};
-
 class AlarmObject: public QObject
 {
     Q_OBJECT
     QML_ELEMENT
 
     Q_WRITABLE_REF_PROPERTY(QString, uuid, Uuid, "")
+    Q_WRITABLE_REF_PROPERTY(QString, group, Group, "")
 
     Q_WRITABLE_REF_PROPERTY(QString, name, Name, "")
     Q_WRITABLE_VAR_PROPERTY(bool, enabled, Enabled, false)
@@ -42,6 +19,7 @@ class AlarmObject: public QObject
     Q_WRITABLE_REF_PROPERTY(QDate, date, Date, {})
     Q_WRITABLE_VAR_PROPERTY(bool, repeat, Repeat, false)
     Q_WRITABLE_VAR_PROPERTY(int, weekdays, Weekdays, 0)
+    Q_WRITABLE_REF_PROPERTY(QVariantMap, details, Details, {})
 
     Q_READONLY_VAR_PROPERTY(int, msToNextRingTime, MsToNextRingTime, 0)
     Q_READONLY_REF_PROPERTY(QDateTime, nextRingDateTime, NextRingDateTime, {})
@@ -78,6 +56,30 @@ private:
 
     QTimer* m_timer = nullptr;
     QTimer* m_remainingTimeChangeCaller = nullptr;
+};
+
+class AlarmModel : public QObjectListModel
+{
+    Q_OBJECT
+    QML_ELEMENT
+
+    Q_WRITABLE_VAR_PROPERTY(bool, enabled, Enabled, false)
+
+    Q_READONLY_VAR_PROPERTY(int, msToNextRingTime, MsToNextRingTime, 0)
+    Q_READONLY_REF_PROPERTY(QDateTime, nextRingDateTime, NextRingDateTime, {})
+    Q_READONLY_REF_PROPERTY(QString, nextTimeRing, NextTimeRing, {})
+
+public:
+    explicit AlarmModel(QObject* parent = nullptr);
+
+    Q_INVOKABLE void create(const QVariantMap& alarmMap);
+
+signals:
+    void remainingTimeChanged();
+    void ringing(AlarmObject* alarmObject);
+
+private slots:
+    void invalidateRemainingTimeChange();
 };
 
 #endif // ALARMOBJECT_H

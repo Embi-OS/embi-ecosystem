@@ -14,6 +14,8 @@ class RestManager : public AbstractManager
 
     Q_CONSTANT_PTR_PROPERTY(RestClient, client)
 
+    Q_WRITABLE_VAR_PROPERTY(bool, localApiEnabled, LocalApiEnabled, false)
+
     Q_WRITABLE_VAR_PROPERTY(RestDataModes::Enum, apiDataMode, ApiDataMode, RestDataModes::Json)
     Q_WRITABLE_REF_PROPERTY(QString, apiBaseUrl, ApiBaseUrl, "localhost")
     Q_WRITABLE_VAR_PROPERTY(int, apiPort, ApiPort, 32768)
@@ -21,19 +23,16 @@ class RestManager : public AbstractManager
     Q_WRITABLE_VAR_PROPERTY(bool, apiSocketEnabled, ApiSocketEnabled, true)
     Q_WRITABLE_REF_PROPERTY(QString, apiKey, ApiKey, "")
 
+    Q_READONLY_REF_PROPERTY(QString, apiEffectiveUrl, ApiEffectiveUrl, "")
+
 private:
     explicit RestManager(QObject *parent = nullptr);
 
 public:
     bool init() final override;
 
-    bool localhost() const;
-
 public slots:
     void authenticate(const QString& identifier, const QString& password);
-
-private:
-    bool m_isLocalhost=false;
 };
 
 #endif // RESTMANAGER_H

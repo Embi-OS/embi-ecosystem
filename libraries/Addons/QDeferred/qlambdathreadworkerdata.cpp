@@ -87,22 +87,6 @@ QLambdaThreadWorkerData::QLambdaThreadWorkerData()
     QObject::connect(mp_workerThread, &QThread::finished, mp_workerObj, &QObject::deleteLater);
     // start thread
     mp_workerThread->start();
-
-    QObject::connect(mp_workerThread, &QThread::started, mp_workerObj, []() {
-        // Ensure that worker is running on any core
-#if defined(Q_OS_BOOT2QT) && defined(Q_DEVICE_APALIS_IMX8) && defined(Q_MANUAL_CORE_AFFINITY)
-        int pid = syscall(SYS_gettid);
-        cpu_set_t mask;
-        CPU_ZERO(&mask);
-        for (int i = 0; i < CPU_SETSIZE; i++) {
-            CPU_SET(i, &mask);
-        }
-        if (sched_setaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
-            qCritical() << "Error while executing sched_setaffinity to reset affinity";
-            assert(false);
-        }
-#endif
-    });
 }
 
 QLambdaThreadWorkerData::QLambdaThreadWorkerData(const QLambdaThreadWorkerData &other) : 
@@ -118,11 +102,18 @@ QLambdaThreadWorkerData::QLambdaThreadWorkerData(const QLambdaThreadWorkerData &
 
 QLambdaThreadWorkerData::~QLambdaThreadWorkerData()
 {
-    if (m_requestedQuit || mp_workerThread->isFinished())
+    if (!mp_workerThread || mp_workerThread->isFinished())
     {
         return;
     }
+
+    m_requestedQuit = true;
     mp_workerThread->quit();
+
+    if (QThread::currentThread() != mp_workerThread)
+    {
+        mp_workerThread->wait();
+    }
 }
 
 bool QLambdaThreadWorkerData::execInThread(const std::function<void()> &threadFunc, const Qt::EventPriority &priority/* = Qt::NormalEventPriority*/)

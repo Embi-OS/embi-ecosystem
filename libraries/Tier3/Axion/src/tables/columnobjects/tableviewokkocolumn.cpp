@@ -54,7 +54,7 @@ QVariant TableViewOkKoColumn::sourceOKKOData(int row, const TableViewModel& view
         return variant;
 
     bool ok = true;
-    const QVariant& nestedVariant = qVariantGetNestedValue(variant, m_okkoSubRoleNames);
+    const QVariant nestedVariant = qVariantGetNestedValue(variant, m_okkoSubRoleNames, &ok);
     if(!ok) {
         AXIONLOG_DEBUG()<<m_okkoRoleName<<"does not exist";
     }

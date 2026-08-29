@@ -52,6 +52,12 @@ FocusScope {
     readonly property BasicLabel labelLabel: labelLabel
     readonly property BasicLabel hintLabel: hintLabel
 
+    MouseArea {
+        //visible: !root.editable
+        anchors.fill: parent
+        onClicked: root.clicked()
+    }
+
     Rectangle {
         id: labelRectangle
         anchors.left: root.left
@@ -136,4 +142,5 @@ FocusScope {
         anchors.fill: parent
         onClicked: root.clicked()
     }
+
 }

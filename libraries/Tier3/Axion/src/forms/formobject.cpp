@@ -344,6 +344,7 @@ bool FormObject::doRevert()
 bool FormObject::changeValue(const QVariant& value)
 {
     const QVariant formattedValue = formatValue(value);
+    setWorkingValue(formattedValue);
     if(!setCurrentValue(formattedValue))
         return false;
 
@@ -364,18 +365,21 @@ bool FormObject::changeValue(const QVariant& value)
 bool FormObject::loadDefaultValue()
 {
     const QVariant formattedValue = formatValue(m_defaultValue);
+    setWorkingValue(formattedValue);
     return setCurrentValue(formattedValue);
 }
 
 bool FormObject::loadCurrentValue()
 {
     const QVariant formattedValue = formatValue(m_value);
+    setWorkingValue(formattedValue);
     return setCurrentValue(formattedValue);
 }
 
 bool FormObject::loadTargetValue()
 {
     const QVariant formattedValue = formatValue(m_targetPropertyValue);
+    setWorkingValue(formattedValue);
     return setCurrentValue(formattedValue);
 }
 
@@ -388,6 +392,8 @@ void FormObject::validateValue(const QVariant& value)
 {
     if(!m_completed)
         return;
+
+    setWorkingValue(value);
 
     bool acceptableInput = isValueValid(value);
     setAcceptableInput(acceptableInput);
@@ -626,7 +632,7 @@ QString FormObject::valueToText(const QVariant& value) const
             text = QLocale().c().toString(value.toLongLong());
             break;
         case FormValueTypes::Double:
-            text = QLocale().c().toString(value.toDouble());
+            text = QLocale().c().toString(value.toDouble(), 'g', QLocale::FloatingPointShortest);
             break;
         default:
             switch (value.userType()) {

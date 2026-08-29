@@ -24,6 +24,10 @@ public:
     static const QString& defaultPath();
     static const QString& defaultName();
 
+    static QSettings* createSettings(QObject *parent = nullptr);
+    static QSettings* createSettings(const QString& baseName, QObject *parent = nullptr);
+    static QSettings* createSettings(const QString& settingsPath, const QString& baseName, QObject *parent = nullptr);
+
 protected:
     bool doSelect() final override;
     bool doSubmit(const QStringList& dirtyKeys) final override;

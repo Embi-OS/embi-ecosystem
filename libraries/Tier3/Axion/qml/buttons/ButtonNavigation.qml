@@ -7,8 +7,6 @@ Rectangle {
     required property int position
     required property bool isFirstRow
 
-    property bool navigationLocked: false
-
     signal clicked(int position)
 
     readonly property bool isFirstColumn: !position
@@ -70,11 +68,6 @@ Rectangle {
         id: mouseArea
         grabPermissions: PointerHandler.TakeOverForbidden
         gesturePolicy: TapHandler.ReleaseWithinBounds
-        onTapped: {
-            if(!root.navigationLocked)
-                root.clicked(root.position)
-            else
-                SnackbarManager.showWarning(qsTr("La navigation est désactivée"))
-        }
+        onTapped: root.clicked(root.position)
     }
 }

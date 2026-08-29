@@ -4,6 +4,8 @@
 #include <Axion>
 #include <Media>
 #include <QMediaPlayer>
+
+#include "ClockAlarmAudio.h"
 #include <QAudioOutput>
 #include <QPropertyAnimation>
 
@@ -23,9 +25,6 @@ class ClockMedia : public AbstractManager
 
     Q_WRITABLE_PTR_PROPERTY(QMediaPlayer, mediaPlayer, MediaPlayer, nullptr)
 
-    Q_WRITABLE_VAR_PROPERTY(int, wakeTimeout, WakeTimeout, 5)
-    Q_WRITABLE_VAR_PROPERTY(int, defaultVolume, DefaultVolume, 20)
-
 private:
     explicit ClockMedia(QObject *parent = nullptr);
 
@@ -33,7 +32,7 @@ public:
     bool init() final override;
 
 public slots:
-    void startMedia();
+    void startMedia(int volume, int fadeInDuration, ClockAlarmMediaStartModes::Enum startMode);
     void stopMedia();
 
 private slots:

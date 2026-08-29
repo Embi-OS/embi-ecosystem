@@ -1,5 +1,17 @@
 ﻿#include "formatutils.h"
 #include <QUtils>
+#include <QRegularExpression>
+
+static QString cleanQmlTypeName(QString typeName)
+{
+    const int addressIndex = typeName.indexOf('(');
+    if(addressIndex>=0)
+        typeName.truncate(addressIndex);
+
+    typeName = typeName.trimmed();
+    typeName.remove(QRegularExpression(QStringLiteral("_(QMLTYPE|QML)_\\d+$")));
+    return typeName;
+}
 
 FormatUtils::FormatUtils(QObject *parent) :
     QObject(parent)
@@ -73,17 +85,26 @@ QString FormatUtils::intToString(qint64 n, int size, char fill) const
     return string.rightJustified(size, fill, false);
 }
 
+QString FormatUtils::qmlTypeName(const QVariant& variant) const
+{
+    const QVariant value = qVariantFromJSVariant(variant);
+    if(QObject* object = value.value<QObject*>())
+        return cleanQmlTypeName(QString::fromLatin1(object->metaObject()->className()));
+
+    return cleanQmlTypeName(value.toString());
+}
+
 QByteArray FormatUtils::variantToLog(const QVariant& variant, bool compact) const
 {
     return QUtils::Log::variantToLog(qVariantFromJSVariant(variant), compact);
 }
 
-QByteArray FormatUtils::variantToJson(const QVariant& variant, bool compact) const
+QByteArray FormatUtils::variantToJson(const QVariant& variant, bool compact, int doublePrecision) const
 {
-    return QUtils::Json::variantToJson(qVariantFromJSVariant(variant), compact);
+    return QUtils::Json::variantToJson(qVariantFromJSVariant(variant), compact, doublePrecision);
 }
 
-QVariant FormatUtils::jsonToVariant(const QByteArray& json)
+QVariant FormatUtils::jsonToVariant(const QByteArray& json) const
 {
     return QUtils::Json::jsonToVariant(json);
 }
@@ -93,7 +114,17 @@ QByteArray FormatUtils::variantToCbor(const QVariant& variant, int opt) const
     return QUtils::Cbor::variantToCbor(qVariantFromJSVariant(variant), opt);
 }
 
-QVariant FormatUtils::cborToVariant(const QByteArray& cbor)
+QVariant FormatUtils::cborToVariant(const QByteArray& cbor) const
 {
     return QUtils::Cbor::cborToVariant(cbor);
+}
+
+QVariantMap FormatUtils::objectToVariant(const QObject* object) const
+{
+    return QUtils::Object::objectToVariant(object);
+}
+
+bool FormatUtils::variantToObject(const QVariantMap& variant, QObject* object) const
+{
+    return QUtils::Object::variantToObject(variant, object);
 }

@@ -15,7 +15,7 @@ StandardObject {
     icon: root.status===StepObjectStates.Current ? MaterialIcons.arrowRightThin :
           root.status===StepObjectStates.Done ? MaterialIcons.check :
           root.status===StepObjectStates.Failed ? MaterialIcons.close :
-          root.status===StepObjectStates.Skipped ? MaterialIcons.arrowURightBottom : MaterialIcons.template
+          root.status===StepObjectStates.Skipped ? MaterialIcons.arrowURightBottom : MaterialIcons.template_
 
     property int status: StepObjectStates.NotDone
 

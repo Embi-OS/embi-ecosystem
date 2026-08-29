@@ -58,14 +58,14 @@ FolderTreeObject::FolderTreeObject(const QString& path, const QStorageInfo& info
     m_driveRootPath = info.rootPath();
     m_driveSubVolume = info.subvolume();
 
-    if(m_driveIsRoot || m_driveIsRoot || m_driveIsConfig || m_driveIsOverlay)
-        m_driveDisplayType = tr("Système");
+    if(m_driveIsRoot || m_driveIsBoot || m_driveIsConfig || m_driveIsOverlay)
+        m_driveType = FilesystemDriveTypes::System;
     else if(m_driveIsNetwork)
-        m_driveDisplayType = tr("Réseau");
+        m_driveType = FilesystemDriveTypes::Network;
     else if(m_driveIsUsb)
-        m_driveDisplayType = tr("USB");
+        m_driveType = FilesystemDriveTypes::Usb;
     else
-        m_driveDisplayType = tr("Standard");
+        m_driveType = FilesystemDriveTypes::Standard;
 
     updateName();
     updateText();

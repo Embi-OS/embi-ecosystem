@@ -26,9 +26,9 @@ BasicDialog {
 
     buttonsContainer: [
         ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.RejectRole; id: cancelButton; text: qsTr("Annuler");},
-        ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; id: quitButton; text: qsTr("Quitter");        onClicked: root.quit();     visible: root.quitVisible;      highlighted: !suspendButton.visible && !restartButton.visible && !rebootButton.visible && !shutdownButton.visible},
-        ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; id: suspendButton; text: qsTr("Veille");      onClicked: root.suspend();  visible: root.suspendVisible;   highlighted: !restartButton.visible && !rebootButton.visible && !shutdownButton.visible},
-        ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; id: restartButton; text: qsTr("Relancer");    onClicked: root.restart();  visible: root.restartVisible;   highlighted: !rebootButton.visible && !shutdownButton.visible},
+        ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; id: suspendButton; text: qsTr("Veille");      onClicked: root.suspend();  visible: root.suspendVisible;   highlighted: !suspendButton.visible && !restartButton.visible && !rebootButton.visible && !shutdownButton.visible},
+        ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; id: restartButton; text: qsTr("Relancer");    onClicked: root.restart();  visible: root.restartVisible;   highlighted: !restartButton.visible && !rebootButton.visible && !shutdownButton.visible},
+        ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; id: quitButton; text: qsTr("Quitter");        onClicked: root.quit();     visible: root.quitVisible;      highlighted: !rebootButton.visible && !shutdownButton.visible},
         ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; id: rebootButton; text: qsTr("Redémarrer");   onClicked: root.reboot();   visible: root.rebootVisible;    highlighted: !shutdownButton.visible},
         ButtonDialog {DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; id: shutdownButton; text: qsTr("Eteindre");   onClicked: root.shutdown(); visible: root.shutdownVisible;  highlighted: true}
     ]

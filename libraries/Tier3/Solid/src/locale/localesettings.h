@@ -5,7 +5,6 @@
 #include "qsingleton.h"
 
 class OrgFreedesktopLocale1Interface;
-class QTranslatorLoader;
 class LocaleSettings : public QObject,
                        public QQmlSingleton<LocaleSettings>
 {
@@ -42,13 +41,10 @@ signals:
     void localeChanged();
 
 private:
-    bool reloadTranslator();
     void updateLocale();
 
     OrgFreedesktopLocale1Interface* m_interface=nullptr;
     QHash<QString, QString> m_localeCache;
-
-    QTranslatorLoader* m_translator=nullptr;
 };
 
 #endif // LOCALESETTINGS_H

@@ -28,7 +28,7 @@ FormObject {
         label: root.label
         infos: root.infos
         placeholder: root.placeholder
-        text: root.currentValue
+        text: root.currentText
 
         textType: root.textType
         inputMethodHints: root.inputMethodHints

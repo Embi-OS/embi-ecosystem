@@ -94,7 +94,7 @@ bool RestSelectWorker::abort()
 
     m_reply->abort();
 
-    return waitForFinished();
+    return true;
 }
 
 bool RestSelectWorker::waitForFinished(int timeout, QEventLoop::ProcessEventsFlags flags)

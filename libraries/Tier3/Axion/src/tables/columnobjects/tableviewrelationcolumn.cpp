@@ -9,6 +9,8 @@ TableViewRelationColumn::TableViewRelationColumn(QObject* parent):
     m_proxyModel->setSortCaseSensitivity(Qt::CaseSensitive);
     m_proxyModel->setSortLocaleAware(false);
 
+    connect(m_proxyModel, &QProxyModel::dataChanged, this, &TableViewRelationColumn::onDataChanged);
+
     connect(this, &TableViewRelationColumn::keyRoleNameChanged, m_proxyModel, &QProxyModel::setSortRoleName);
     connect(this, &TableViewRelationColumn::keyRoleChanged, m_proxyModel, &QProxyModel::setSortRole);
 
@@ -34,6 +36,14 @@ QVariant TableViewRelationColumn::data(int row, const TableViewModel& viewModel)
     const QVariant& val = m_proxyModel->data(m_proxyModel->index(index,0), m_relationRole);
 
     return val;
+}
+
+void TableViewRelationColumn::onDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
+{
+    if(roles.contains(m_relationRole) || roles.contains(m_keyRole))
+    {
+        invalidate();
+    }
 }
 
 void TableViewRelationColumn::onModelAboutToChanged(QAbstractItemModel* oldModel, QAbstractItemModel* newModel)

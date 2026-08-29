@@ -3,6 +3,7 @@
 
 #include <QIODevice>
 #include <QString>
+#include <algorithm>
 
 namespace QUtf8 {
 
@@ -16,7 +17,7 @@ static inline uchar hexdig(uint u)
 }
 static inline QByteArray escapedString(QStringView s)
 {
-    QByteArray ba(std::max(s.size(), qsizetype(16)), Qt::Uninitialized);
+    QByteArray ba((std::max)(s.size(), qsizetype(16)), Qt::Uninitialized);
     auto ba_const_start = [&]() { return reinterpret_cast<const uchar *>(ba.constData()); };
     uchar *cursor = reinterpret_cast<uchar *>(ba.data());
     const uchar *ba_end = cursor + ba.size();

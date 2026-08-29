@@ -9,6 +9,16 @@ QLoopProcessor::QLoopProcessor(QObject *parent) :
 
 bool QLoopProcessor::run()
 {
+    if(m_asynchronous)
+        QMetaObject::invokeMethod(this, &QLoopProcessor::launch, Qt::QueuedConnection);
+    else
+        launch();
+
+    return true;
+}
+
+bool QLoopProcessor::launch()
+{
     if(m_running)
         return false;
 

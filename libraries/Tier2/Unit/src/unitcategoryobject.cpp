@@ -1,6 +1,12 @@
 #include "unitcategoryobject.h"
 #include "unit_log.h"
 
+UnitCategoryObject::UnitCategoryObject(QObject *parent) :
+    UnitCategoryObject(UnitCategories::NoCategory, parent)
+{
+
+}
+
 UnitCategoryObject::UnitCategoryObject(UnitCategories::Enum category, QObject *parent) :
     QObjectListModel(parent, &UnitTypeObject::staticMetaObject),
     m_category(category),
@@ -38,7 +44,7 @@ UnitTypes::Enum UnitCategoryObject::type(int index) const
         return (UnitType)m_category; //UnitTypes::InvalidUnit;
 
     if(UnitTypeObject* object = at<UnitTypeObject>(index))
-        return object->type();
+        return object->getType();
 
     return UnitTypes::InvalidUnit;
 }
@@ -51,7 +57,7 @@ QString UnitCategoryObject::name(UnitTypes::Enum type) const
     }
 
     if(UnitTypeObject* object = unitObject(type))
-        return object->name();
+        return object->getName();
 
     return "N/A";
 }
@@ -64,7 +70,7 @@ QString UnitCategoryObject::abbreviation(UnitTypes::Enum type) const
     }
 
     if(UnitTypeObject* object = unitObject(type))
-        return object->abbreviation();
+        return object->getAbbreviation();
 
     return "N/A";
 }
@@ -78,7 +84,7 @@ double UnitCategoryObject::ratio(UnitTypes::Enum type) const
 
     if(UnitTypeObject* object = unitObject(type))
     {
-        double ratio = object->ratio();
+        double ratio = object->getRatio();
         if (qFuzzyCompare(ratio, 0))
             ratio=1.0;
         return ratio;
@@ -132,14 +138,21 @@ void UnitCategoryObject::onObjectAboutToBeInserted(QObject* object, int row)
 {
     Q_UNUSED(row)
     if(UnitTypeObject* castObject = qobject_cast<UnitTypeObject*>(object))
-        checkTypeCompatibility(castObject->type());
+    {
+        if(!checkTypeCompatibility(castObject->getType())) {
+            UNITLOG_FATAL()<<"Bad unit type for this categfory";
+        }
+
+        castObject->setCategory(m_category);
+        connect(this, &UnitCategoryObject::categoryChanged, castObject, &UnitTypeObject::setCategory);
+    }
 }
 
 UnitTypeObject* UnitCategoryObject::unitObject(UnitTypes::Enum type) const
 {
     for(UnitTypeObject* object: modelIterator<UnitTypeObject>())
     {
-        if(object->type()==type)
+        if(object->getType()==type)
             return object;
     }
 

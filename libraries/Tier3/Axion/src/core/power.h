@@ -36,6 +36,10 @@ public:
     };
     Q_ENUM(Capabilities);
 
+    static void init();
+    static void init(int argc, char *argv[]);
+    static void unInit();
+
     static int getCapabilities();
     static bool hasCapability(int capability) { return getCapabilities() & capability; };
     static bool canQuit() { return hasCapability(Capabilities::Quit); }
@@ -61,6 +65,24 @@ signals:
     void aboutToShutdown();
     void aboutToReboot();
     void aboutToSuspend(bool deep);
+
+private:
+    static void doRestart();
+    static void doShutdown();
+    static void doReboot();
+
+    enum AcionOnQuit
+    {
+        None,
+        RestartOnQuit,
+        ShutdownOnQuit,
+        RebootOnQuit,
+    };
+
+    static AcionOnQuit s_actionOnQuit;
+    static QString s_executable;
+    static QStringList s_args;
+    static QString s_workingPath;
 };
 
 #endif // POWER_H

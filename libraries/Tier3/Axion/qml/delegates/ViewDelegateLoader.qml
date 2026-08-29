@@ -51,6 +51,10 @@ Item {
 
     function invalidate() {
         throttler.stop()
+
+        if(root.active)
+            Log.startElapsed(("loader_%1").arg(root))
+
         loader.asynchronous = root.asynchronous
         loader.source = root.source
         loader.sourceComponent = root.delegate
@@ -70,10 +74,16 @@ Item {
         active: false
 
         onStatusChanged: {
+            const key = ("loader_%1").arg(root)
+
             if (status===Loader.Ready) {
+                const elapsed = Log.endElapsed(key)
+                if(elapsed>=0)
+                    Log.trace(("load %1 took: %2 ms").arg(FormatUtils.qmlTypeName(item)).arg(elapsed))
                 root.loaded()
             }
             if (status===Loader.Error) {
+                Log.endElapsed(key)
                 root.error()
             }
         }

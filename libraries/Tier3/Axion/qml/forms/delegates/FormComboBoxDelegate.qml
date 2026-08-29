@@ -17,28 +17,23 @@ FormObject {
     property bool isSorted: false
     property string emptyText: "N/A"
     property bool mandatory: true
-    property bool customizable: false
     readonly property int optionsCount: root.options.ModelHelper.count
     readonly property int currentIndex: root.options.ModelHelper.contentIsEmpty ? -1 : root.options.ModelHelper.indexOf(root.valueRole,root.currentValue,root.isSorted)
     readonly property string currentText: root.currentIndex>=0 ? root.options.ModelHelper.getProperty(root.currentIndex, root.textRole) : ""
-    readonly property string editText: root.currentValue
+    readonly property string editText: root.currentValue || ""
 
-    warning: customizable ? !acceptableInput :
-             mandatory ? (currentIndex<0 || currentIndex>=optionsCount) : false
+    warning: mandatory ? (currentIndex<0 || currentIndex>=optionsCount) : false
 
     delegate: FormComboBox {
         fitLabel: root.fitLabel
         labelWidthRatio: root.labelWidthRatio
         editable: root.editable
         authorizeEmpty: !root.mandatory
-        authorizeCustom: root.customizable
         emptyText: root.emptyText
 
         enabled: root.enabled
-        warning: root.warning || (authorizeCustom ? !acceptableInput :
-                                 !authorizeEmpty ? (currentIndex<0 || currentIndex>=count) : false)
+        warning: root.warning || (!authorizeEmpty ? (currentIndex<0 || currentIndex>=count) : false)
 
-        validator: root.validator
         label: root.label
         infos: root.infos
         placeholder: root.placeholder
@@ -46,12 +41,6 @@ FormObject {
         textRole: root.textRole
         valueRole: root.valueRole!=="" ? root.valueRole : root.textRole
         currentIndex: root.currentIndex
-
-        Binding on editText {
-            delayed: true
-            when: root.customizable && root.currentIndex < 0
-            value: root.editText
-        }
 
         onTextEdited: (text) => root.validateValue(text)
         onAccepted: (text) => root.changeValue(text)

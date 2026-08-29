@@ -8,7 +8,6 @@ BasicWindow {
     width: 1280
     height: 800
 
-    frontendInitDelay: 200
     canLoadApplication: imageColorsHelper.isReady
     backend: A01_GalleryManager {}
     applicationModule: "L01_Gallery"

@@ -10,6 +10,7 @@
 #include <QMap>
 #include <QRegularExpression>
 #include <functional>
+#include <atomic>
 
 #define QDYNAMICEVENTSPROXY_EVENT_TYPE (QEvent::Type)(QEvent::User + 666)
 
@@ -39,7 +40,7 @@ protected:
 	static QDynamicEventsProxyObject * getObjectForThread(QThread * p_currThd);
     static QHash< QThread *, QDynamicEventsProxyObject * > s_threadMap;
 	static QMutex    s_mutex;
-	static qlonglong s_funcId;
+    static std::atomic<qlonglong> s_funcId;
 };
 
 // forward declaration to be able to make friend
@@ -264,7 +265,7 @@ QDynamicEventsHandle QDynamicEventsData<Types...>::on(QString strEventName, std:
 	// create proxy object if necessary
 	this->createProxyObj(strEventName);
 	// get callback uuid
-	qlonglong funcId = QDynamicEventsDataBase::s_funcId++;
+    qlonglong funcId = QDynamicEventsDataBase::s_funcId.fetch_add(1, std::memory_order_relaxed);
 	// lock after
 	QMutexLocker locker(&m_mutex);
 	// for each event name
@@ -294,7 +295,7 @@ QDynamicEventsHandle QDynamicEventsData<Types...>::once(QString strEventName, st
 	// create proxy object if necessary
 	this->createProxyObj(strEventName);
 	// get callback uuid
-	qlonglong funcId = QDynamicEventsDataBase::s_funcId++;
+    qlonglong funcId = QDynamicEventsDataBase::s_funcId.fetch_add(1, std::memory_order_relaxed);
 	// lock after
 	QMutexLocker locker(&m_mutex);
 	// for each event name

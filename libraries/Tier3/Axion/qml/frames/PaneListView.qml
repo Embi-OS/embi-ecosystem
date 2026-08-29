@@ -15,6 +15,7 @@ BasicPane {
     property alias reuseItems: view.reuseItems
     property alias viewSection: view.section
     property alias viewCount: view.count
+    property alias viewOrientation: view.orientation
 
     property alias viewFooter: view.footer
     property alias viewFooterItem: view.footerItem

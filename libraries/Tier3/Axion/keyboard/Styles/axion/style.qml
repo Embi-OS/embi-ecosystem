@@ -617,7 +617,7 @@ KeyboardStyle {
         Rectangle {
             id: characterPreviewBackground
             anchors.fill: parent
-            color: "#5d5b59"
+            color: Style.colorPrimaryLight
             radius: root.keyRadius
             Text {
                 id: characterPreviewText
@@ -646,7 +646,7 @@ KeyboardStyle {
         Text {
             id: listItemText
             text: model.text
-            color: "#868482"
+            color: Style.colorPrimaryLighter
             font {
                 family: root.fontFamily
                 weight: Font.Normal
@@ -664,7 +664,7 @@ KeyboardStyle {
         }
     }
     alternateKeysListHighlight: Rectangle {
-        color: "#5d5b59"
+        color: Style.colorPrimaryLight
         radius: root.keyRadius
     }
     alternateKeysListBackground: Rectangle {
@@ -880,7 +880,7 @@ KeyboardStyle {
             anchors.leftMargin: popupListLabel.height / 2
             anchors.topMargin: popupListLabel.height / 3
             text: decorateText(display, wordCompletionLength)
-            color: "#5CAA15"
+            color: Style.green
             font {
                 family: root.fontFamily
                 weight: Font.Normal
@@ -898,7 +898,7 @@ KeyboardStyle {
             when: popupListItem.ListView.isCurrentItem
             PropertyChanges {
                 target: popupListLabel
-                color: "black"
+                color: Style.colorBlack
             }
         }
     }
@@ -910,7 +910,7 @@ KeyboardStyle {
             color: Style.colorWhite
             border {
                 width: 1
-                color: "#929495"
+                color: Style.colorPrimaryLightest
             }
         }
     }
@@ -970,7 +970,7 @@ KeyboardStyle {
             when: languageListItem.ListView.isCurrentItem
             PropertyChanges {
                 target: languageListLabel
-                color: "black"
+                color: Style.colorBlack
             }
         }
     }
@@ -979,7 +979,7 @@ KeyboardStyle {
         color: Style.colorWhite
         border {
             width: 1
-            color: "#929495"
+            color: Style.colorPrimaryLightest
         }
     }
 
@@ -998,11 +998,11 @@ KeyboardStyle {
     }
 
     fullScreenInputContainerBackground: Rectangle {
-        color: "#FFF"
+        color: Style.colorWhite
     }
 
     fullScreenInputBackground: Rectangle {
-        color: "#FFF"
+        color: Style.colorWhite
     }
 
     fullScreenInputMargins: Math.round(15 * root.scaleHint)
@@ -1011,7 +1011,7 @@ KeyboardStyle {
 
     fullScreenInputCursor: Rectangle {
         width: 1
-        color: "#000"
+        color: Style.colorBlack
         visible: parent.blinkStatus
     }
 

@@ -18,32 +18,32 @@ BasicStackView {
     }
 
     function popObject(obj: BasicNavObject) {
-        Log.startElapsed()
+        Log.startElapsed(("stack_%1").arg(obj))
         if(root.popCacheItem)
             root.pushItem(root.popCacheItem)
         root.popToItem(obj.item)
-        Log.trace(("popObject took: %1 ms").arg(Log.elapsed()))
+        Log.trace(("popObject %1 took: %2 ms").arg(FormatUtils.qmlTypeName(obj.item)).arg(Log.endElapsed(("stack_%1").arg(obj))))
     }
 
     function pushObject(obj: BasicNavObject) {
-        Log.startElapsed()
+        Log.startElapsed(("stack_%1").arg(obj))
         obj.index = root.depth;
         if(obj.properties)
             obj.item = root.pushItem(obj.navItem, obj.properties) as BasicNavItem
         else
             obj.item = root.pushItem(obj.navItem) as BasicNavItem
         obj.properties = null
-        Log.trace(("pushObject took: %1 ms").arg(Log.elapsed()))
+        Log.trace(("pushObject %1 took: %2 ms").arg(FormatUtils.qmlTypeName(obj.item)).arg(Log.endElapsed(("stack_%1").arg(obj))))
     }
 
     function replaceCurrentObject(obj: BasicNavObject) {
-        Log.startElapsed()
+        Log.startElapsed(("stack_%1").arg(obj))
         obj.index = root.depth-1;
         if(obj.properties)
             obj.item = root.replaceCurrentItem(obj.navItem, obj.properties) as BasicNavItem
         else
             obj.item = root.replaceCurrentItem(obj.navItem) as BasicNavItem
         obj.properties = null
-        Log.trace(("replaceCurrentObject took: %1 ms").arg(Log.elapsed()))
+        Log.trace(("replaceCurrentObject %1 took: %2 ms").arg(FormatUtils.qmlTypeName(obj.item)).arg(Log.endElapsed(("stack_%1").arg(obj))))
     }
 }

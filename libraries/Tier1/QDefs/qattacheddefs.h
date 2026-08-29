@@ -39,6 +39,18 @@
 
 #define _Q_OBJECT_CHILD_ATTACHED_IMPL(TYPE, PARENT_TYPE) \
     public: \
+    static bool exists(const QObject* object) \
+    { \
+        PARENT_TYPE* parent = qobject_cast<PARENT_TYPE*>(const_cast<QObject *>(object)); \
+        if (!parent) \
+        { \
+            qCritical()<<object<<parent; \
+            qFatal(#TYPE " must be attached to a " #PARENT_TYPE); \
+            return false; \
+        } \
+        TYPE* helper = parent->findChild<TYPE*>(QString(), Qt::FindDirectChildrenOnly); \
+        return helper!=nullptr; \
+    } \
     static TYPE* wrap(const QObject* object) \
     { \
         PARENT_TYPE* parent = qobject_cast<PARENT_TYPE*>(const_cast<QObject *>(object)); \

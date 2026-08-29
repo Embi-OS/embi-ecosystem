@@ -77,8 +77,10 @@ void RestModel::onPaginationChanged(QSPagination* pagination)
 bool RestModel::doSelect()
 {
     if(!m_selectWorker.isNull()) {
+        m_selectWorker->disconnectAll(this);
         m_selectWorker->abort();
         m_selectWorker->deleteLater();
+        m_selectWorker.clear();
     }
 
     QSWorker* worker = createSelectWorker();
@@ -89,8 +91,10 @@ bool RestModel::doSelect()
 bool RestModel::doSubmit()
 {
     if(!m_submitWorker.isNull()) {
+        m_submitWorker->disconnectAll(this);
         m_submitWorker->abort();
         m_submitWorker->deleteLater();
+        m_submitWorker.clear();
     }
 
     QSWorker* worker = createSubmitWorker();
@@ -115,6 +119,8 @@ bool RestModel::doCancel()
 
 bool RestModel::runSelectWorker(QSWorker* worker)
 {
+    m_selectReplyAccepted = false;
+
     if(!worker)
     {
         RESTLOG_WARNING()<<this<<m_baseName<<"No worker given to runSelectWorker";
@@ -122,60 +128,61 @@ bool RestModel::runSelectWorker(QSWorker* worker)
         return false;
     }
 
-    worker->onProgress(this, [this](const QString message, int progress) {
+    worker->onProgress(this, [this, worker](const QString message, int progress) {
+        if(worker != m_selectWorker)
+            return;
+
         setMessage(message);
         setDownload(progress);
         setProgress(progress);
     });
-    worker->onSucceeded(this, [this](int status, const QVariant& reply) {
+    worker->onSucceeded(this, [this, worker](int status, const QVariant& reply) {
+        if(worker != m_selectWorker)
+            return;
+
         setCode(status);
         resetError();
         resetMessage();
-        if(reply.canConvert<QVariantMap>())
-        {
-            QVariantMap result = reply.toMap();
-            QVariantList storage = result.value("data").toList();
 
-            if(m_pagination)
-            {
-                m_pagination->setTotal(result.value("total").toInt());
-                m_pagination->setCount(result.value("page_size").toInt());
-                m_pagination->setPageCount(result.value("page_count").toInt());
-                m_pagination->setPrevious(result.value("previous").toString());
-                m_pagination->setNext(result.value("next").toString());
-            }
-
-            setStorage(std::move(storage));
-        }
-        else if(reply.canConvert<QVariantList>())
-        {
-            QVariantList storage = reply.toList();
-            setStorage(std::move(storage));
-        }
-        else
-        {
-            setStorage(QVariantList());
+        QString errorMessage;
+        m_selectReplyAccepted = applySelectReply(reply, &errorMessage);
+        if(!m_selectReplyAccepted) {
+            setError(errorMessage);
+            clearSelectData();
+            RESTLOG_WARNING()<<this<<m_baseName<<"Select reply parsing failed, Reason:"<<m_error;
+            emit this->error();
         }
         RESTLOG_TRACE()<<this<<m_baseName<<"Select succeeded";
     });
-    worker->onFailed(this, [this](int status, const QString& error, const QVariant& reply) {
+    worker->onFailed(this, [this, worker](int status, const QString& error, const QVariant& reply) {
+        if(worker != m_selectWorker)
+            return;
+
+        m_selectReplyAccepted = false;
         setCode(status);
         setError(error);
         setMessage(RestHelper::parseBody(reply));
-        setStorage(QVariantList());
+        clearSelectData();
         RESTLOG_WARNING()<<this<<m_baseName<<"Select failed, Reason:"<<m_code<<m_error<<m_message;
         emit this->error();
     });
-    worker->onCanceled(this, [this]() {
+    worker->onCanceled(this, [this, worker]() {
+        if(worker != m_selectWorker)
+            return;
+
+        m_selectReplyAccepted = false;
         resetCode();
         resetMessage();
         resetError();
         RESTLOG_DEBUG()<<"Select Canceled";
     });
-    worker->onFinished(this, [this](int status) {
+    worker->onFinished(this, [this, worker](int status) {
+        if(worker != m_selectWorker)
+            return;
+
         resetDownload();
         resetProgress();
-        emitSelectDone(status>=200 && status<=299);
+        emitSelectDone(status>=200 && status<=299 && m_selectReplyAccepted);
     });
 
     m_selectWorker = worker;
@@ -183,8 +190,59 @@ bool RestModel::runSelectWorker(QSWorker* worker)
     return m_selectWorker->run();
 }
 
+bool RestModel::applySelectReply(const QVariant& reply, QString* errorMessage)
+{
+    if(reply.metaType().id() == QMetaType::QVariantMap)
+    {
+        const QVariantMap result = reply.toMap();
+        const QVariant data = result.value("data");
+        if(data.metaType().id() != QMetaType::QVariantList) {
+            if(errorMessage)
+                *errorMessage = QStringLiteral("Invalid select reply: expected a list in 'data'");
+            return false;
+        }
+
+        if(m_pagination)
+        {
+            m_pagination->setTotal(result.value("total").toInt());
+            m_pagination->setCount(result.value("page_size").toInt());
+            m_pagination->setPageCount(result.value("page_count").toInt());
+            m_pagination->setPrevious(result.value("previous").toString());
+            m_pagination->setNext(result.value("next").toString());
+        }
+
+        setStorage(data.toList());
+        return true;
+    }
+
+    if(reply.metaType().id() == QMetaType::QVariantList) {
+        setStorage(reply.toList());
+        return true;
+    }
+
+    if(errorMessage)
+        *errorMessage = QStringLiteral("Invalid select reply: expected a list or a map");
+    return false;
+}
+
+void RestModel::clearSelectData()
+{
+    setStorage(QVariantList());
+
+    if(m_pagination)
+    {
+        m_pagination->setTotal(0);
+        m_pagination->setCount(0);
+        m_pagination->setPageCount(0);
+        m_pagination->setPrevious({});
+        m_pagination->setNext({});
+    }
+}
+
 bool RestModel::runSubmitWorker(QSWorker* worker)
 {
+    m_submitReplyAccepted = false;
+
     if(!worker)
     {
         RESTLOG_WARNING()<<this<<m_baseName<<"No worker given to runSubmitWorker";
@@ -192,42 +250,91 @@ bool RestModel::runSubmitWorker(QSWorker* worker)
         return false;
     }
 
-    worker->onProgress(this, [this](const QString message, int progress) {
+    worker->onProgress(this, [this, worker](const QString message, int progress) {
+        if(worker != m_submitWorker)
+            return;
+
         setMessage(message);
         setUpload(progress);
         setProgress(progress);
     });
-    worker->onSucceeded(this, [this](int status, const QVariant& reply) {
+    worker->onSucceeded(this, [this, worker](int status, const QVariant& reply) {
+        if(worker != m_submitWorker)
+            return;
+
         setCode(status);
         resetError();
         resetMessage();
-        QVariantList storage = reply.toList();
-        patchStorage(std::move(storage));
+
+        QString errorMessage;
+        m_submitReplyAccepted = applySubmitReply(status, reply, &errorMessage);
+        if(!m_submitReplyAccepted) {
+            setError(errorMessage);
+            restoreSubmitData();
+            RESTLOG_WARNING()<<this<<m_baseName<<"Submit reply parsing failed, Reason:"<<m_error;
+            emit this->error();
+        }
         RESTLOG_TRACE()<<this<<m_baseName<<"Submit succeeded";
     });
-    worker->onFailed(this, [this](int status, const QString& error, const QVariant& reply) {
+    worker->onFailed(this, [this, worker](int status, const QString& error, const QVariant& reply) {
+        if(worker != m_submitWorker)
+            return;
+
+        m_submitReplyAccepted = false;
         setCode(status);
         setError(error);
         setMessage(RestHelper::parseBody(reply));
-        patchStorage(getBackup());
+        restoreSubmitData();
         RESTLOG_WARNING()<<this<<m_baseName<<"Submit failed, Reason:"<<m_code<<m_error<<m_message;
         emit this->error();
     });
-    worker->onCanceled(this, [this]() {
+    worker->onCanceled(this, [this, worker]() {
+        if(worker != m_submitWorker)
+            return;
+
+        m_submitReplyAccepted = false;
         resetCode();
         resetMessage();
         resetError();
         RESTLOG_DEBUG()<<"Submit Canceled";
     });
-    worker->onFinished(this, [this](int status) {
+    worker->onFinished(this, [this, worker](int status) {
+        if(worker != m_submitWorker)
+            return;
+
         resetUpload();
         resetProgress();
-        emitSubmitDone(status>=200 && status<=299);
+        emitSubmitDone(status>=200 && status<=299 && m_submitReplyAccepted);
     });
 
     m_submitWorker = worker;
 
     return m_submitWorker->run();
+}
+
+bool RestModel::applySubmitReply(int status, const QVariant& reply, QString* errorMessage)
+{
+    if(status == 204 && !reply.isValid())
+        return true;
+
+    if(reply.metaType().id() != QMetaType::QVariantList) {
+        if(errorMessage)
+            *errorMessage = QStringLiteral("Invalid submit reply: expected a list");
+        return false;
+    }
+
+    if(!patchStorage(reply.toList())) {
+        if(errorMessage)
+            *errorMessage = QStringLiteral("Unable to apply submit reply");
+        return false;
+    }
+
+    return true;
+}
+
+void RestModel::restoreSubmitData()
+{
+    patchStorage(getBackup());
 }
 
 QSWorker* RestModel::createSelectWorker()

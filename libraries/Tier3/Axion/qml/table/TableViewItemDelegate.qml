@@ -50,11 +50,13 @@ DelegateChooser {
             required property string display
             required property color columnColor
             required property font column_font
+            required property int column_textFormat
             readonly property bool isRowCurrent: TableView.view.currentRow===row
 
             current: isRowCurrent
             text: display
             font: column_font
+            textFormat: column_textFormat
             foregroundColor: columnColor
         }
     }

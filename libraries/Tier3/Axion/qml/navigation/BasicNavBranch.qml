@@ -5,22 +5,19 @@ BasicNavItem {
     id: root
 
     property string stackBranchName: ""
-    property string stackBranchSecondaryName: ""
 
     required property BasicNavObject initialObject
     readonly property BasicNavStack navStack: navStack
     readonly property BasicNavItem currentItem: navStack.currentItem as BasicNavItem
 
-    stackItemName: currentItem?.stackItemName ?? ""
-    stackItemSecondaryName: currentItem?.stackItemSecondaryName ?? ""
-    navigationLocked: currentItem?.navigationLocked ?? false
-    navigationEnabled: currentItem?.navigationEnabled ?? true
+    Navigation.guarded: currentItem?.Navigation.guarded ?? false
+    Navigation.name: currentItem?.Navigation.name ?? ""
+    Navigation.effectiveName: (currentItem?.Navigation.effectiveName ?? "" !== "") ? currentItem.Navigation.effectiveName :
+                              (currentItem?.Navigation.name ?? "" !== "") ? currentItem.Navigation.name :
+                              root.Navigation.name
+    Navigation.secondaryName: currentItem?.Navigation.secondaryName ?? ""
     navModels: currentItem?.navModels ?? null
     state: currentItem?.state ?? ""
-
-    onItemIsActive: {
-        console.info("BasicNavBranch active:",stackBranchName,stackBranchSecondaryName!==""?"("+stackBranchSecondaryName+")":"")
-    }
 
     BasicNavStack {
         id: navStack

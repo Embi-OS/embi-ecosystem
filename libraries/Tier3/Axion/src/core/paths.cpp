@@ -124,11 +124,9 @@ void Paths::init()
     if(m_ready)
         return;
     m_ready = true;
-#ifdef Q_OS_WASM
-#else
+
     QSettingsMapper::setDefaultPath(setting());
     QSettingsMapper::setDefaultName("settings.conf");
-#endif
 }
 
 QString Paths::specificLocation(const QString& folder, const QString& file, bool mkpath)

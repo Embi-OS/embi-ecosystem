@@ -6,6 +6,7 @@
 #include "log.h"
 #include "paths.h"
 #include "version.h"
+#include "languagesettings.h"
 
 #include <QDir>
 
@@ -22,6 +23,12 @@ Q_GLOBAL_STATIC_WITH_ARGS(QByteArrayMap, s_environmentVariable, ({
     {"QT_MEDIA_BACKEND", "gstreamer"},
     {"QT_IM_MODULE", "qtvirtualkeyboard"},
     {"QT_VIRTUALKEYBOARD_STYLE", "axion"}
+}))
+#elif defined(Q_OS_LINUX)
+Q_GLOBAL_STATIC_WITH_ARGS(QByteArrayMap, s_environmentVariable, ({
+    // {"QSG_VISUALIZE", "overdraw"},
+    // {"QT_MEDIA_BACKEND", "gstreamer"},
+    // {"QT_QPA_PLATFORM", "xcb"}
 }))
 #else
 Q_GLOBAL_STATIC_WITH_ARGS(QByteArrayMap, s_environmentVariable, ({}))
@@ -95,6 +102,7 @@ Application::Application(int &argc, char **argv, const QString &applicationName)
     QObject::connect(m_engine.data(), &QQmlApplicationEngine::quit, m_application.data(), &QCoreApplication::quit, Qt::QueuedConnection);
     QObject::connect(m_engine.data(), &QQmlApplicationEngine::exit, m_application.data(), &QCoreApplication::exit, Qt::QueuedConnection);
 
+    Power::init(argc, argv);
     Log::init();
     Paths::init();
 
@@ -111,6 +119,7 @@ Application::~Application()
     m_application.reset();
 
     Log::unInit();
+    Power::unInit();
 }
 
 void Application::putEnvironmentVariable(const char *varName, QByteArrayView value)
@@ -142,7 +151,7 @@ const QMap<QString, QByteArray>& Application::environmentVariable()
 
 int Application::run(QAnyStringView uri, QAnyStringView typeName)
 {
-    installTranslators();
+    setupLanguageSettings();
 
     AXIONLOG_INFO()<<"Loading QML...";
 
@@ -170,14 +179,19 @@ int Application::run(QAnyStringView uri, QAnyStringView typeName)
 #endif
 }
 
-void Application::installTranslators()
+void Application::setupLanguageSettings()
 {
+    LanguageSettings* languageSettings = LanguageSettings::Get();
+    languageSettings->setEngine(m_engine.data());
+
     const QVariantMap args = AxionHelper::Get()->arguments();
     if(args.contains("lang"))
     {
         const QString lang = args.value("lang").toString();
-        QTranslatorLoader* translator = new QTranslatorLoader(m_application.data());
-        translator->componentComplete();
-        translator->setLanguage(QLocale(lang).name().split("_").at(0));
+        languageSettings->setLanguage(lang, false);
+    }
+    else
+    {
+        languageSettings->reloadTranslations();
     }
 }

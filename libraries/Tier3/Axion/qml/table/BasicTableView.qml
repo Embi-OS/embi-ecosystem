@@ -137,7 +137,7 @@ Item {
     }
 
     function positionViewAtCell(row: int, column: int) {
-        view.positionViewAtCell(Qt.point(row, column), TableView.Contain)
+        view.positionViewAtCell(Qt.point(column, row), TableView.Contain)
     }
 
     function positionViewAtCurrentRow() {

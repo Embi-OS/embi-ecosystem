@@ -46,19 +46,19 @@ RowContainer {
     onPlusButtonClicked: {
         root.selectionModel.clear()
         root.showForm(function (formValues) {
-            let index = root.currentSourceRow>0 ? root.currentSourceRow : root.sourceModel.rowCount()-1
+            let index = root.currentSourceRow>=0 ? root.currentSourceRow : root.sourceModel.rowCount()-1
             index = index+1;
             root.sourceModel.insert(index, formValues)
-            root.selectionModel.SelectionHelper.setCurrentRow(index)
+            root.setCurrentSourceRow(index)
         })
     }
 
     onCopyButtonClicked: {
-        let index = root.currentSourceRow>0 ? root.currentSourceRow : root.sourceModel.rowCount()-1
+        let index = root.currentSourceRow>=0 ? root.currentSourceRow : root.sourceModel.rowCount()-1
         let data = root.sourceModel.ModelHelper.get(index)
         index = index+1;
         root.sourceModel.insert(index, data)
-        root.selectionModel.SelectionHelper.setCurrentRow(index)
+        root.setCurrentSourceRow(index)
     }
 
     onUpButtonClicked: {
@@ -70,8 +70,10 @@ RowContainer {
     }
 
     onDeleteButtonClicked: {
-        root.sourceModel.remove(root.currentSourceRow)
-        root.selectionModel.clear()
+        let index = root.currentSourceRow;
+        root.sourceModel.remove(index)
+        index = Math.min(index, root.sourceModel.count-1);
+        root.setCurrentSourceRow(index)
     }
 
     onEditRowButtonClicked: {
@@ -105,6 +107,12 @@ RowContainer {
             }
         }
         DialogManager.showCancel(settings)
+    }
+
+    function setCurrentSourceRow(row: int) {
+        const proxyRow = root.tableList.mapFromSource(row)
+        if(proxyRow >= 0)
+            root.selectionModel.SelectionHelper.setCurrentRow(proxyRow)
     }
 
     function submit() {
@@ -152,12 +160,6 @@ RowContainer {
         target: root.tableList
         property: "sortable"
         value: false
-    }
-
-    Binding {
-        target: root.tableList
-        property: "navigationEnabled"
-        value: root.state === ""
     }
 
     Binding {

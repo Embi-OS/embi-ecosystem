@@ -3,6 +3,9 @@
 
 #include "syncable/qsdiffrunner.h"
 
+#include <algorithm>
+#include <utility>
+
 // ──────── CONSTRUCTOR ──────────
 QVariantListModel::QVariantListModel(QObject *parent) :
     QVariantListModel("", parent)
@@ -111,6 +114,10 @@ QVariant QVariantListModel::data(const QModelIndex & index, const int role) cons
     if(!index.isValid() || index.row() >= m_storage.count())
         return QVariant();
 
+    const QByteArray roleName = m_roleNames.value(role);
+    if(const auto it = m_additionalRoles.constFind(roleName); it != m_additionalRoles.cend())
+        return it->getter(m_storage.at(index.row()));
+
     if(role == Qt::UserRole)
     {
         return m_storage.at(index.row());
@@ -120,7 +127,7 @@ QVariant QVariantListModel::data(const QModelIndex & index, const int role) cons
         if(m_storage.at(index.row()).metaType().id()==QMetaType::QVariantMap)
         {
             const QVariantMap& original = *reinterpret_cast<const QVariantMap*>(m_storage[index.row()].constData());
-            const QString& key = m_roleNames.value(role);
+            const QString key = QString::fromUtf8(m_sourceRoleNames.value(role));
             return original.value(key, m_placeholder.value(key));
         }
     }
@@ -140,17 +147,23 @@ bool QVariantListModel::setData(const QModelIndex & index, const QVariant & valu
         emit this->dataChanged (index, index, QVector<int>{});
         ret = true;
     }
+    else if(m_additionalRoles.contains(m_roleNames.value(role)))
+    {
+        QMODELSLOG_WARNING()<<m_baseName<<"cannot setData to additional role:"<<role;
+    }
     else if(role > Qt::UserRole)
     {
         if(m_storage.at(index.row()).metaType().id()==QMetaType::QVariantMap)
         {
             QVariantMap& original = *reinterpret_cast<QVariantMap*>(m_storage[index.row()].data());
-            const QString& key = m_roleNames.value(role);
+            const QString key = QString::fromUtf8(m_sourceRoleNames.value(role));
+            if(key.isEmpty())
+                return false;
             const QVariant& oldValue = original[key];
             if(oldValue==value && value.isNull()==oldValue.isNull())
                 return true;
             original[key] = value;
-            emit this->dataChanged (index, index, QVector<int>{role});
+            emit this->dataChanged (index, index, additionalRolesFor(QVector<int>{role}));
             ret = true;
         }
     }
@@ -191,7 +204,7 @@ void QVariantListModel::shuffle(QVariantList& storage)
 
 void QVariantListModel::sort(int role, Qt::SortOrder order)
 {
-    const QString& roleName = m_roleNames[role];
+    const QString roleName = QString::fromUtf8(m_roleNames[role]);
     sort(m_storage, roleName, order);
 }
 
@@ -389,14 +402,14 @@ bool QVariantListModel::set(int index, const QVariant& variant)
         for (auto [key, value] : map.asKeyValueRange())
         {
             const QVariant& oldValue = original[key];
-            if(oldValue==value || !m_roleIds.contains(key))
+            if(oldValue==value || !m_sourceRoleIds.contains(key))
                 continue;
             original[key] = value;
-            roles << m_roleIds[key];
+            roles << m_sourceRoleIds[key];
         }
 
         if(!roles.isEmpty())
-            emit this->dataChanged(this->index(index,0), this->index(index,0), roles);
+            emit this->dataChanged(this->index(index,0), this->index(index,0), additionalRolesFor(roles));
     }
     else
     {
@@ -620,7 +633,7 @@ bool QVariantListModel::patchStorageImpl(T&& storage)
     if (m_storage.isEmpty() && storage.isEmpty())
         return true;
 
-    if (m_roleNames.isEmpty() || m_storage.isEmpty())
+    if (m_sourceRoleNames.isEmpty() || m_storage.isEmpty())
         return replaceStorage(std::forward<T>(storage));
 
     QElapsedTimer timer;
@@ -1149,13 +1162,14 @@ void QVariantListModel::contentInvalidate()
 
 void QVariantListModel::clearRoleNames()
 {
-    m_roleNames.clear();
-    m_roleIds.clear();
+    m_sourceRoleNames.clear();
+    m_sourceRoleIds.clear();
+    rebuildRoleNames();
 }
 
 void QVariantListModel::updateRoleNames(const QVariant& var)
 {
-    if(m_roleNames.isEmpty())
+    if(m_sourceRoleNames.isEmpty())
     {
         QHash<int, QByteArray> roleNames;
         if(var.canConvert<QVariantMap>())
@@ -1168,16 +1182,93 @@ void QVariantListModel::updateRoleNames(const QVariant& var)
             while (iter.hasNext())
             {
                 iter.next();
+                if(m_additionalRoles.contains(iter.key().toLocal8Bit())) {
+                    QMODELSLOG_WARNING()<<m_baseName<<"source role conflicts with additional role:"<<iter.key();
+                    continue;
+                }
                 roleNames[role] = iter.key().toLocal8Bit();
                 role++;
             }
         }
         else
         {
-            roleNames[Qt::UserRole] = QByteArrayLiteral("qtVariant");
+            const QByteArray roleName = QByteArrayLiteral("qtVariant");
+            if(m_additionalRoles.contains(roleName))
+                QMODELSLOG_WARNING()<<m_baseName<<"source role conflicts with additional role:"<<roleName;
+            else
+                roleNames[Qt::UserRole] = roleName;
         }
 
-        m_roleNames = roleNames;
-        reverseStringIntHash(m_roleIds, m_roleNames);
+        m_sourceRoleNames = roleNames;
+        reverseStringIntHash(m_sourceRoleIds, m_sourceRoleNames);
+        rebuildRoleNames();
     }
+}
+
+bool QVariantListModel::addAdditionalRole(const QByteArray& name, const QStringList& sourceRoles, AdditionalRoleDataGetter getter)
+{
+    if(name.isEmpty() || !getter || m_additionalRoles.contains(name) || m_sourceRoleIds.contains(QString::fromUtf8(name))) {
+        QMODELSLOG_WARNING()<<m_baseName<<"cannot add additional role:"<<name;
+        return false;
+    }
+
+    if(!m_storage.isEmpty()) {
+        QMODELSLOG_WARNING()<<m_baseName<<"cannot add additional role after the model is populated:"<<name;
+        return false;
+    }
+
+    m_additionalRoleNames.append(name);
+    m_additionalRoles.insert(name, {sourceRoles, std::move(getter)});
+    rebuildRoleNames();
+    return true;
+}
+
+void QVariantListModel::invalidateAdditionalRole(const QByteArray& name)
+{
+    if(!m_additionalRoles.contains(name)) {
+        QMODELSLOG_WARNING()<<m_baseName<<"cannot invalidate unknown additional role:"<<name;
+        return;
+    }
+
+    if(m_storage.isEmpty())
+        return;
+
+    emit this->dataChanged(index(0), index(m_storage.count()-1), {m_roleIds.value(QString::fromUtf8(name))});
+}
+
+QVector<int> QVariantListModel::additionalRolesFor(const QVector<int>& sourceRoles) const
+{
+    if(sourceRoles.isEmpty())
+        return sourceRoles;
+
+    QVector<int> roles = sourceRoles;
+    for(const QByteArray& name : m_additionalRoleNames)
+    {
+        const auto it = m_additionalRoles.constFind(name);
+        if(it == m_additionalRoles.cend())
+            continue;
+
+        const AdditionalRole& additionalRole = *it;
+        const bool dependsOnAllRoles = additionalRole.sourceRoles.isEmpty();
+        const bool dependencyChanged = std::any_of(additionalRole.sourceRoles.cbegin(), additionalRole.sourceRoles.cend(), [this, &sourceRoles](const QString& sourceRole){
+            return sourceRoles.contains(m_sourceRoleIds.value(sourceRole, -1));
+        });
+        if(dependsOnAllRoles || dependencyChanged)
+            roles.append(m_roleIds.value(QString::fromUtf8(name)));
+    }
+    return roles;
+}
+
+void QVariantListModel::rebuildRoleNames()
+{
+    m_roleNames = m_sourceRoleNames;
+
+    int role = Qt::UserRole + 1;
+    for(const int sourceRole : m_sourceRoleNames.keys())
+        role = std::max(role, sourceRole + 1);
+
+    for(const QByteArray& name : std::as_const(m_additionalRoleNames))
+        m_roleNames.insert(role++, name);
+
+    reverseStringIntHash(m_roleIds, m_roleNames);
 }

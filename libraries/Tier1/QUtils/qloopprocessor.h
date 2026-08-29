@@ -29,6 +29,7 @@ public slots:
     bool run();
 
 private slots:
+    bool launch();
     bool start();
     void iterate();
     void release();

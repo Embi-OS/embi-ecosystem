@@ -64,7 +64,6 @@ BasicFormBackground {
         TapHandler {
             id: tapHandler
             gesturePolicy: TapHandler.ReleaseWithinBounds
-            cursorShape: Qt.PointingHandCursor
             enabled: root.editable
             onTapped: {
                 root.activated(!root.checked)

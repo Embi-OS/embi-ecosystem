@@ -2,6 +2,7 @@
 #include "sql_log.h"
 
 #include <QDir>
+#include <QFileInfo>
 #include <QThread>
 
 class SqlDbConnection
@@ -120,6 +121,10 @@ QSqlDatabase SqlDbPool::create(const SqlDbProfile& profile, bool force)
         if(profile.name==":memory:")
         {
             db.setDatabaseName(profile.name);
+        }
+        else if(QFileInfo(profile.path).isFile())
+        {
+            db.setDatabaseName(profile.path);
         }
         else
         {

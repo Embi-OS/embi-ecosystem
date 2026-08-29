@@ -65,7 +65,7 @@ QVariant MethodRole::data(const QModelIndex& sourceIndex, const QQmlSortFilterPr
         {
             const QMetaType parameterType = m_parameterTypes.at(i);
             param = proxyModel.sourceData(sourceIndex, parameterRole);
-            if(param.metaType().isValid() && parameterType.id()!=QMetaType::QVariant && !param.canConvert(parameterType)) {
+            if(param.metaType().isValid() && parameterType.id()!=QMetaType::QVariant && !param.canConvert(parameterType) && !param.isNull()) {
                 QPROXYMODELLOG_WARNING()<<"Unable to convert param type"<<param.metaType()<<"to"<<parameterType;
                 return m_defaultValue;
             }

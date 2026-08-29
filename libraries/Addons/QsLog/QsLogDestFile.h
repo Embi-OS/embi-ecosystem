@@ -93,7 +93,7 @@ public:
     virtual bool isValid();
 
 private:
-    void init();
+    bool init();
 
     QFile mFile;
     QTextStream mOutputStream;

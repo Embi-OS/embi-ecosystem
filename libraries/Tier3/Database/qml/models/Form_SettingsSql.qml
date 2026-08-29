@@ -6,6 +6,8 @@ import Eco.Tier3.Database
 FormObjectModel {
     id: root
 
+    property bool selectSqliteFile: false
+
     FormComboBoxDelegate {
         id: dbType
         label: qsTr("Type")
@@ -19,6 +21,8 @@ FormObjectModel {
         targetProperty: "dbType"
     }
     FormTextFieldDelegate {
+        visible: !root.selectSqliteFile || dbType.currentValue!==SqlDatabaseTypes.SQLite
+        warning: visible && !acceptableInput
         label: qsTr("Nom")
         validator: StringValidator {
             minSize: 1
@@ -27,7 +31,8 @@ FormObjectModel {
     }
     FormTextFieldPathDelegate {
         visible: dbType.currentValue===SqlDatabaseTypes.SQLite
-        label: qsTr("Chemin")
+        label: root.selectSqliteFile ? qsTr("Fichier SQLite") : qsTr("Chemin")
+        folderTreeType: root.selectSqliteFile ? FolderTreeTypes.File : FolderTreeTypes.Dir
         validator: StringValidator {
             minSize: 1
         }

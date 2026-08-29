@@ -22,7 +22,7 @@ UnitObject::UnitObject(UnitCategories::Enum category, QObject *parent) :
 
 double UnitObject::getValue(UnitTypes::Enum type) const
 {
-    if(type==UnitTypes::NoUnit || type==m_categoryObject->defaultType())
+    if(type==UnitTypes::NoUnit || type==m_categoryObject->getDefaultType())
         return getRawValue();
 
     return m_categoryObject->convertTo(getRawValue(), type);
@@ -30,7 +30,7 @@ double UnitObject::getValue(UnitTypes::Enum type) const
 
 bool UnitObject::setValue(double value, UnitTypes::Enum type)
 {
-    if(type==UnitTypes::NoUnit || type==m_categoryObject->defaultType())
+    if(type==UnitTypes::NoUnit || type==m_categoryObject->getDefaultType())
         return setRawValue(value);
 
     return setRawValue(m_categoryObject->convertFrom(value, type));

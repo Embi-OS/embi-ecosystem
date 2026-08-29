@@ -12,7 +12,7 @@ QDefs is a header-only grab bag of C++ macros and helpers that remove the repeti
 
 | Header | Purpose |
 | --- | --- |
-| `qpropertydefs.h` | All `Q_*_PROPERTY` macros (writable/readonly/constant/abstract/callable + `VAR`, `PTR`, `REF`, `ENU`, `FUZ` specialisations). |
+| `qpropertydefs.h` | All `Q_*_PROPERTY` macros (writable/readonly/constant/abstract/callable/bindable + `VAR`, `PTR`, `REF`, `ENU`, `FUZ` specialisations). |
 | `qenumdefs.h` / `qflagdefs.h` | `Q_ENUM_CLASS` and `Q_FLAG_CLASS` helpers exposing enums/flags to both C++ and QML (with runtime conversion helpers). |
 | `qsingletondefs.h` | `Q_OBJECT_SINGLETON` and `Q_OBJECT_QML_SINGLETON` macros to materialise per-process or QML singletons. |
 | `qattacheddefs.h` | Helpers to implement attached properties (`Q_OBJECT_ATTACHED`, `Q_OBJECT_CHILD_ATTACHED`). |
@@ -65,6 +65,16 @@ Macros are available for:
 - Access level: `Q_WRITABLE_*`, `Q_READONLY_*`, `Q_CONSTANT_*`, `Q_ABSTRACT_*`, `Q_CALLABLE_*`, and `Q_REQUIRED_*`.
 - Type helpers: `VAR` (value), `PTR`, `REF`, `FUZ` (floating point setter using `qFuzzyCompare`).
 - Extras: automatic notifier signals, `reset` methods, `AboutToChange` hooks for writable variants.
+
+Use `Q_BINDABLE_*` variants when the property must support Qt 6 bindings from C++:
+```cpp
+class BindableSettings : public QObject
+{
+    Q_OBJECT
+    Q_BINDABLE_REF_PROPERTY(BindableSettings, QString, title, Title, "Untitled");
+};
+```
+Bindable macros require the owning class as first argument and currently cover `VAR`, `REF`, and `FUZ` properties.
 
 ### Expose enums and flags to QML in one line
 ```cpp

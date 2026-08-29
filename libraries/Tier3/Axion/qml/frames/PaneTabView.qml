@@ -7,8 +7,7 @@ import Eco.Tier3.Axion
 BasicPane {
     id: root
 
-    navigationLocked: currentItem?.navigationLocked ?? false
-    navigationEnabled: !loader.loading && (currentItem?.navigationEnabled ?? true)
+    Navigation.guarded: loader.loading || (currentItem?.Navigation.guarded ?? false)
 
     property alias proxyModel: proxyModel
     readonly property int currentIndex: proxyModel.count>0 ? proxyModel.mapToSource(tabBar.currentIndex) : -1
@@ -40,7 +39,7 @@ BasicPane {
         rightInset: root.headerPadding
 
         opacity: enabled ? 1.0 : 0.5
-        enabled: root.navigationEnabled && !root.navigationLocked
+        enabled: !root.Navigation.guarded
         visible: count>1
 
         Repeater {

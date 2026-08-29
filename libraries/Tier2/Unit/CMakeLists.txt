@@ -5,6 +5,7 @@ include(Common)
 project(Unit)
 
 allFileRecurseRelative(ALL_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
+allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 
 embi_add_qml_module(${PROJECT_NAME}
     URI Eco.Tier2.Unit

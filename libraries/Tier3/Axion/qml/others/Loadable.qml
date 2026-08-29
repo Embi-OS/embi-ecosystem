@@ -12,6 +12,7 @@ Item {
     property int delay: 0
 
     property Component sourceComponent
+    property Component generatedComponent
     property string sourceModule
     property string sourceName
     property alias asynchronous: loader.asynchronous
@@ -67,9 +68,17 @@ Item {
         Log.startElapsed()
         if(root.sourceComponent) {
             loader.sourceComponent = root.sourceComponent;
+
+            if(root.generatedComponent) {
+                root.generatedComponent.destroy()
+                root.generatedComponent = null
+            }
         }
         else {
-            loader.sourceComponent = Qt.createComponent(sourceModule, sourceName, root.asynchronous ? Component.Asynchronous : Component.PreferSynchronous, root);
+            if(!root.generatedComponent)
+                root.generatedComponent = Qt.createComponent(sourceModule, sourceName, root.asynchronous ? Component.Asynchronous : Component.PreferSynchronous, root);
+
+            loader.sourceComponent = root.generatedComponent;
             Log.debug(("createComponent %1 took: %2 ms").arg(root.sourceName).arg(Log.elapsed()))
         }
         loader.active = true
@@ -80,5 +89,10 @@ Item {
         loader.active = false
         loader.sourceComponent = undefined;
         loader.visible = false;
+
+        if(root.generatedComponent) {
+            root.generatedComponent.destroy()
+            root.generatedComponent = null
+        }
     }
 }

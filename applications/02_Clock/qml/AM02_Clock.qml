@@ -16,6 +16,7 @@ Item {
 
     W0201_Homescreen {
         id: homescreen
+        visible: ClockDisplay.state===ClockDisplayStates.On
         anchors.fill: parent
     }
 

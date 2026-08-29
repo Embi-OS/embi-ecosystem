@@ -9,11 +9,32 @@ BasicFormBackground {
 
     required property AbstractItemModel colorsModel
 
-    property bool displayName: false
     property alias color: rectangle.color
     readonly property string colorText: ColorUtils.name(root.color, false)
-    readonly property string colorName: currentIndex>0 ? root.colorsModel.ModelHelper.getProperty(currentIndex, "text") : colorText
-    readonly property int currentIndex: root.colorsModel.ModelHelper.contentIsEmpty ? -1 : root.colorsModel.ModelHelper.indexOf("color",root.color)
+
+    property bool paletteEnabled: true
+    property bool saturationEnabled: true
+    property bool hueEnabled: true
+    property bool alphaEnabled: false
+    property bool swatchEnabled: false
+    property bool hexEnabled: true
+
+    function showColorDialog() {
+        DialogManager.showColor({
+            selectedColor: color,
+            colorModel: root.colorsModel,
+            paletteEnabled: root.paletteEnabled,
+            saturationEnabled: root.saturationEnabled,
+            hueEnabled: root.hueEnabled,
+            alphaEnabled: root.alphaEnabled,
+            swatchEnabled: root.swatchEnabled,
+            hexEnabled: root.hexEnabled,
+            onColorSelected: function(color) {
+                root.color = color;
+                root.accepted(root.color);
+            }
+        });
+    }
 
     Item {
         parent: root.controlRectangle
@@ -27,7 +48,7 @@ BasicFormBackground {
             TapHandler {
                 id: tapHandler
                 enabled: root.editable
-                onTapped: colorPicker.open()
+                onTapped: root.showColorDialog()
             }
         }
 
@@ -36,18 +57,9 @@ BasicFormBackground {
             anchors.fill: parent
             anchors.margins: Style.formInnerMargin
             color: ColorUtils.transparent(ColorUtils.isDarkColor(root.color) ? Style.colorWhite : Style.colorBlack, 0.6)
-            text: root.displayName ? root.colorName : root.colorText
+            text: root.colorText
             font: root.font
             elide: Text.ElideRight
         }
-    }
-
-    PopupColorPicker {
-        id: colorPicker
-        ExtraPosition.position: ItemPositions.BottomEnd
-
-        colorModel: root.colorsModel
-        currentColor: root.color
-        onColorChosen: (color) => root.accepted(color)
     }
 }

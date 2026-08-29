@@ -1,287 +1,61 @@
 cmake_minimum_required(VERSION 3.24)
 
-if(DEFINED ENV{QTC_RUN})
-    message(NOTICE "CMake is running under Qt Creator")
-    set(QT_CREATOR_RUN TRUE)
-else()
-    message(NOTICE "CMake is running outside Qt Creator")
-    set(QT_CREATOR_RUN FALSE)
-endif()
-
-# Only set if EXEC_CPACK is not defined
-if(NOT DEFINED EXEC_CPACK)
-    set(EXEC_CPACK OFF)  # EXEC_CPACK disabled by default
-endif()
-
 ## Add paths to check for cmake modules:
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-set(QT_CREATOR_SKIP_MAINTENANCE_TOOL_PROVIDER ON)
 
-# Only set if DEFAULT_PROJECT_VERSION is not defined
-if(NOT DEFINED DEFAULT_PROJECT_VERSION)
-    set(DEFAULT_PROJECT_VERSION 0.0.0)  # default version
-endif()
+include(QtSetup)
+include(ProjectOptions)
+include(PlatformSetup)
+embi_detect_qt_creator_run()
+embi_setup_project_options()
+embi_disable_qt_creator_maintenance_provider()
 
-# Only set if DEFAULT_PROJECT_VERSION_SUFFIX is not defined
-if(NOT DEFINED DEFAULT_PROJECT_VERSION_SUFFIX)
-    set(DEFAULT_PROJECT_VERSION_SUFFIX "alpha")  # default version suffix
-endif()
-
-# Only set if DEFAULT_PROJECT_VERSION_CODENAME is not defined
-if(NOT DEFINED DEFAULT_PROJECT_VERSION_CODENAME)
-    set(DEFAULT_PROJECT_VERSION_CODENAME "")  # default version codename
-endif()
-
-# Only set if DEFAULT_PROJECT_DESCRIPTION is not defined
-if(NOT DEFINED DEFAULT_PROJECT_DESCRIPTION)
-    set(DEFAULT_PROJECT_DESCRIPTION "")  # default description
-endif()
+include(ProjectMetadata)
+embi_setup_default_project_metadata(
+    VERSION 0.0.0
+    VERSION_SUFFIX "alpha"
+    VERSION_CODENAME ""
+    DESCRIPTION ""
+)
 
 project(Embi-Ecosystem
     VERSION ${DEFAULT_PROJECT_VERSION}
     DESCRIPTION "${DEFAULT_PROJECT_DESCRIPTION}"
     LANGUAGES CXX)
+
 include(GNUInstallDirs)
-set(CMAKE_PROJECT_VERSION_SUFFIX "${DEFAULT_PROJECT_VERSION_SUFFIX}")
-set(CMAKE_PROJECT_VERSION_CODENAME "${DEFAULT_PROJECT_VERSION_CODENAME}")
-set(CMAKE_PROJECT_COMPANY "Embi-OS")
-set(CMAKE_PROJECT_COMPANY_ADDRESS "Switzerland")
-set(CMAKE_PROJECT_COMPANY_ZIPCODE "")
-set(CMAKE_PROJECT_COMPANY_CONTACT "")
-set(CMAKE_PROJECT_WEBSITE "github.com/Embi-OS")
-set(CMAKE_PROJECT_DOMAIN "embi.os")
-set(CMAKE_PROJECT_COPYRIGHT "")
-set(CMAKE_PROJECT_MAINTAINER "Embi-OS <github.com/Embi-OS>")
-message(NOTICE "Setup project ${CMAKE_PROJECT_NAME} v${CMAKE_PROJECT_VERSION} (${CMAKE_PROJECT_DESCRIPTION})")
+embi_set_project_metadata(
+    VERSION_SUFFIX "${DEFAULT_PROJECT_VERSION_SUFFIX}"
+    VERSION_CODENAME "${DEFAULT_PROJECT_VERSION_CODENAME}"
+    COMPANY "Embi-OS"
+    COMPANY_ADDRESS "Switzerland"
+    COMPANY_ZIPCODE ""
+    COMPANY_CONTACT ""
+    WEBSITE "github.com/Embi-OS"
+    DOMAIN "embi.os"
+    COPYRIGHT ""
+    MAINTAINER "Embi-OS <github.com/Embi-OS>"
+)
+message(NOTICE "Setup project ${CMAKE_PROJECT_NAME} v${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_SUFFIX}")
 
-include(Boot2Qt)
+embi_setup_compiler_defaults()
+embi_setup_qt_project()
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
-
-# Force C++ standard, do not fall back, do not use compiler extensions
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# ask for all warnings and strict compliance with the standard
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic-errors")
-
-set(ENABLE_TARGET_IPO OFF)
-if(ENABLE_OPTIMIZATION)
-    if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        message(STATUS "Build without interprocedural optimization: MinGW GCC LTO is unstable with Qt on Windows")
-    else()
-        set(ENABLE_TARGET_IPO ON)
-    endif()
-endif()
-
-if(NOT DEFINED QT_VERSION_MAJOR)
-    find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-endif()
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Gui)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Qml)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Quick)
-
-# ─────── find_package GLOBAL ───────
-set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL ON)
-
-# ─────── Deploy ───────
-set(DEPLOYABLE_APPS "")
-list(APPEND DEPLOYABLE_APPS "00_Launcher")
-list(APPEND DEPLOYABLE_APPS "01_Gallery")
-list(APPEND DEPLOYABLE_APPS "02_Clock")
-list(APPEND DEPLOYABLE_APPS "03_Life")
-# ──────────────────────
-
-# ────── Qt stuff ──────
-set(BUILD_SHARED_LIBS OFF)
-qt_standard_project_setup(REQUIRES 6.8)
-qt_policy(SET QTP0001 NEW)
-qt_policy(SET QTP0003 NEW)
-qt_policy(SET QTP0004 NEW)
-qt_policy(SET QTP0005 NEW)
-
-set(CMAKE_OUTPUT_PREFIX "${CMAKE_BINARY_DIR}/../${CMAKE_PROJECT_NAME}")
-
-if(BOOT2QT)
-
-    message(NOTICE "CMake Building for Boot2Qt")
-
-    # optimization
-    if(ENABLE_OPTIMIZATION)
-        message(STATUS "Build with optimization")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ${ENABLE_TARGET_IPO})
-    endif()
-
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}_Boot2Qt")
-    set(QT_DEPLOY_PREFIX "/Embi")
-
-    add_definitions(-DQ_OS_BOOT2QT)
-
-    if(RASPBERRY_PI)
-        add_definitions(-DQ_DEVICE_RASPBERRY_PI)
-    endif()
-
-    if(APALIS_IMX8)
-        add_definitions(-DQ_DEVICE_APALIS_IMX8)
-        add_definitions(-DQ_MANUAL_CORE_AFFINITY)
-    endif()
-
-elseif(EMSCRIPTEN)
-
-    message(NOTICE "CMake Building for WASM")
-
-    # optimization
-    if(ENABLE_OPTIMIZATION)
-        message(STATUS "Build with optimization")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Oz") # smaller footprint but dangerous
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ${ENABLE_TARGET_IPO})
-    endif()
-
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}_WASM")
-    set(QT_DEPLOY_PREFIX "")
-
-else()
-
-    if(WIN32)
-        message(NOTICE "CMake Building for Windows")
-    elseif(APPLE)
-        message(NOTICE "CMake Building for macOS")
-    else()
-        message(NOTICE "CMake Building for Linux")
-    endif()
-
-    # optimization
-    if(ENABLE_OPTIMIZATION)
-        message(STATUS "Build with optimization")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ${ENABLE_TARGET_IPO})
-    endif()
-
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_PREFIX}")
-    set(QT_DEPLOY_PREFIX "/Embi")
-
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    # AddressSanitizer
-    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
-    add_link_options(-fsanitize=address)
-endif()
-# ──────────────────────
-
-# ───── QMLCACHEGEN ────
-set(QMLCACHEGEN_STATIC ON)
-set(QMLCACHEGEN_DIRECT OFF)
-set(QMLCACHEGEN_BYTECODE OFF)
-if(QT_CREATOR_RUN)
-    set(QMLCACHEGEN_VERBOSE ON)
-endif()
-# ──────────────────────
-
-# ─────── QMLLINT ──────
-set(QT_QML_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qt/qml")
-set(QT_QML_GENERATE_QMLLS_INI ON)
-# ──────────────────────
-
-# ───── QT CREATOR ─────
-set(QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/qt/qml" CACHE STRING "Qt Creator extra qml import paths" FORCE)
-# ──────────────────────
+embi_setup_platform(
+    DEPLOY_PREFIX "/Embi"
+    BOOT2QT_PREFIX "/etc/default/b2qt"
+)
+embi_setup_optimization_flags()
+embi_setup_debug_sanitizers()
 
 include(GitTag)
-string(TIMESTAMP BUILD_DATE)
+include(ProjectDiagnostics)
 
-add_definitions(
-    -DPROJECT_VERSION="${CMAKE_PROJECT_VERSION}"
-    -DPROJECT_VERSION_MAJOR=${CMAKE_PROJECT_VERSION_MAJOR}
-    -DPROJECT_VERSION_MINOR=${CMAKE_PROJECT_VERSION_MINOR}
-    -DPROJECT_VERSION_PATCH=${CMAKE_PROJECT_VERSION_PATCH}
-    -DPROJECT_VERSION_SUFFIX="${CMAKE_PROJECT_VERSION_SUFFIX}"
-    -DPROJECT_VERSION_CODENAME="${CMAKE_PROJECT_VERSION_CODENAME}"
-    -DPROJECT_DESCRIPTION="${CMAKE_PROJECT_DESCRIPTION}"
-    -DPROJECT_NAME="${CMAKE_PROJECT_NAME}"
-    -DPROJECT_COMPANY="${CMAKE_PROJECT_COMPANY}"
-    -DPROJECT_COMPANY_ADDRESS="${CMAKE_PROJECT_COMPANY_ADDRESS}"
-    -DPROJECT_COMPANY_ZIPCODE="${CMAKE_PROJECT_COMPANY_ZIPCODE}"
-    -DPROJECT_COMPANY_CONTACT="${CMAKE_PROJECT_COMPANY_CONTACT}"
-    -DPROJECT_WEBSITE="${CMAKE_PROJECT_WEBSITE}"
-    -DPROJECT_DOMAIN="${CMAKE_PROJECT_DOMAIN}"
-    -DPROJECT_MAINTAINER="${CMAKE_PROJECT_MAINTAINER}"
-    -DPROJECT_COPYRIGHT="${CMAKE_PROJECT_COPYRIGHT}"
-    -DAPPCONTROLLER_CMD="appcontroller"
-    -DB2QT_PREFIX="/etc/default/b2qt"
+embi_add_project_compile_definitions(
+    APP_CONTROLLER_COMMAND "appcontroller"
 )
-
-if(QT_CREATOR_RUN)
-    add_definitions(-DQT_CREATOR_RUN)
-endif()
 
 add_subdirectory(libraries)
 add_subdirectory(applications)
 
-# ─────── VERBOSE ──────
-message(STATUS "------------ VERBOSE -----------")
-message(STATUS "[GLOBAL] QT_VERSION                  = ${QT_VERSION}")
-message(STATUS "[GLOBAL] QT_CREATOR_RUN              = ${QT_CREATOR_RUN}")
-message(STATUS "[GLOBAL] EXEC_CPACK                  = ${EXEC_CPACK}")
-message(STATUS "[GLOBAL] QT_QML_OUTPUT_DIRECTORY     = ${QT_QML_OUTPUT_DIRECTORY}")
-message(STATUS "[GLOBAL] QML_IMPORT_PATH             = ${QML_IMPORT_PATH}")
-message(STATUS "[GLOBAL] QT_QML_DEBUG                = ${QT_QML_DEBUG}")
-message(STATUS "[GLOBAL] QML_DEBUG_FLAG              = ${QML_DEBUG_FLAG}")
-message(STATUS "[GLOBAL] DEPLOYABLE_APPS             = ${DEPLOYABLE_APPS}")
-message(STATUS "")
-message(STATUS "[DEFINE] PROJECT_VERSION             = ${CMAKE_PROJECT_VERSION}")
-message(STATUS "[DEFINE] PROJECT_VERSION_SUFFIX      = ${CMAKE_PROJECT_VERSION_SUFFIX}")
-message(STATUS "[DEFINE] PROJECT_VERSION_CODENAME    = ${CMAKE_PROJECT_VERSION_CODENAME}")
-message(STATUS "[DEFINE] PROJECT_DESCRIPTION         = ${CMAKE_PROJECT_DESCRIPTION}")
-message(STATUS "[DEFINE] CMAKE_PROJECT_NAME          = ${CMAKE_PROJECT_NAME}")
-message(STATUS "[DEFINE] CMAKE_PROJECT_COMPANY       = ${CMAKE_PROJECT_COMPANY}")
-message(STATUS "[DEFINE] CMAKE_PROJECT_WEBSITE       = ${CMAKE_PROJECT_WEBSITE}")
-message(STATUS "[DEFINE] CMAKE_PROJECT_DOMAIN        = ${CMAKE_PROJECT_DOMAIN}")
-message(STATUS "[DEFINE] CMAKE_PROJECT_MAINTAINER    = ${CMAKE_PROJECT_MAINTAINER}")
-message(STATUS "[DEFINE] CMAKE_PROJECT_COPYRIGHT     = ${CMAKE_PROJECT_COPYRIGHT}")
-message(STATUS "[DEFINE] PROJECT_BUILD_DATE          = ${BUILD_DATE}")
-message(STATUS "[DEFINE] PROJECT_GIT_TAG_HEX         = ${GIT_TAG_HEX}")
-message(STATUS "")
-message(STATUS "[DEFINE] UNIX                       = ${UNIX}")
-message(STATUS "[DEFINE] WIN32                      = ${WIN32}")
-message(STATUS "[DEFINE] APPLE                      = ${APPLE}")
-message(STATUS "[DEFINE] EMSCRIPTEN                 = ${EMSCRIPTEN}")
-message(STATUS "[DEFINE] BOOT2QT                    = ${BOOT2QT}")
-message(STATUS "[DEFINE] RASPBERRY_PI               = ${RASPBERRY_PI}")
-message(STATUS "[DEFINE] APALIS_IMX8                = ${APALIS_IMX8}")
-message(STATUS "--------------------------------")
-# ──────────────────────
-
-message(STATUS "[CMAKE] CMAKE_VERSION = ${CMAKE_VERSION}")
-message(STATUS "[CMAKE] CMAKE_RUNTIME_OUTPUT_DIRECTORY = ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-message(STATUS "[CMAKE] CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
-message(STATUS "[CMAKE] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
-message(STATUS "[CMAKE] CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "[CMAKE] CMAKE_INSTALL_BINDIR = ${CMAKE_INSTALL_BINDIR}")
-message(STATUS "[CMAKE] CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "[CMAKE] CMAKE_BINARY_DIR = ${CMAKE_BINARY_DIR}")
-message(STATUS "[CMAKE] CMAKE_C_COMPILER = ${CMAKE_C_COMPILER}")
-message(STATUS "[CMAKE] CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
-message(STATUS "[CMAKE] CMAKE_MAKE_PROGRAM = ${CMAKE_MAKE_PROGRAM}")
-message(STATUS "[CMAKE] CMAKE_COMMAND = ${CMAKE_COMMAND}")
-message(STATUS "[CMAKE] CMAKE_ROOT = ${CMAKE_ROOT}")
-message(STATUS "[CMAKE] CMAKE_SYSROOT = ${CMAKE_SYSROOT}")
-message(STATUS "[CMAKE] CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
-message(STATUS "[CMAKE] CMAKE_VS_PLATFORM_NAME = ${CMAKE_VS_PLATFORM_NAME}")
-message(STATUS "[CMAKE] CMAKE_SYSTEM = ${CMAKE_SYSTEM}")
-message(STATUS "[CMAKE] CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
-message(STATUS "[CMAKE] CMAKE_SYSTEM_PROCESSOR = ${CMAKE_SYSTEM_PROCESSOR}")
-message(STATUS "[CMAKE] CMAKE_SYSTEM_VERSION = ${CMAKE_SYSTEM_VERSION}")
-message(STATUS "[CMAKE] CMAKE_HOST_SYSTEM = ${CMAKE_HOST_SYSTEM}")
-message(STATUS "[CMAKE] CMAKE_HOST_SYSTEM_NAME = ${CMAKE_HOST_SYSTEM_NAME}")
-message(STATUS "[CMAKE] CMAKE_HOST_SYSTEM_PROCESSOR = ${CMAKE_HOST_SYSTEM_PROCESSOR}")
-message(STATUS "[CMAKE] CMAKE_HOST_SYSTEM_VERSION = ${CMAKE_HOST_SYSTEM_VERSION}")
-message(STATUS "[CMAKE] CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}")
-message(STATUS "[CMAKE] CMAKE_CXX_FLAGS_DEBUG = ${CMAKE_CXX_FLAGS_DEBUG}")
-message(STATUS "[CMAKE] CMAKE_CXX_FLAGS_RELEASE = ${CMAKE_CXX_FLAGS_RELEASE}")
-message(STATUS "[CMAKE] CMAKE_EXE_LINKER_FLAGS = ${CMAKE_EXE_LINKER_FLAGS}")
+embi_print_project_diagnostics()

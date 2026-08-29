@@ -268,6 +268,21 @@ DialogObject* DialogManager::showTime(const QVariant& settings)
     return dialog;
 }
 
+DialogObject* DialogManager::showColor(const QVariant& settings)
+{
+    DialogObject* dialog = show(settings);
+
+    dialog->setType(DialogTypes::Color);
+    dialog->setSeverity(DialogSeverities::Message);
+
+    if(dialog->getButtonAccept().isEmpty())
+        dialog->setButtonAccept(tr("Valider"));
+    if(dialog->getButtonReject().isEmpty())
+        dialog->setButtonReject(tr("Annuler"));
+
+    return dialog;
+}
+
 DialogObject* DialogManager::showFileTree(const QVariant& settings)
 {
     DialogObject* dialog = show(settings);

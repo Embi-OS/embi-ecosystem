@@ -1,11 +1,37 @@
 #include "qsettingsmapper.h"
 #include "qutils_log.h"
 
+#include <QCoreApplication>
 #include <QDir>
+#include <QFileInfo>
 #include <QStandardPaths>
 
 Q_GLOBAL_STATIC(QString, g_path)
 Q_GLOBAL_STATIC(QString, g_name)
+
+namespace {
+
+static QString settingsBaseName(const QString& baseName)
+{
+    QString normalizedBaseName = baseName;
+    if (normalizedBaseName.isEmpty())
+        normalizedBaseName = QCoreApplication::applicationName();
+
+    if(!QFileInfo(baseName).suffix().isEmpty())
+        return normalizedBaseName;
+
+    return normalizedBaseName + QStringLiteral(".conf");
+}
+
+static QString settingsRootPath(const QString& settingsPath)
+{
+    if (!settingsPath.isEmpty())
+        return settingsPath;
+
+    return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+}
+
+}
 
 void QSettingsMapper::setDefaultPath(const QString& path)
 {
@@ -27,6 +53,69 @@ const QString& QSettingsMapper::defaultPath()
 const QString& QSettingsMapper::defaultName()
 {
     return *g_name;
+}
+
+QSettings* QSettingsMapper::createSettings(QObject* parent)
+{
+    return createSettings(*g_path, *g_name, parent);
+}
+
+QSettings* QSettingsMapper::createSettings(const QString& baseName, QObject* parent)
+{
+    return createSettings(*g_path, baseName, parent);
+}
+
+QSettings* QSettingsMapper::createSettings(const QString& settingsPath, const QString& baseName, QObject* parent)
+{
+    QSettings* settings = nullptr;
+#ifdef Q_OS_WASM
+    const QString organizationName = QCoreApplication::organizationName();
+    const QString applicationName = settingsBaseName(baseName);
+    settings = new QSettings(QSettings::WebLocalStorageFormat,
+                             QSettings::UserScope,
+                             organizationName,
+                             applicationName,
+                             parent);
+#else
+    if(!baseName.isEmpty())
+    {
+        const QString rootPath = settingsRootPath(settingsPath);
+        if(!rootPath.isEmpty() && !QDir().mkpath(rootPath)) {
+            QUTILSLOG_WARNING() << "Failed to create settings path:" << rootPath;
+        }
+
+        const QString filePath = QDir(rootPath).filePath(settingsBaseName(baseName));
+        settings = new QSettings(filePath, QSettings::IniFormat, parent);
+    }
+    else
+    {
+        settings = new QSettings(parent);
+    }
+#endif
+
+    QUTILSLOG_DEBUG()<<"QSettings created at:"<<settings->fileName();
+
+    if (settings->status() != QSettings::NoError)
+    {
+        // TODO: can't print out the enum due to the following error:
+        // error: C2666: 'QQmlInfo::operator <<': 15 overloads have similar conversions
+        QUTILSLOG_WARNING() << "Failed to initialize QSettings instance. Status code is: " << int(settings->status());
+        if (settings->status() == QSettings::AccessError)
+        {
+            QStringList missingIdentifiers = {};
+            if (QCoreApplication::organizationName().isEmpty())
+                missingIdentifiers.append("organizationName");
+            if (QCoreApplication::organizationDomain().isEmpty())
+                missingIdentifiers.append("organizationDomain");
+            if (QCoreApplication::applicationName().isEmpty())
+                missingIdentifiers.append("applicationName");
+            if (!missingIdentifiers.isEmpty()) {
+                QUTILSLOG_WARNING() << "The following application identifiers have not been set: " << missingIdentifiers;
+            }
+        }
+    }
+
+    return settings;
 }
 
 QSettingsMapper::QSettingsMapper(QObject *parent) :
@@ -115,21 +204,21 @@ bool QSettingsMapper::submitSettings(const QStringList& dirtyKeys)
 
 bool QSettingsMapper::toFile(const QVariantMap& map)
 {
-    const QString settingsPath = !m_settingsPath.isEmpty() || m_baseName.isEmpty() ?
-                                     m_settingsPath :
-                                     QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-
-    if (!settingsPath.isEmpty() && !QDir().mkpath(settingsPath)) {
+#ifndef Q_OS_WASM
+    const QString settingsPath = settingsRootPath(m_settingsPath);
+    if (!m_baseName.isEmpty() && !settingsPath.isEmpty() && !QDir().mkpath(settingsPath)) {
         QUTILSLOG_WARNING() << "Failed to create settings path:" << settingsPath;
         return false;
     }
+#endif
 
     for(auto [key, value]: map.asKeyValueRange())
     {
         instance()->setValue(key, value);
     }
 
-    return true;
+    instance()->sync();
+    return instance()->status() == QSettings::NoError;
 }
 
 QSettings *QSettingsMapper::instance()
@@ -137,41 +226,10 @@ QSettings *QSettingsMapper::instance()
     if (m_settings)
         return m_settings;
 
-    if(!m_settingsPath.isEmpty() && !m_baseName.isEmpty())
-    {
-        const QString filePath = QDir(m_settingsPath).filePath(m_baseName);
-        m_settings = new QSettings(filePath, QSettings::IniFormat, this);
-    }
-    else if(m_settingsPath.isEmpty() && !m_baseName.isEmpty())
-    {
-        const QString filePath = QDir(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation)).filePath(m_baseName);
-        m_settings = new QSettings(filePath, QSettings::IniFormat, this);
-    }
-    else
-    {
-        m_settings = new QSettings(this);
-    }
+    m_settings = createSettings(m_settingsPath, m_baseName, this);
 
-    if (m_settings->status() != QSettings::NoError)
-    {
-        // TODO: can't print out the enum due to the following error:
-        // error: C2666: 'QQmlInfo::operator <<': 15 overloads have similar conversions
-        QUTILSLOG_WARNING() << "Failed to initialize QSettings instance. Status code is: " << int(m_settings->status());
-        if (m_settings->status() == QSettings::AccessError)
-        {
-            QStringList missingIdentifiers = {};
-            if (QCoreApplication::organizationName().isEmpty())
-                missingIdentifiers.append("organizationName");
-            if (QCoreApplication::organizationDomain().isEmpty())
-                missingIdentifiers.append("organizationDomain");
-            if (QCoreApplication::applicationName().isEmpty())
-                missingIdentifiers.append("applicationName");
-            if (!missingIdentifiers.isEmpty()) {
-                QUTILSLOG_WARNING() << "The following application identifiers have not been set: " << missingIdentifiers;
-            }
-        }
+    if (m_settings->status()!=QSettings::NoError)
         return m_settings;
-    }
 
     if (!m_settingsCategory.isEmpty())
         m_settings->beginGroup(m_settingsCategory);
