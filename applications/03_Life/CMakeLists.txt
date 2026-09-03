@@ -33,3 +33,5 @@ qt_add_resources(L${PROJECT_NAME} "L${PROJECT_NAME}_cells"
     FILES
         ${ALL_CELLS_FILES}
 )
+
+embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})

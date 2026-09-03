@@ -42,3 +42,5 @@ embi_add_application(${PROJECT_NAME}
     OUTPUT_DIRECTORY_PREFIX
         /samples
 )
+
+embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})

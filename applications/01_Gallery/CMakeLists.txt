@@ -30,3 +30,4 @@ embi_add_application(${PROJECT_NAME}
 )
 
 create_package(TARGET A${PROJECT_NAME})
+embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})
