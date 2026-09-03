@@ -172,18 +172,19 @@ void ImageColorsHelper::setSource(const QVariant &source)
                 }
                 return QImage(sourceString);
             });
-            m_futureSourceImageData = new QFutureWatcher<QImage>(this);
-            connect(m_futureSourceImageData, &QFutureWatcherBase::finished, this, [this, source]() {
-                if(!m_futureSourceImageData)
+            auto *watcher = new QFutureWatcher<QImage>(this);
+            m_futureSourceImageData = watcher;
+            connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher, source]() {
+                if(m_futureSourceImageData != watcher)
                     return;
-                const QImage image = m_futureSourceImageData->future().result();
-                m_futureSourceImageData->deleteLater();
+                const QImage image = watcher->future().result();
                 m_futureSourceImageData = nullptr;
+                watcher->deleteLater();
                 setSourceImage(image);
                 m_source = source;
                 emit this->sourceChanged();
             });
-            m_futureSourceImageData->setFuture(future);
+            watcher->setFuture(future);
             return;
 #else
             if (auto url = QUrl(sourceString); url.isLocalFile()) {

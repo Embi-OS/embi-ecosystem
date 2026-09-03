@@ -14,15 +14,18 @@ BasicDialog {
     property string buttonReject: qsTr("Annuler")
     property string buttonAccept: qsTr("Confirmer")
     property string buttonApply: ""
+    property string buttonHelp: ""
 
     property bool rejectVisible: buttonReject!==""
     property bool acceptVisible: buttonAccept!==""
     property bool applyVisible: buttonApply!==""
+    property bool helpVisible: buttonHelp!==""
 
     buttonsContainer: [
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.RejectRole; visible: root.rejectVisible; text: root.buttonReject },
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; visible: root.acceptVisible; text: root.buttonAccept; onClicked: root.acceptedOverwrite(); highlighted: !root.applyVisible },
-        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; visible: root.applyVisible; text: root.buttonApply; onClicked: root.acceptedVersion(); highlighted: true }
+        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; visible: root.applyVisible; text: root.buttonApply; onClicked: root.acceptedVersion(); highlighted: true },
+        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.HelpRole; text: root.buttonHelp; visible: root.helpVisible}
     ]
 
     contentItem: LabelWithCaption {

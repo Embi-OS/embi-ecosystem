@@ -148,9 +148,7 @@ public:
     Q_INVOKABLE static QString formatFilterName(const QString& field, RestFilterOperators::Enum op, bool inverted);
     Q_INVOKABLE static QString formatFieldName(const QString& field, const QString& type=QString());
 
-    static QString dumpRequest(const QNetworkRequest &request,
-                               const QByteArray &verb,
-                               const QByteArray &body);
+    static QString dumpRequest(const QNetworkRequest &request, const QByteArray &verb=QByteArray(), const QByteArray &body=QByteArray());
 
 private:
     static QReadWriteLock globalApiLock;

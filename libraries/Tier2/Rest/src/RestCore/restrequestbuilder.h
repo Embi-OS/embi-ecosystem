@@ -2,6 +2,8 @@
 #define RESTREQUESTBUILDER_H
 
 #include <QDefs>
+#include <QList>
+#include <QStringList>
 #include "restreply.h"
 #include "rest_helpertypes.h"
 
@@ -13,9 +15,15 @@ public:
     RestRequestBuilderExtender() = default;
     virtual ~RestRequestBuilderExtender() = default;
 
+    void setExcludedPaths(const QStringList &paths);
+    bool isExcluded(const QUrl &url) const;
+
     virtual void extendUrl(QUrl &url) const { Q_UNUSED(url) };
     virtual bool requiresBody() const { return false; };
     virtual void extendRequest(QNetworkRequest& request, QByteArray& verb, QByteArray* body) const {Q_UNUSED(request); Q_UNUSED(verb); Q_UNUSED(body)};
+
+private:
+    QStringList m_excludedPaths;
 };
 
 class RestRequestBuilder
@@ -30,7 +38,7 @@ public:
     ~RestRequestBuilder();
 
     RestRequestBuilder &setNetworkAccessManager(QNetworkAccessManager *manager);
-    RestRequestBuilder &setExtender(RestRequestBuilderExtender *extender);
+    RestRequestBuilder &setExtenders(const QList<RestRequestBuilderExtender *> &extenders);
 
     RestRequestBuilder &setCredentials(const QString& user, const QString& password = {});
     RestRequestBuilder &setVersion(const QVersionNumber& version);
@@ -84,7 +92,7 @@ public:
 
 private:
     QNetworkAccessManager* m_manager=nullptr;
-    RestRequestBuilderExtender* m_extender=nullptr;
+    QList<RestRequestBuilderExtender *> m_extenders;
 
     QUrl m_base;
     QVersionNumber m_version;

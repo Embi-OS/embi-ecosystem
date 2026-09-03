@@ -551,12 +551,14 @@ void RestSocket::open()
     builder.addPath(m_method);
     builder.addParameters(bindParameters());
 
-    QUrl url = builder.buildUrl();
+    QNetworkRequest request = builder.buildRequest();
+    QUrl url = request.url();
 
     if(url.scheme()=="http")
         url.setScheme("ws");
     else if(url.scheme()=="https")
         url.setScheme("wss");
+    request.setUrl(url);
 
     const QUrl currentTargetUrl = m_targetUrl;
     setUrl(url.toString());
@@ -586,9 +588,6 @@ void RestSocket::open()
         return;
     }
 
-    QNetworkRequest request(url);
-    builder.prepareRequest(request);
-
     QWebSocketHandshakeOptions options;
     options.setSubprotocols(m_requestedProtocols);
 
@@ -601,6 +600,8 @@ void RestSocket::open()
         m_openWatchdog->start(m_openTimeoutMs);
     else
         m_openWatchdog->stop();
+
+    // qNotice().noquote()<<RestHelper::dumpRequest(request);
 
     m_socket->open(request, options);
 }

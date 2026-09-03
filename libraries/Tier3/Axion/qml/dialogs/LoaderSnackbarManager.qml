@@ -122,7 +122,7 @@ Item {
                     // "textFormat": TextEdit.RichText,
                     "title": title,
                     "message": caption,
-                    "infos": details,
+                    "traces": details,
                     "diagnose": false
                 }
                 DialogManager.showText(settings)

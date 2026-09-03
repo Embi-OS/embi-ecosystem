@@ -73,7 +73,7 @@ Page {
 
             delegate: SvgColorImage {
                 required property int index
-                size: 24
+                size: 16
                 icon: swipeView.itemAt(index).StandardObject.icon
                 color: index===pageIndicator.currentIndex  ? pageIndicator.color : Style.colorPrimaryDark
                 opacity: root.enabled ? 1.0 : 0.7

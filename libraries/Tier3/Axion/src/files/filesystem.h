@@ -31,8 +31,6 @@ class Filesystem : public QObject,
     Q_CONSTANT_REF_PROPERTY(QString, workingDirectoryPath, "")
     Q_CONSTANT_PTR_PROPERTY(FilesystemDriveModel, drives)
 
-    Q_WRITABLE_REF_PROPERTY(QString, pathClipboard, PathClipboard, "")
-
 protected:
     friend QQmlSingleton<Filesystem>;
     explicit Filesystem(QObject *parent = nullptr);
@@ -65,6 +63,9 @@ public:
     Q_INVOKABLE static QUrl urlFromPath(const QString& path);
 
     Q_INVOKABLE static QString nearestExistingAncestorOfPath(const QString& path);
+
+    Q_INVOKABLE static bool copyToClipboard(const QString& text);
+    Q_INVOKABLE static QString pasteFromClipboard();
 
 public slots:
     static bool copy(const QString& sourcePath, const QString& destPath, bool force=false);

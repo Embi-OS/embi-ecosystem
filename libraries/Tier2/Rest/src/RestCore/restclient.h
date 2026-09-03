@@ -38,6 +38,11 @@ public:
     RestClass* createClass(const QString &path, QObject *parent = nullptr);
 
     virtual RestRequestBuilder builder() const;
+    const QList<RestRequestBuilderExtender *> &requestExtenders() const;
+    // Extenders are not owned and must outlive all builders created by this client.
+    void addRequestExtender(RestRequestBuilderExtender *extender);
+    void removeRequestExtender(RestRequestBuilderExtender *extender);
+    void clearRequestExtenders();
 
 public slots:
     void setModernAttributes();
@@ -50,6 +55,9 @@ public slots:
 
     void addRequestAttribute(QNetworkRequest::Attribute attribute, const QVariant &value);
     void removeRequestAttribute(QNetworkRequest::Attribute attribute);
+
+private:
+    QList<RestRequestBuilderExtender *> m_requestExtenders;
 };
 
 #endif // RESTCLIENT_H

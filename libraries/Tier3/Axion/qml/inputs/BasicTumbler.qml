@@ -13,6 +13,7 @@ T.Tumbler {
 
     currentIndex: -1
     delegate: LabelTumbler {
+        required property int index
         required property string modelData
         text: modelData
     }

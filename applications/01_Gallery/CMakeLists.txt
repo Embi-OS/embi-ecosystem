@@ -3,6 +3,8 @@ include(Package/CreatePackage)
 
 project(01_Gallery)
 
+embi_exclude_from_translations()
+
 allFileRecurseRelative(ALL_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 
@@ -27,5 +29,4 @@ embi_add_application(${PROJECT_NAME}
         /samples
 )
 
-embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})
 create_package(TARGET A${PROJECT_NAME})

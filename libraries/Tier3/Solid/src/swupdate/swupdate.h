@@ -3,7 +3,10 @@
 
 #include <QDefs>
 #include <QSocketNotifier>
+#include <QTimer>
 #include "qsingleton.h"
+
+class QProcess;
 
 Q_ENUM_CLASS(SwupdateRecoveryStatuses, SwupdateRecoveryStatus,
              Idle,
@@ -75,7 +78,7 @@ class Swupdate: public QObject,
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_PROPERTY(bool available READ available CONSTANT FINAL)
+    Q_PROPERTY(bool available READ available NOTIFY availableChanged FINAL)
     Q_READONLY_VAR_PROPERTY(bool, isRunning, IsRunning, false)
     Q_READONLY_REF_PROPERTY(QString, status, Status, {})
     Q_READONLY_REF_PROPERTY(QString, file, File, {})
@@ -90,6 +93,8 @@ protected:
     explicit Swupdate(QObject* parent=nullptr);
 
 public:
+    ~Swupdate() override;
+
     bool available() const;
 
 public slots:
@@ -99,13 +104,24 @@ public slots:
     bool update(const QString& file);
     bool restart();
 
+signals:
+    void availableChanged();
+
 private slots:
     void test();
     void open();
     void onProgressMessage();
 
 private:
+    void closeProgressChannel(bool closeFd);
+    void scheduleOpen();
+    void setProgressChannelFd(int fd);
+
+    QTimer m_reconnectTimer;
     QSocketNotifier* m_socketNotifier=nullptr;
+    QProcess* m_updateProcess=nullptr;
+    QProcess* m_restartProcess=nullptr;
+    bool m_progressConnectionUnavailable=false;
 };
 
 #endif // SWUPDATE_H

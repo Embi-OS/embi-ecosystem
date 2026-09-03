@@ -26,6 +26,7 @@ class ClockAlarmAudio : public AbstractManager
     Q_OBJECT_QML_SINGLETON(ClockAlarmAudio)
 
     Q_WRITABLE_VAR_PROPERTY(int, defaultVolume, DefaultVolume, 20)
+    Q_WRITABLE_VAR_PROPERTY(int, defaultFadeInDuration, DefaultFadeInDuration, 60)
     Q_READONLY_VAR_PROPERTY(bool, ringtonePreviewing, RingtonePreviewing, false)
 
 private:
@@ -51,6 +52,8 @@ private slots:
     void handleRingtoneError(QMediaPlayer::Error error, const QString& errorString);
 
 private:
+    void stopRingtoneFadeIn();
+
     QMediaPlayer* m_ringtonePlayer=nullptr;
     QAudioOutput* m_ringtoneAudioOutput=nullptr;
     QPropertyAnimation* m_volumeAnimation=nullptr;

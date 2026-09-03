@@ -139,7 +139,7 @@ PaneSplitView {
                 ExtraPosition.position: ItemPositions.BottomEnd
 
                 BasicMenuItem {text: qsTr("Aller en haut"); onClicked: root.clear()}
-                BasicMenuItem {text: qsTr("Copier le chemin"); onClicked: Filesystem.pathClipboard=root.folderPath}
+                BasicMenuItem {text: qsTr("Copier le chemin"); onClicked: Filesystem.copyToClipboard(root.folderPath)}
                 BasicMenuSeparator {}
                 BasicCheckDelegate {id: showHidden; text: qsTr("Voir les fichier cachés")}
                 BasicCheckDelegate {id: showOnlyReadable; text: qsTr("Voir les fichier en lecture seul")}
@@ -169,7 +169,7 @@ PaneSplitView {
                           textFile.fileType==="html" ? TextEdit.RichText : TextEdit.PlainText,
             "title": textFile.fileName,
             "message": textFile.error ? textFile.error : textFile.fileUrl,
-            "infos": textFile.content,
+            "traces": textFile.content,
             "fullscreen": true,
             "diagnose": false
         }

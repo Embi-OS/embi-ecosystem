@@ -37,8 +37,6 @@ bool RestManager::init()
         m_apiBaseUrl = args.value("apiBaseUrl").toString();
     if(args.contains("apiPort"))
         m_apiPort = args.value("apiPort").toInt();
-    if(args.contains("apiKey"))
-        m_apiKey = args.value("apiKey").toString();
     if(args.contains("apiDataMode"))
         m_apiDataMode = args.value("apiDataMode")=="Cbor" ? RestDataModes::Cbor : RestDataModes::Json;
     if(args.contains("apiTrailingSlash"))
@@ -62,7 +60,6 @@ bool RestManager::init()
     persistantData->mapProperty(this,"apiPort");
     persistantData->mapProperty(this,"apiTrailingSlash");
     persistantData->mapProperty(this,"apiSocketEnabled");
-    persistantData->mapProperty(this,"apiKey");
 
     if(!hasLocalApiEnabledSetting)
         setLocalApiEnabled(endpointIsLoopback(m_apiBaseUrl));
@@ -74,7 +71,6 @@ bool RestManager::init()
     int clientApiPort = m_apiPort;
     bool clientApiTrailingSlash = m_apiTrailingSlash;
     bool clientApiSocketEnabled = m_apiSocketEnabled;
-    QString clientApiKey = m_apiKey;
 
 #ifndef Q_OS_WASM
     if(m_localApiEnabled)
@@ -84,7 +80,6 @@ bool RestManager::init()
         clientApiPort = 32768;
         clientApiTrailingSlash = true;
         clientApiSocketEnabled = true;
-        clientApiKey.clear();
     }
 
     const QString trimmed = clientApiBaseUrl.trimmed();
@@ -107,8 +102,6 @@ bool RestManager::init()
     m_client->setPort(clientApiPort);
     m_client->setDataMode(clientApiDataMode);
     m_client->setTrailingSlash(clientApiTrailingSlash);
-    if(!clientApiKey.isEmpty())
-        m_client->addGlobalHeader("Authorization", QString("Bearer %1").arg(clientApiKey).toUtf8());
 
     RestRequestBuilder builder = m_client->builder();
     const QUrl effectiveUrl = builder.buildUrl();
@@ -116,40 +109,4 @@ bool RestManager::init()
     RESTLOG_INFO()<<"RestClient configuration:"<<m_apiEffectiveUrl;
 
     return true;
-}
-
-void RestManager::authenticate(const QString& identifier, const QString& password)
-{
-    if(identifier.isEmpty() && password.isEmpty())
-    {
-        resetApiKey();
-        return;
-    }
-
-    QVariantMap auth;
-    auth.insert("identifier", identifier);
-    auth.insert("password", password);
-    RestReply* reply = m_client->rootClass()->post("api/authentication/token", QVariant(auth));
-    reply->onAllErrors(this, [](const QString &errorString, int error, RestReplyErrorTypes::Enum errorType, const QVariant& reply) {
-        RESTLOG_WARNING()<<"Auth error:"<<errorString;
-        QVariantMap settings;
-        settings["title"] = tr("Erreur d'authentification");
-        settings["caption"] = QString("Error: %1").arg(error);
-        settings["details"] = errorString;
-        settings["closable"] = true;
-        SnackbarManager::Get()->showFatal(settings);
-    });
-    reply->onSucceeded(this, [this](int status, const QVariant& reply) {
-        RESTLOG_INFO()<<"Auth token received:"<<status;
-        const QVariantMap map = reply.toMap();
-        const QString access = map.value("access").toString();
-        const QString refresh = map.value("refresh").toString();
-
-        QVariantMap settings;
-        settings["title"] = tr("Authentification réussie");
-        settings["details"] = access;
-        SnackbarManager::Get()->showSuccess(settings);
-
-        setApiKey(access);
-    });
 }

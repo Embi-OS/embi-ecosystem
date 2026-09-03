@@ -2,6 +2,8 @@ include(Common)
 
 project(02_Clock)
 
+embi_exclude_from_translations()
+
 allFileRecurseRelative(ALL_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 allFileRecurseRelative(ALL_IMG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/*)
@@ -40,6 +42,3 @@ embi_add_application(${PROJECT_NAME}
     OUTPUT_DIRECTORY_PREFIX
         /samples
 )
-
-embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})
-create_package(TARGET A${PROJECT_NAME})

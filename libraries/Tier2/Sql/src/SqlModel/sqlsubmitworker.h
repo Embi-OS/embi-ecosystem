@@ -4,6 +4,9 @@
 #include "sql_helpertypes.h"
 #include "SqlCore/sqlquerybuilder.h"
 #include "syncable/qsworker.h"
+
+#include <atomic>
+
 class SqlSubmitWorker : public QSWorker
 {
     Q_OBJECT
@@ -30,6 +33,10 @@ public slots:
     bool doRun() final override;
     bool abort() final override;
     bool waitForFinished(int timeout = -1, QEventLoop::ProcessEventsFlags flags = QEventLoop::AllEvents) final override;
+
+private:
+    std::atomic_bool m_abortRequested = false;
+    std::atomic<quint64> m_runId = 0;
 };
 
 #endif // SQLSUBMITWORKER_H

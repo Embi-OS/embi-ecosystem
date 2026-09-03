@@ -5,6 +5,7 @@
 #include "dialogs/snackbarmanager.h"
 
 #include <QStandardPaths>
+#include <QClipboard>
 
 Filesystem::Filesystem(QObject *parent) :
     QObject(parent),
@@ -243,4 +244,18 @@ QString Filesystem::nearestExistingAncestorOfPath(const QString& path)
     while(!dir.exists() && !dir.isRoot());
 
     return dir.exists() ? dir.path() : QString();
+}
+
+bool Filesystem::copyToClipboard(const QString& text)
+{
+    if(QUtils::Filesystem::copyToClipboard(text))
+        SnackbarManager::Get()->show(tr("Copié dans le presse-papier"));
+    else
+        SnackbarManager::Get()->showWarning(tr("Impossible de copier dans le presse-papier"));
+    return true;
+}
+
+QString Filesystem::pasteFromClipboard()
+{
+    return QUtils::Filesystem::pasteFromClipboard();
 }

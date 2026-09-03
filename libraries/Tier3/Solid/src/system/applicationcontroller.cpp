@@ -17,9 +17,13 @@
 #define B2QT_PREFIX "/usr/bin/b2qt"
 #endif
 
+namespace
+{
+bool s_updateInProgress = false;
+}
+
 ApplicationController::ApplicationController(QObject *parent) :
-    QObject(parent),
-    m_hasAppController(!QStandardPaths::findExecutable(APPCONTROLLER_CMD).isEmpty())
+    QObject(parent)
 {
 
 }
@@ -34,13 +38,13 @@ void ApplicationController::init(bool makeDefault)
 
     const QString newVersionLocalFile = Paths::applicationFilePath()+"_new";
     const QString oldVersionLocalFile = Paths::applicationFilePath()+"_old";
-    if(QFile::exists(newVersionLocalFile))
+    if(QFile::exists(newVersionLocalFile) && !QUtils::Filesystem::remove(newVersionLocalFile))
     {
-        QUtils::Filesystem::remove(newVersionLocalFile);
+        SOLIDLOG_WARNING() << "Can't remove stale update file" << newVersionLocalFile;
     }
-    if(QFile::exists(oldVersionLocalFile))
+    if(QFile::exists(oldVersionLocalFile) && !QUtils::Filesystem::remove(oldVersionLocalFile))
     {
-        QUtils::Filesystem::remove(oldVersionLocalFile);
+        SOLIDLOG_WARNING() << "Can't remove stale previous-version file" << oldVersionLocalFile;
     }
 
     const QString applicationDirPath = QCoreApplication::applicationDirPath();
@@ -98,6 +102,13 @@ void ApplicationController::update(const QString& path)
     }
 
     auto importStep = [this, path]() {
+        if(s_updateInProgress)
+        {
+            emit errorOccurred(tr("Une mise à jour est déjà en cours"));
+            return;
+        }
+
+        s_updateInProgress = true;
         DialogObject* dialog = DialogManager::Get()->showBusy(tr("Chargement de la mise à jour!"));
 
         const QString localFile = Paths::applicationFilePath();
@@ -105,7 +116,8 @@ void ApplicationController::update(const QString& path)
 
         QtConcurrent::run([path, newVersionLocalFile]() {
             return QUtils::Filesystem::copy(path, newVersionLocalFile, true);
-        }).then(this, [dialog, newVersionLocalFile, localFile](bool copied) {
+        }).then(qApp, [dialog, newVersionLocalFile, localFile](bool copied) {
+            s_updateInProgress = false;
             dialog->hide();
 
             if(!copied) {
@@ -135,7 +147,16 @@ void ApplicationController::update(const QString& path)
             else if(!newVersion.rename(localFile))
             {
                 SOLIDLOG_WARNING() << "Can't rename newVersion to" << localFile;
-                errorMessage = tr("Impossible d'importer la nouvelle version");
+                QFile oldVersionBackup(localFile + "_old");
+                if(!oldVersionBackup.rename(localFile))
+                {
+                    SOLIDLOG_CRITICAL() << "Can't restore oldVersion from" << localFile + "_old";
+                    errorMessage = tr("Impossible d'importer la nouvelle version et de restaurer la version actuelle");
+                }
+                else
+                {
+                    errorMessage = tr("Impossible d'importer la nouvelle version. La version actuelle a été restaurée");
+                }
             }
 
             if(!errorMessage.isEmpty()) {
@@ -184,7 +205,7 @@ void ApplicationController::install(const QString& path)
     auto future = QtConcurrent::run([path]() -> std::tuple<bool, QString, QString> {
 
         const QFileInfo fileInfo = QFileInfo(path);
-        if(fileInfo.fileName()==Paths::applicationName())
+        if(fileInfo.fileName()==Paths::applicationFileName())
         {
             const QString infos = tr("Impossible de réinstaller l'applicaiton actuelle");
             const QString traces = tr("Il est préférable d'utiliser la fonction de mise à jour");
@@ -263,6 +284,7 @@ void ApplicationController::launch(const QString& path)
     if (!hasAppController())
     {
         SOLIDLOG_WARNING()<<"Application controller unavailable on this platform";
+        emit errorOccurred(tr("Impossible de lancer l'application : appcontroller est indisponible"));
         return;
     }
 
@@ -270,11 +292,17 @@ void ApplicationController::launch(const QString& path)
     if (fileInfo.isExecutable())
     {
         SOLIDLOG_INFO()<<"Launching application"<<path;
-        QMetaObject::invokeMethod(qApp, [path](){
-            qApp->quit();
+        QMetaObject::invokeMethod(this, [this, path](){
             QString uid = QString::number(getuid());
             QString gid = QString::number(getgid());
-            QProcess::startDetached("systemd-run", {"--system", "--uid="+uid, "--gid="+gid, APPCONTROLLER_CMD, path});
+            if(!QProcess::startDetached("systemd-run", {"--system", "--uid="+uid, "--gid="+gid, APPCONTROLLER_CMD, path}))
+            {
+                SOLIDLOG_WARNING() << "Can't start systemd-run";
+                emit errorOccurred(tr("Impossible de lancer l'application"));
+                return;
+            }
+
+            qApp->quit();
         }, Qt::QueuedConnection);
     }
     else
@@ -316,6 +344,13 @@ void ApplicationController::makeDefault(const QString& path)
             emit this->currentDefaultChanged();
             proc->deleteLater();
         });
+        connect(proc, &QProcess::errorOccurred, this, [this, proc](QProcess::ProcessError error) {
+            if(error != QProcess::FailedToStart)
+                return;
+
+            emit this->errorOccurred(proc->errorString());
+            proc->deleteLater();
+        });
         proc->start(APPCONTROLLER_CMD, {"--make-default", path});
     }
     else
@@ -340,6 +375,13 @@ void ApplicationController::removeDefault()
         if(exitCode != 0)
             emit this->errorOccurred(proc->readAllStandardError());
         emit this->currentDefaultChanged();
+        proc->deleteLater();
+    });
+    connect(proc, &QProcess::errorOccurred, this, [this, proc](QProcess::ProcessError error) {
+        if(error != QProcess::FailedToStart)
+            return;
+
+        emit this->errorOccurred(proc->errorString());
         proc->deleteLater();
     });
     proc->start(APPCONTROLLER_CMD, {"--remove-default"});

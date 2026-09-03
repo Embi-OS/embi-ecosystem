@@ -3,6 +3,7 @@
 
 #include <QtConcurrentRun>
 #include <QDeferred>
+#include <QTimer>
 
 SqlSubmitWorker::SqlSubmitWorker(QObject *parent):
     QSWorker(parent)
@@ -12,6 +13,9 @@ SqlSubmitWorker::SqlSubmitWorker(QObject *parent):
 
 bool SqlSubmitWorker::doRun()
 {
+    m_abortRequested.store(false);
+    const quint64 runId = ++m_runId;
+
     const QString connection = m_connection;
     const QString tableName = m_tableName;
     const QString primaryField = m_primaryField;
@@ -23,16 +27,29 @@ bool SqlSubmitWorker::doRun()
     const QVariantList source = m_source;
 
     QDeferred<long long, QSqlError, QVariant> defer;
-    defer.progress([this](long long progress, const QSqlError&, const QVariant& reply) {
+    defer.progress([this, runId](long long progress, const QSqlError&, const QVariant& reply) {
+        if(runId != m_runId.load() || m_abortRequested.load())
+            return;
         emit this->progress(reply.toString(), progress);
     });
-    defer.fail([this](long long, const QSqlError& error, const QVariant& reply) {
+    defer.fail([this, runId](long long, const QSqlError& error, const QVariant& reply) {
+        if(runId != m_runId.load() || m_abortRequested.load())
+            return;
         emit this->failed(error.type(), error.text(), reply);
     });
-    defer.done([this](long long, const QSqlError& error, const QVariant& reply) {
+    defer.done([this, runId](long long, const QSqlError& error, const QVariant& reply) {
+        if(runId != m_runId.load() || m_abortRequested.load())
+            return;
         emit this->succeeded(error.type(), reply);
     });
-    defer.complete([this](bool, long long, const QSqlError& error, const QVariant&) {
+    defer.complete([this, runId](bool, long long, const QSqlError& error, const QVariant&) {
+        if(runId != m_runId.load())
+            return;
+        if(m_abortRequested.load()) {
+            emit this->canceled();
+            emit this->finished(QSqlError::UnknownError);
+            return;
+        }
         emit this->finished(error.type());
     }, m_asynchronous ? Qt::QueuedConnection : Qt::AutoConnection);
 
@@ -64,17 +81,28 @@ bool SqlSubmitWorker::doRun()
 
 bool SqlSubmitWorker::abort()
 {
+    if(m_running)
+        m_abortRequested.store(true);
+
     return true;
 }
 
 bool SqlSubmitWorker::waitForFinished(int timeout, QEventLoop::ProcessEventsFlags flags)
 {
     if(!m_running)
-        return true;
+        return m_status==QSqlError::NoError;
 
     QEventLoop loop;
-    connect(this, &QSWorker::finished, &loop, &QEventLoop::exit, Qt::QueuedConnection);
-    int status = loop.exec(flags);
+    bool finished = false;
+    int status = QSqlError::UnknownError;
+    connect(this, &QSWorker::finished, &loop, [&loop, &finished, &status](int workerStatus) {
+        finished = true;
+        status = workerStatus;
+        loop.quit();
+    }, Qt::QueuedConnection);
+    if(timeout>=0)
+        QTimer::singleShot(timeout, &loop, &QEventLoop::quit);
+    loop.exec(flags);
 
-    return status==QSqlError::NoError;
+    return finished && status==QSqlError::NoError;
 }

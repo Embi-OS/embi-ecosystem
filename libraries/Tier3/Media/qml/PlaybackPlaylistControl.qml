@@ -45,6 +45,7 @@ RowLayout {
         id: loopButton
         Layout.alignment: Qt.AlignVCenter
         size: root.buttonSize
+        highlighted: root.mediaPlaylist.playbackMode===MediaPlaybackModes.ItemLoop || root.mediaPlaylist.playbackMode===MediaPlaybackModes.Loop
         icon: root.mediaPlaylist.playbackMode===MediaPlaybackModes.Sequential ? MaterialIcons.repeatOff :
               root.mediaPlaylist.playbackMode===MediaPlaybackModes.ItemLoop ? MaterialIcons.repeatOnce :
               root.mediaPlaylist.playbackMode===MediaPlaybackModes.Loop ? MaterialIcons.repeat : MaterialIcons.repeatOff

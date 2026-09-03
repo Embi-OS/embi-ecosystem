@@ -109,8 +109,11 @@ QString RestHelper::dumpRequest(const QNetworkRequest &request, const QByteArray
     const QList<QByteArray> rawHeaderList = request.rawHeaderList();
     if(!rawHeaderList.isEmpty()) {
         string.append(QString("    Headers       :\n"));
-        for(const QByteArray& rawHeader: rawHeaderList)
-            string.append(QString("         %1 %2\n").arg(QString::fromUtf8(rawHeader), QString::fromUtf8(request.rawHeader(rawHeader))));
+        for(const QByteArray& rawHeader: rawHeaderList) {
+            const bool sensitive = rawHeader.compare("Authorization", Qt::CaseInsensitive)==0 || rawHeader.compare("Proxy-Authorization", Qt::CaseInsensitive)==0;
+            const QString value = sensitive ? QStringLiteral("[redacted]") : QString::fromUtf8(request.rawHeader(rawHeader));
+            string.append(QString("         %1 %2\n").arg(QString::fromUtf8(rawHeader), value));
+        }
     }
 
     string.append(QString("%1").arg(qLogLine()));

@@ -25,7 +25,6 @@ class Clock : public AbstractManager
     Q_WRITABLE_VAR_PROPERTY(int, ringTimeout, RingTimeout, 30)
     Q_WRITABLE_VAR_PROPERTY(int, wakeTimeout, WakeTimeout, 5)
     Q_WRITABLE_VAR_PROPERTY(int, snoozeTimeout, SnoozeTimeout, 5)
-    Q_WRITABLE_VAR_PROPERTY(int, defaultVolume, DefaultVolume, 20)
 
 private:
     explicit Clock(QObject *parent = nullptr);

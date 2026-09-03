@@ -3,12 +3,18 @@
 
 #include "qmodelmatcher.h"
 
+#include <algorithm>
+
 AlarmModel::AlarmModel(QObject* parent) :
     QObjectListModel(parent, &AlarmObject::staticMetaObject)
 {
     onInserted<AlarmObject>([this](AlarmObject* alarmObject){
         connect(alarmObject, &AlarmObject::ringing, this, [this, alarmObject](){ emit this->ringing(alarmObject); });
         connect(alarmObject, &AlarmObject::remainingTimeChanged, this, &AlarmModel::invalidateRemainingTimeChange);
+        invalidateRemainingTimeChange();
+    });
+    onRemoved<AlarmObject>([this](AlarmObject*){
+        invalidateRemainingTimeChange();
     });
 
     QModelMatcher* loadingMatcher = new QModelMatcher(this);
@@ -23,7 +29,7 @@ AlarmModel::AlarmModel(QObject* parent) :
 
 void AlarmModel::invalidateRemainingTimeChange()
 {
-    int msToNextRingTime=-1;
+    qint64 msToNextRingTime=-1;
     QDateTime nextRingDateTime;
     for(AlarmObject* alarmObject: this->modelIterator<AlarmObject>())
     {
@@ -62,7 +68,7 @@ AlarmObject::AlarmObject(QObject *parent):
     connect(this, &AlarmObject::weekdaysChanged, this, &AlarmObject::queueInvalidate);
 
     m_timer->setSingleShot(true);
-    connect(m_timer, &QTimer::timeout, this, &AlarmObject::ring);
+    connect(m_timer, &QTimer::timeout, this, &AlarmObject::onTimerTimeout);
 
     m_remainingTimeChangeCaller->setSingleShot(false);
     m_remainingTimeChangeCaller->setInterval(1000);
@@ -95,21 +101,30 @@ void AlarmObject::fromMap(const QVariantMap& alarmMap)
     if(alarmMap.contains("group"))
         setGroup(alarmMap.value("group").toString());
     if(alarmMap.contains("hour"))
-        setHour(alarmMap.value("hour").toInt());
+    {
+        const int hour = alarmMap.value("hour").toInt();
+        if(hour >= 0 && hour < 24)
+            setHour(hour);
+    }
     if(alarmMap.contains("minute"))
-        setMinute(alarmMap.value("minute").toInt());
+    {
+        const int minute = alarmMap.value("minute").toInt();
+        if(minute >= 0 && minute < 60)
+            setMinute(minute);
+    }
     if(alarmMap.contains("date"))
         setDate(alarmMap.value("date").toDate());
-    if(alarmMap.contains("enabled"))
-        setEnabled(alarmMap.value("enabled").toBool());
     if(alarmMap.contains("name"))
         setName(alarmMap.value("name").toString());
     if(alarmMap.contains("repeat"))
         setRepeat(alarmMap.value("repeat").toBool());
     if(alarmMap.contains("weekdays"))
-        setWeekdays(alarmMap.value("weekdays").toInt());
+        setWeekdays(alarmMap.value("weekdays").toInt() & WeekdayMask);
     if(alarmMap.contains("details"))
         setDetails(alarmMap.value("details").toMap());
+
+    if(alarmMap.contains("enabled"))
+        setEnabled(alarmMap.value("enabled").toBool());
 }
 
 void AlarmObject::ring()
@@ -161,11 +176,14 @@ void AlarmObject::invalidate()
 
     invalidateRemainingTimeChange();
 
-    int delay = m_msToNextRingTime;
+    const qint64 delay = m_msToNextRingTime;
     if(m_enabled && delay>0)
-        m_timer->start(delay);
-    else
+        startTimer(delay);
+    else if(m_enabled)
+    {
         setEnabled(false);
+        invalidateRemainingTimeChange();
+    }
 
     emit this->invalidated();
     m_invalidateQueued = false;
@@ -174,14 +192,38 @@ void AlarmObject::invalidate()
         m_remainingTimeChangeCaller->start();
 }
 
-QString AlarmObject::nextTimeRing(int secToNextRingTime, QLocale::FormatType format)
+void AlarmObject::startTimer(qint64 delay)
+{
+    if(delay <= 0)
+        return;
+
+    m_timer->start(static_cast<int>((std::min)(delay, MaximumTimerInterval)));
+}
+
+void AlarmObject::onTimerTimeout()
+{
+    m_timer->stop();
+    invalidateRemainingTimeChange();
+
+    if(m_enabled && m_msToNextRingTime > 0)
+    {
+        startTimer(m_msToNextRingTime);
+        if(m_timer->remainingTime() > 1000)
+            m_remainingTimeChangeCaller->start();
+        return;
+    }
+
+    ring();
+}
+
+QString AlarmObject::nextTimeRing(qint64 secToNextRingTime, QLocale::FormatType format)
 {
     if(secToNextRingTime<=0)
         return "N/A";
 
-    int day = secToNextRingTime / (24 * 3600);
-    int hour = secToNextRingTime / 3600 - day * 24;
-    int minute = secToNextRingTime / 60 - day * 24 * 60 - hour * 60;
+    qint64 day = secToNextRingTime / (24 * 3600);
+    qint64 hour = secToNextRingTime / 3600 - day * 24;
+    qint64 minute = secToNextRingTime / 60 - day * 24 * 60 - hour * 60;
     QString arg;
     if (day > 0) {
         if(format==QLocale::NarrowFormat && (hour > 0 || minute > 0))
@@ -223,10 +265,11 @@ void AlarmObject::invalidateRemainingTimeChange()
     setMsToNextRingTime(now.msecsTo(m_nextRingDateTime));
     setNextTimeRing(nextTimeRing(m_msToNextRingTime/1000));
 
-    if(m_timer->isActive() && (m_timer->remainingTime()-m_msToNextRingTime)>1000)
+    if(m_timer->isActive() && m_msToNextRingTime <= MaximumTimerInterval
+            && qAbs(qint64(m_timer->remainingTime())-m_msToNextRingTime)>1000)
     {
-        AXIONLOG_WARNING()<<"AlarmObject.remainingTime differs from msToNextRingTime:"<<qAbs(m_timer->remainingTime()-m_msToNextRingTime)/1000.0<<"sec";
-        m_timer->start(m_msToNextRingTime);
+        AXIONLOG_WARNING()<<"AlarmObject.remainingTime differs from msToNextRingTime:"<<qAbs(qint64(m_timer->remainingTime())-m_msToNextRingTime)/1000.0<<"sec";
+        startTimer(m_msToNextRingTime);
     }
 
     emit this->remainingTimeChanged();
@@ -238,39 +281,35 @@ QDateTime AlarmObject::calculateNextRingDateTime() const
     if (!m_enabled)
         return QDateTime();
 
-    // alarm is not valid
-    if (m_repeat && !m_weekdays)
+    const QDateTime now = QDateTime::currentDateTime();
+    const QTime alarmTime(m_hour, m_minute, 0);
+    if(!alarmTime.isValid())
         return QDateTime();
 
-    const QDateTime now = QDateTime::currentDateTime();
-    QDateTime alarmDateTime;
-
-    // alarm does not repeat (no days of the week are specified)
-    if (m_weekdays == 0 && m_date.isValid())
+    if(m_repeat)
     {
-        // get the time when the alarm will ring
-        alarmDateTime = QDateTime(m_date,QTime(m_hour, m_minute, 0));
-    }
-    else if (m_weekdays > 0) // repeat alarm
-    {
-        bool first = true;
+        const int weekdays = m_weekdays & WeekdayMask;
+        if(!weekdays)
+            return QDateTime();
 
-        // get the time when the alarm will ring
-        const QTime alarmTime = QTime(m_hour, m_minute, 0);
-        QDateTime dateToRing = QDateTime::currentDateTime();
-        // keeping looping forward a single day until the day of week is accepted
-        while (((m_weekdays & (1<<(dateToRing.date().dayOfWeek() - 1))) == 0) // check day
-               || (first && (alarmTime < dateToRing.time()))) // check time if the current day is accepted (keep looping forward if alarmTime has passed)
+        for(int dayOffset=0; dayOffset<7; ++dayOffset)
         {
-            dateToRing = dateToRing.addDays(1); // go forward a day
-            first = false;
-        }
-        alarmDateTime = QDateTime(dateToRing.date(), alarmTime);
+            const QDate date = now.date().addDays(dayOffset);
+            if((weekdays & (1 << (date.dayOfWeek() - 1))) == 0)
+                continue;
 
-        return alarmDateTime;
+            const QDateTime alarmDateTime(date, alarmTime);
+            if(alarmDateTime > now)
+                return alarmDateTime;
+        }
+
+        return QDateTime();
     }
 
-    // alarm is in the past
+    if(!m_date.isValid())
+        return QDateTime();
+
+    const QDateTime alarmDateTime(m_date, alarmTime);
     if(alarmDateTime <= now || !alarmDateTime.isValid())
         return QDateTime();
 

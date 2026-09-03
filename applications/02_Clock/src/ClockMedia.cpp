@@ -1,4 +1,5 @@
 #include "ClockMedia.h"
+
 ClockMedia::ClockMedia(QObject *parent) :
     AbstractManager(parent),
     m_volumeAnimation(new QPropertyAnimation(this))
@@ -26,8 +27,21 @@ void ClockMedia::startMedia(int volume, int fadeInDuration, ClockAlarmMediaStart
     qTrace() << "[ClockMedia] Starting media" << m_mediaPlayer->source() << "volume" << volume
             << "fade-in" << fadeInDuration << "seconds" << "start mode" << startMode;
 
+    MediaItemModel* playlist = MediaItemModelAttached::wrap(m_mediaPlayer)->getPlaylist();
+    if(!playlist)
+    {
+        qWarning() << "[ClockMedia] Cannot start media: no playlist";
+        return;
+    }
+
     if(startMode == ClockAlarmMediaStartModes::Next)
-        MediaItemModelAttached::wrap(m_mediaPlayer)->getPlaylist()->autoNext();
+        playlist->autoNext();
+
+    if(playlist->getCurrentItem().isEmpty())
+    {
+        qWarning() << "[ClockMedia] Cannot start media: playlist has no current item";
+        return;
+    }
 
     QAudioOutput* audioOutput = m_mediaPlayer->audioOutput();
     if(!audioOutput)
@@ -60,6 +74,28 @@ void ClockMedia::stopMedia()
     qTrace() << "[ClockMedia] Stopping media" << m_mediaPlayer->source();
     m_mediaPlayer->stop();
     m_volumeAnimation->stop();
+}
+
+void ClockMedia::stopFadeIn(int maximumVolume)
+{
+    if(m_volumeAnimation->state() != QAbstractAnimation::Running)
+        return;
+
+    m_volumeAnimation->stop();
+
+    QMediaPlayer* mediaPlayer = m_mediaPlayer;
+    QAudioOutput* audioOutput = mediaPlayer ? mediaPlayer->audioOutput() : nullptr;
+    if(!audioOutput)
+    {
+        qWarning() << "[ClockMedia] Cannot stop media fade-in: no audio output";
+        return;
+    }
+
+    const qreal maximumOutputVolume = qBound(0, maximumVolume, 100) / 100.0;
+    if(audioOutput->volume() > maximumOutputVolume)
+        audioOutput->setVolume(maximumOutputVolume);
+
+    qTrace() << "[ClockMedia] Media fade-in stopped at" << audioOutput->volume();
 }
 
 void ClockMedia::onMediaPlayerAboutToChange(QMediaPlayer* oldMediaPlayer, QMediaPlayer* newMediaPlayer)

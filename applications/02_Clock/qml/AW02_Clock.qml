@@ -7,8 +7,8 @@ import L02_Clock
 BasicWindow {
     id: root
 
-    width: 1280
-    height: 720
+    width: 1024 //1280
+    height: 576 //720
 
     canLoadApplication: imageColorsHelper.isReady
     backend: A02_ClockManager {}

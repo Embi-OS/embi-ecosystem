@@ -27,6 +27,9 @@ namespace Process
 namespace Filesystem
 {
 
+    bool copyToClipboard(const QString& text);
+    QString pasteFromClipboard();
+
     bool copy(const QString& sourcePath, const QString& destPath, bool force=false);
     bool move(const QString& sourcePath, QString destPath, bool force=false);
     bool link(const QString& sourcePath, const QString& destPath);

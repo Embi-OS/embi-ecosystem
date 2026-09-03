@@ -2,6 +2,8 @@ include(Common)
 
 project(03_Life)
 
+embi_exclude_from_translations()
+
 allFileRecurseRelative(ALL_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 allFileRecurseRelative(ALL_QML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/qml/*)
 allFileRecurseRelative(ALL_CELLS_FILES ${CMAKE_CURRENT_SOURCE_DIR}/cells/*)
@@ -31,6 +33,3 @@ qt_add_resources(L${PROJECT_NAME} "L${PROJECT_NAME}_cells"
     FILES
         ${ALL_CELLS_FILES}
 )
-
-embi_mark_boot2qt_deployable(TARGET A${PROJECT_NAME})
-create_package(TARGET A${PROJECT_NAME})

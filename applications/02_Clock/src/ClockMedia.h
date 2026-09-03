@@ -34,6 +34,7 @@ public:
 public slots:
     void startMedia(int volume, int fadeInDuration, ClockAlarmMediaStartModes::Enum startMode);
     void stopMedia();
+    void stopFadeIn(int maximumVolume);
 
 private slots:
     void onMediaPlayerAboutToChange(QMediaPlayer* oldMediaPlayer, QMediaPlayer* newMediaPlayer);

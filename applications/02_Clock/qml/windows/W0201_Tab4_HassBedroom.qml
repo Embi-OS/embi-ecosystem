@@ -11,7 +11,8 @@ import L02_Clock
 BasicPane {
     id: root
 
-    padding: 20
+    topPadding: 0
+    padding: 10
 
     function editInputDateTime(entityId: string, hasDate: bool, hasTime: bool, valueDateTime: date) {
         if (hasDate && hasTime) {
@@ -169,10 +170,6 @@ BasicPane {
                 required attributes
                 onClicked: HassManager.setEntityEnabled(entity_id, !isOn)
             }
-        }
-
-        BasicSeparator {
-            orientation: Qt.Horizontal
         }
 
         RowLayout {

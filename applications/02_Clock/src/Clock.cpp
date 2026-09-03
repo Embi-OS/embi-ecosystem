@@ -106,14 +106,22 @@ Clock::Clock(QObject *parent) :
 
 bool Clock::init()
 {
+    QSettingsMapper* persistantData = new QSettingsMapper(this);
+    persistantData->setSelectPolicy(QVariantMapperPolicies::Manual);
+    persistantData->setSubmitPolicy(QVariantMapperPolicies::Delayed);
+    persistantData->setSettingsCategory(managerName());
+    persistantData->select();
+    persistantData->waitForSelect();
+
+    persistantData->mapProperty(this, "ringTimeout");
+    persistantData->mapProperty(this, "wakeTimeout");
+    persistantData->mapProperty(this, "snoozeTimeout");
+
     connect(this, &Clock::startRinging, ClockAlarmAudio::Get(), &ClockAlarmAudio::startAlarm, Qt::QueuedConnection);
     connect(this, &Clock::stopRinging, ClockAlarmAudio::Get(), &ClockAlarmAudio::stopAlarm, Qt::QueuedConnection);
 
     ClockDisplay::Get()->setWakeTimeout(m_wakeTimeout);
     connect(this, &Clock::wakeTimeoutChanged, ClockDisplay::Get(), &ClockDisplay::setWakeTimeout);
-
-    ClockAlarmAudio::Get()->setDefaultVolume(m_defaultVolume);
-    connect(this, &Clock::defaultVolumeChanged, ClockAlarmAudio::Get(), &ClockAlarmAudio::setDefaultVolume);
 
     return true;
 }
@@ -228,11 +236,14 @@ void Clock::setAlarmEnabled(const QString& alarmUuid, bool enabled)
     if(!alarmObject || alarmObject->getEnabled() == enabled)
         return;
 
-    QVariantMap alarmMap{{"enabled", enabled}};
-    if(!alarmObject->getRepeat())
-        alarmMap.insert("date", DateTimeUtils::nextValidDateTimeForTime(alarmObject->getHour(), alarmObject->getMinute(), 0, 0));
+    if(enabled && !alarmObject->getRepeat())
+    {
+        const QDateTime alarmDateTime(alarmObject->getDate(), QTime(alarmObject->getHour(), alarmObject->getMinute()));
+        if(!alarmDateTime.isValid() || alarmDateTime <= QDateTime::currentDateTime())
+            alarmObject->setDate(DateTimeUtils::nextValidDateTimeForTime(alarmObject->getHour(), alarmObject->getMinute(), 0, 0).date());
+    }
 
-    alarmObject->fromMap(alarmMap);
+    alarmObject->setEnabled(enabled);
 }
 
 void Clock::setGroupEnabled(const QString& groupUuid, bool enabled)
@@ -246,11 +257,14 @@ void Clock::setGroupEnabled(const QString& groupUuid, bool enabled)
         if(!alarmObject || alarmObject->getGroup() != groupUuid || alarmObject->getEnabled() == enabled)
             continue;
 
-        QVariantMap alarmMap{{"enabled", enabled}};
         if(enabled && !alarmObject->getRepeat())
-            alarmMap.insert("date", DateTimeUtils::nextValidDateTimeForTime(alarmObject->getHour(), alarmObject->getMinute(), 0, 0));
+        {
+            const QDateTime alarmDateTime(alarmObject->getDate(), QTime(alarmObject->getHour(), alarmObject->getMinute()));
+            if(!alarmDateTime.isValid() || alarmDateTime <= QDateTime::currentDateTime())
+                alarmObject->setDate(DateTimeUtils::nextValidDateTimeForTime(alarmObject->getHour(), alarmObject->getMinute(), 0, 0).date());
+        }
 
-        alarmObject->fromMap(alarmMap);
+        alarmObject->setEnabled(enabled);
     }
 }
 
@@ -264,7 +278,7 @@ void Clock::removeGroup(const QString& groupUuid)
     {
         AlarmObject* alarmObject = qobject_cast<AlarmObject*>(object);
         if(alarmObject && alarmObject->getGroup() == groupUuid)
-            alarmObject->fromMap({{"group", ""}});
+            alarmObject->setGroup("");
     }
 
     m_alarmGroupModel->remove(groupObject);
@@ -279,7 +293,7 @@ void Clock::assignAlarmsToGroup(const QStringList& alarmUuids, const QString& gr
     {
         AlarmObject* alarmObject = alarm(alarmUuid);
         if(alarmObject && alarmObject->getGroup() != groupUuid)
-            alarmObject->fromMap({{"group", groupUuid}});
+            alarmObject->setGroup(groupUuid);
     }
 }
 

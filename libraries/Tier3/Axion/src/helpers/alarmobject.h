@@ -4,6 +4,8 @@
 #include <QDefs>
 #include <QModels>
 
+#include <limits>
+
 class AlarmObject: public QObject
 {
     Q_OBJECT
@@ -21,14 +23,14 @@ class AlarmObject: public QObject
     Q_WRITABLE_VAR_PROPERTY(int, weekdays, Weekdays, 0)
     Q_WRITABLE_REF_PROPERTY(QVariantMap, details, Details, {})
 
-    Q_READONLY_VAR_PROPERTY(int, msToNextRingTime, MsToNextRingTime, 0)
+    Q_READONLY_VAR_PROPERTY(qint64, msToNextRingTime, MsToNextRingTime, 0)
     Q_READONLY_REF_PROPERTY(QDateTime, nextRingDateTime, NextRingDateTime, {})
     Q_READONLY_REF_PROPERTY(QString, nextTimeRing, NextTimeRing, {})
 
 public:
     explicit AlarmObject(QObject *parent = nullptr);
 
-    static QString nextTimeRing(int secToNextRingTime, QLocale::FormatType format=QLocale::LongFormat);
+    static QString nextTimeRing(qint64 secToNextRingTime, QLocale::FormatType format=QLocale::LongFormat);
 
     Q_INVOKABLE virtual QVariantMap toMap() const;
     Q_INVOKABLE virtual void fromMap(const QVariantMap& alarmMap);
@@ -48,9 +50,14 @@ signals:
 
 private slots:
     void invalidateRemainingTimeChange();
+    void onTimerTimeout();
 
 private:
     QDateTime calculateNextRingDateTime() const;
+    void startTimer(qint64 delay);
+
+    static constexpr qint64 MaximumTimerInterval = (std::numeric_limits<int>::max)();
+    static constexpr int WeekdayMask = (1 << 7) - 1;
 
     bool m_invalidateQueued = false;
 
@@ -65,7 +72,7 @@ class AlarmModel : public QObjectListModel
 
     Q_WRITABLE_VAR_PROPERTY(bool, enabled, Enabled, false)
 
-    Q_READONLY_VAR_PROPERTY(int, msToNextRingTime, MsToNextRingTime, 0)
+    Q_READONLY_VAR_PROPERTY(qint64, msToNextRingTime, MsToNextRingTime, 0)
     Q_READONLY_REF_PROPERTY(QDateTime, nextRingDateTime, NextRingDateTime, {})
     Q_READONLY_REF_PROPERTY(QString, nextTimeRing, NextTimeRing, {})
 

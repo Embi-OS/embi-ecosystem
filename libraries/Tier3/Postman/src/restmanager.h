@@ -21,7 +21,6 @@ class RestManager : public AbstractManager
     Q_WRITABLE_VAR_PROPERTY(int, apiPort, ApiPort, 32768)
     Q_WRITABLE_VAR_PROPERTY(bool, apiTrailingSlash, ApiTrailingSlash, true)
     Q_WRITABLE_VAR_PROPERTY(bool, apiSocketEnabled, ApiSocketEnabled, true)
-    Q_WRITABLE_REF_PROPERTY(QString, apiKey, ApiKey, "")
 
     Q_READONLY_REF_PROPERTY(QString, apiEffectiveUrl, ApiEffectiveUrl, "")
 
@@ -30,9 +29,6 @@ private:
 
 public:
     bool init() final override;
-
-public slots:
-    void authenticate(const QString& identifier, const QString& password);
 };
 
 #endif // RESTMANAGER_H

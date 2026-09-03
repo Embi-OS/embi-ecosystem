@@ -170,7 +170,8 @@ Item {
     PaneListView {
         id: view
         anchors.fill: parent
-        anchors.margins: 20
+        anchors.topMargin: 0
+        anchors.margins: 10
         drawFrame: true
         model: proxyModel
 

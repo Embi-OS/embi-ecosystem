@@ -34,7 +34,6 @@ bool ClockDisplay::init()
     persistantData->mapProperty(this,"lockedBrightness");
     persistantData->mapProperty(this,"lockedTimeout");
     persistantData->mapProperty(this,"wakeBrightness");
-    persistantData->mapProperty(this,"wakeTimeout");
     persistantData->mapProperty(this,"alwaysOnEnabled");
 
     return true;

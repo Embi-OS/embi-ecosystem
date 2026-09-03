@@ -28,6 +28,7 @@ Item {
         RawButton {onClicked: root.showLogout();      text: ("Dialog logout");       color: Style.lightBlue;   icon.source: MaterialIcons.logout;        Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showDate();        text: ("Dialog calendar");     color: Style.blue;        icon.source: MaterialIcons.calendar;      Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: dialogDateRange.open(); text: ("Dialog date range");   color: Style.oxfordBlue;  icon.source: MaterialIcons.calendarBadge; Layout.fillWidth: true; Layout.fillHeight: true }
+        RawButton {onClicked: dialogTime.open();      text: ("Dialog time");         color: Style.deepPurple;  icon.source: MaterialIcons.clockOutline;  Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showTime();        text: ("Dialog time");         color: Style.indigo;      icon.source: MaterialIcons.clock;         Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showColor();       text: ("Dialog color");        color: Style.orange;      icon.source: MaterialIcons.palette;       Layout.fillWidth: true; Layout.fillHeight: true }
         RawButton {onClicked: root.showFileTree();    text: ("Dialog file tree");    color: Style.deepPurple;  icon.source: MaterialIcons.folder;        Layout.fillWidth: true; Layout.fillHeight: true }
@@ -268,6 +269,13 @@ Item {
         id: dialogDateRange
         onDateRangeSelected: (fromDate, toDate) => {
             console.log(fromDate, toDate)
+        }
+    }
+
+    DialogTimePicker {
+        id: dialogTime
+        onTimeSelected: (time) => {
+            console.log(time)
         }
     }
 }

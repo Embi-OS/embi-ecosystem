@@ -1,31 +1,12 @@
 import QtQuick
 import Eco.Tier1.Models
-import Eco.Tier1.ProxyModel
 import Eco.Tier3.Axion
 import Eco.Tier3.Solid
 
-PaneTreeView {
+PaneFormView {
     id: root
 
-    Navigation.guarded: barActions.state!=="" && treeModel.isDirty
-
     title: qsTr("Réglage date et heure")
-
-    model: proxyModel
-
-    ProxyModel {
-        id: proxyModel
-        delayed: true
-        sourceModel: treeModel
-        filterRoleName: "visible"
-        filterValue: true
-    }
-
-    footer: FormEditControlBar {
-        id: barActions
-        formModel: treeModel
-        editable: root.editable
-    }
 
     SystemCtlUnitController {
         id: timesyncdService
@@ -36,7 +17,7 @@ PaneTreeView {
         id: timedatectlService
     }
 
-    FormObjectModel {
+    formModel: FormObjectModel {
         id: treeModel
         editable: root.editable
         target: TimedateSettings

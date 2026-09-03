@@ -25,8 +25,8 @@ class ClockDisplay : public AbstractManager
 
     Q_READONLY_VAR_PROPERTY(ClockDisplayStates::Enum, state, State, ClockDisplayStates::Invalid)
 
-    Q_WRITABLE_VAR_PROPERTY(int, onBrightness, OnBrightness, 100)
-    Q_WRITABLE_VAR_PROPERTY(int, lockedBrightness, LockedBrightness, 25)
+    Q_WRITABLE_VAR_PROPERTY(int, onBrightness, OnBrightness, 60)
+    Q_WRITABLE_VAR_PROPERTY(int, lockedBrightness, LockedBrightness, 10)
     Q_WRITABLE_VAR_PROPERTY(int, lockedTimeout, LockedTimeout, 5)
     Q_WRITABLE_VAR_PROPERTY(int, wakeBrightness, WakeBrightness, 255)
     Q_WRITABLE_VAR_PROPERTY(int, wakeTimeout, WakeTimeout, 5)

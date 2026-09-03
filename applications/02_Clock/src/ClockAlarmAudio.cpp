@@ -1,5 +1,6 @@
 #include "ClockAlarmAudio.h"
 
+#include "ClockDisplay.h"
 #include "ClockMedia.h"
 
 #include <helpers/alarmobject.h>
@@ -44,7 +45,33 @@ ClockAlarmAudio::ClockAlarmAudio(QObject* parent) :
 
 bool ClockAlarmAudio::init()
 {
+    QSettingsMapper* persistantData = new QSettingsMapper(this);
+    persistantData->setSelectPolicy(QVariantMapperPolicies::Manual);
+    persistantData->setSubmitPolicy(QVariantMapperPolicies::Delayed);
+    persistantData->setSettingsCategory(managerName());
+    persistantData->select();
+    persistantData->waitForSelect();
+
+    persistantData->mapProperty(this, "defaultVolume");
+    persistantData->mapProperty(this, "defaultFadeInDuration");
+
     m_ringtoneAudioOutput->setVolume(m_defaultVolume / 100.0);
+    connect(ClockDisplay::Get(), &ClockDisplay::stateChanged, this, [this](ClockDisplayState state) {
+        if(state != ClockDisplayStates::On)
+            return;
+
+        switch(m_playbackSource) {
+        case PlaybackSource::MediaPlayer:
+            ClockMedia::Get()->stopFadeIn(m_defaultVolume);
+            break;
+        case PlaybackSource::Ringtone:
+            stopRingtoneFadeIn();
+            break;
+        case PlaybackSource::None:
+            break;
+        }
+    });
+
     qTrace() << "[ClockAlarmAudio] Initialized with default volume" << m_defaultVolume;
     return true;
 }
@@ -64,7 +91,8 @@ void ClockAlarmAudio::startAlarm(AlarmObject* alarmObject)
     const int audioSource = qVariantGetNestedValue(details, "audio.source").toInt();
     const QVariant volumeValue = qVariantGetNestedValue(details, "audio.volume");
     const int volume = qBound(0, volumeValue.isValid() ? volumeValue.toInt() : m_defaultVolume, 100);
-    const int fadeInDuration = qMax(0, qVariantGetNestedValue(details, "audio.fadeInDuration").toInt());
+    const QVariant fadeInDurationValue = qVariantGetNestedValue(details, "audio.fadeInDuration");
+    const int fadeInDuration = qBound(0, fadeInDurationValue.isValid() ? fadeInDurationValue.toInt() : m_defaultFadeInDuration, 120);
 
     qTrace() << "[ClockAlarmAudio] Starting audio for alarm" << alarmObject->getUuid()
             << "source" << audioSource << "volume" << volume << "fade-in" << fadeInDuration << "seconds";
@@ -124,6 +152,20 @@ void ClockAlarmAudio::stopAlarm()
     }
 
     m_playbackSource = PlaybackSource::None;
+}
+
+void ClockAlarmAudio::stopRingtoneFadeIn()
+{
+    if(m_volumeAnimation->state() != QAbstractAnimation::Running)
+        return;
+
+    m_volumeAnimation->stop();
+
+    const qreal maximumOutputVolume = qBound(0, m_defaultVolume, 100) / 100.0;
+    if(m_ringtoneAudioOutput->volume() > maximumOutputVolume)
+        m_ringtoneAudioOutput->setVolume(maximumOutputVolume);
+
+    qTrace() << "[ClockAlarmAudio] Ringtone fade-in stopped at" << m_ringtoneAudioOutput->volume();
 }
 
 void ClockAlarmAudio::playRingtonePreview(const QString& ringtone, int volume)

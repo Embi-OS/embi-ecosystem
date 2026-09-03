@@ -1,4 +1,5 @@
 #include "RestCore/restclient.h"
+#include "RestCore/restbearerauthenticationextender.h"
 #include "RestCore/restclass.h"
 #include "RestCore/restreply.h"
 

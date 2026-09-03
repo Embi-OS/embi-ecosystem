@@ -442,20 +442,21 @@ void SvgIconHelper::doProcessIcon()
         return iconData;
     }, std::move(iconData));
 
-    m_futureIconData = new QFutureWatcher<SvgIconData>(this);
-    connect(m_futureIconData, &QFutureWatcherBase::finished, this, [this]() {
-        if(!m_futureIconData)
+    auto *watcher = new QFutureWatcher<SvgIconData>(this);
+    m_futureIconData = watcher;
+    connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher]() {
+        if(m_futureIconData != watcher)
             return;
-        const SvgIconData iconData = m_futureIconData->future().result();
-        m_futureIconData->deleteLater();
+        const SvgIconData iconData = watcher->future().result();
         m_futureIconData = nullptr;
+        watcher->deleteLater();
 
         doProcessSvgToPng(iconData);
     });
-    m_futureIconData->setFuture(future);
+    watcher->setFuture(future);
 
     if(!m_asynchronous)
-        m_futureIconData->waitForFinished();
+        watcher->waitForFinished();
 
 #else
     bool result = s_cache->doGenerateIconData(iconData);

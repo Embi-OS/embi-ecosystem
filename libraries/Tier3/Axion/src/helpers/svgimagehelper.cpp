@@ -130,19 +130,23 @@ void SvgImageHelper::doProcessIcon()
     if(!m_futureSizeWatcher.isNull()) {
         m_futureSizeWatcher->cancel();
         m_futureSizeWatcher->deleteLater();
+        m_futureSizeWatcher.clear();
     }
 
     if(m_asynchronous)
     {
         QFuture<QSize> future = QtConcurrent::run(SvgImageHelper::processSvgSize, m_icon, iconSize, m_aspectRatio);
-        m_futureSizeWatcher = new QFutureWatcher<QSize>(this);
-        connect(m_futureSizeWatcher, &QFutureWatcherBase::finished, this, [this]() {
-            if(m_futureSizeWatcher.isNull())
+        auto *watcher = new QFutureWatcher<QSize>(this);
+        m_futureSizeWatcher = watcher;
+        connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher]() {
+            if(m_futureSizeWatcher.data() != watcher)
                 return;
-            const QSize size = m_futureSizeWatcher->future().result();
+            const QSize size = watcher->future().result();
+            m_futureSizeWatcher.clear();
+            watcher->deleteLater();
             doUpdateSourceSize(size);
         });
-        m_futureSizeWatcher->setFuture(future);
+        watcher->setFuture(future);
     }
     else
 #endif

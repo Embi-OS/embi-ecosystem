@@ -40,9 +40,6 @@ signals:
 
 private:
     static void exitWithError(const QString& msg);
-
-    bool m_hasAppController;
-    QString m_newVersionPath;
 };
 
 #endif // APPLICATIONCONTROLLER_H

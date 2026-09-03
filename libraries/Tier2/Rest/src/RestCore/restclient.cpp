@@ -51,10 +51,32 @@ RestRequestBuilder RestClient::builder() const
         .addHeaders(m_globalHeaders)
         .addParameters(m_globalParameters)
         .setCredentials(m_username, m_password)
+        .setExtenders(m_requestExtenders)
         .setTrailingSlash(m_trailingSlash)
         .setDataMode(m_dataMode);
 
     return builder;
+}
+
+const QList<RestRequestBuilderExtender *> &RestClient::requestExtenders() const
+{
+    return m_requestExtenders;
+}
+
+void RestClient::addRequestExtender(RestRequestBuilderExtender *extender)
+{
+    if(extender && !m_requestExtenders.contains(extender))
+        m_requestExtenders.append(extender);
+}
+
+void RestClient::removeRequestExtender(RestRequestBuilderExtender *extender)
+{
+    m_requestExtenders.removeAll(extender);
+}
+
+void RestClient::clearRequestExtenders()
+{
+    m_requestExtenders.clear();
 }
 
 void RestClient::setModernAttributes()

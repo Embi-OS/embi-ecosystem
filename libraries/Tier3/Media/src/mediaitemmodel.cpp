@@ -4,6 +4,9 @@
 #include <QtConcurrentRun>
 #include <QDirIterator>
 
+#include <algorithm>
+#include <QSet>
+
 MediaItemModel::MediaItemModel(QObject* parent):
     QVariantListModel(parent)
 {
@@ -51,19 +54,20 @@ bool MediaItemModel::doSelect()
         return medias;
     });
 
-    m_selectWatcher = new QFutureWatcher<QVariantList>(this);
-    connect(m_selectWatcher, &QFutureWatcherBase::finished, this, [this]() {
-        if(m_selectWatcher.isNull())
+    QFutureWatcher<QVariantList>* watcher = new QFutureWatcher<QVariantList>(this);
+    m_selectWatcher = watcher;
+    connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher]() {
+        if(m_selectWatcher != watcher)
             return;
-        QVariantList medias = m_selectWatcher->future().result();
+        QVariantList medias = watcher->future().result();
 
         int currentIndex = 0;
         if(medias.isEmpty())
             currentIndex = -1;
         else if(m_shuffled)
-            currentIndex = qMax(0, QVariantListModel::indexOf(medias, "uuid", QUuid().toString(QUuid::WithoutBraces), true));
+            currentIndex = (std::max)(0, QVariantListModel::indexOf(medias, "uuid", QUuid().toString(QUuid::WithoutBraces), true));
         else
-            currentIndex = qMax(0, QVariantListModel::indexOf(medias, "path", getCurrentMedia().value("path"), true));
+            currentIndex = (std::max)(0, QVariantListModel::indexOf(medias, "path", getCurrentMedia().value("path"), true));
 
         setStorage(std::move(medias));
         m_currentIndex = currentIndex;
@@ -71,7 +75,7 @@ bool MediaItemModel::doSelect()
 
         emitSelectDone(true);
     });
-    m_selectWatcher->setFuture(future);
+    watcher->setFuture(future);
 
     return true;
 }
@@ -113,6 +117,9 @@ void MediaItemModel::autoNext()
         emit this->currentIndexChanged(m_currentIndex);
         return;
     }
+
+    if(m_playbackMode==MediaPlaybackModes::Sequential && m_currentIndex>=count()-1)
+        return;
 
     next();
 }
@@ -171,7 +178,17 @@ void MediaItemModel::previous()
 
 void MediaItemModel::addPath(const QString& path)
 {
-    m_additionalPaths.append(path);
+    if(path.isEmpty())
+        return;
+
+    const QFileInfo info(path);
+    const QString normalizedPath = info.canonicalFilePath().isEmpty() ? info.absoluteFilePath() : info.canonicalFilePath();
+    const QFileInfo primaryInfo(m_path);
+    const QString primaryPath = primaryInfo.canonicalFilePath().isEmpty() ? primaryInfo.absoluteFilePath() : primaryInfo.canonicalFilePath();
+    if(normalizedPath.isEmpty() || normalizedPath==primaryPath || m_additionalPaths.contains(normalizedPath))
+        return;
+
+    m_additionalPaths.append(normalizedPath);
     emit this->additionalPathsChanged(m_additionalPaths);
 }
 
@@ -179,6 +196,13 @@ void MediaItemModel::onRowsRemoved(const QModelIndex &parent, int first, int las
 {
     if(parent.isValid())
         return;
+
+    if(isEmpty())
+    {
+        m_currentIndex = -1;
+        emit this->currentIndexChanged(m_currentIndex);
+        return;
+    }
 
     if(m_currentIndex>=first && m_currentIndex<=last)
     {
@@ -210,20 +234,23 @@ QVariantList MediaItemModel::fetchPath(const QString& path, const QString& curre
 
     MEDIALOG_TRACE()<<"Fetch path:"<<path;
 
-    QDir::Filters filters;
-    filters.setFlag(QDir::Files);
-
-    QStringList nameFilters;
-    nameFilters.append("*.mp3");
-    nameFilters.append("*.flac");
-    nameFilters.append("*.wav");
+    static const QSet<QString> supportedExtensions = {
+        "flac",
+        "m4a",
+        "mp3",
+        "ogg",
+        "wav",
+    };
 
     QVariantList medias;
 
-    QDirIterator iterator(path, nameFilters, filters, QDirIterator::Subdirectories);
+    QDirIterator iterator(path, QDir::Files, QDirIterator::Subdirectories);
     while (iterator.hasNext()) {
         const QString fileUrl = iterator.next();
         const QFileInfo info = QFileInfo(fileUrl);
+        if(!supportedExtensions.contains(info.suffix().toCaseFolded()))
+            continue;
+
         const QString path = info.absoluteFilePath();
         const QUuid uuid = path==currentItem ? QUuid() : QUuid::createUuid();
 
@@ -247,10 +274,30 @@ QVariantList MediaItemModel::fetchPath(const QString& path, const QString& curre
 QVariantList MediaItemModel::fetchPaths(const QStringList& paths, const QString& currentItem)
 {
     QVariantList medias;
+    QSet<QString> scannedPaths;
+    QSet<QString> mediaPaths;
 
     for(const QString& path: paths)
     {
-        medias<<fetchPath(path, currentItem);
+        if(path.isEmpty())
+            continue;
+
+        const QFileInfo info(path);
+        const QString normalizedPath = info.canonicalFilePath().isEmpty() ? info.absoluteFilePath() : info.canonicalFilePath();
+        if(normalizedPath.isEmpty() || scannedPaths.contains(normalizedPath))
+            continue;
+
+        scannedPaths.insert(normalizedPath);
+        const QVariantList pathMedias = fetchPath(normalizedPath, currentItem);
+        for(const QVariant& media: pathMedias)
+        {
+            const QString mediaPath = media.toMap().value("path").toString();
+            if(mediaPath.isEmpty() || mediaPaths.contains(mediaPath))
+                continue;
+
+            mediaPaths.insert(mediaPath);
+            medias.append(media);
+        }
     }
 
     return medias;
@@ -316,12 +363,24 @@ void MediaItemModelAttached::onPlaylistChanged(MediaItemModel* mediaPlaylist)
 
 void MediaItemModelAttached::onPaylistCurrentItemChanged()
 {
-    if(!m_playlist || m_playlist->getCurrentIndex()<0)
+    if(!m_playlist)
         return;
 
-    bool wasPlaying = m_player->isPlaying() || m_player->mediaStatus()==QMediaPlayer::EndOfMedia;
+    if(m_playlist->getCurrentIndex()<0)
+    {
+        m_player->stop();
+        m_player->setSource({});
+        return;
+    }
 
-    m_player->setSource(m_playlist->getCurrentItem());
+    const QUrl source = m_playlist->getCurrentItem();
+    const bool wasAtEnd = m_player->mediaStatus()==QMediaPlayer::EndOfMedia;
+    if(m_player->source()==source && !wasAtEnd)
+        return;
+
+    const bool wasPlaying = m_player->isPlaying() || wasAtEnd;
+
+    m_player->setSource(source);
 
     if(wasPlaying)
     {

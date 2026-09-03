@@ -1,6 +1,33 @@
 #include "restrequestbuilder.h"
 #include "rest_log.h"
 
+namespace
+{
+QString normalizedPath(QString path)
+{
+    if(!path.startsWith(QLatin1Char('/')))
+        path.prepend(QLatin1Char('/'));
+
+    while(path.size() > 1 && path.endsWith(QLatin1Char('/')))
+        path.chop(1);
+
+    return path;
+}
+}
+
+void RestRequestBuilderExtender::setExcludedPaths(const QStringList &paths)
+{
+    m_excludedPaths.clear();
+    m_excludedPaths.reserve(paths.size());
+    for(const QString &path : paths)
+        m_excludedPaths.append(normalizedPath(path));
+}
+
+bool RestRequestBuilderExtender::isExcluded(const QUrl &url) const
+{
+    return m_excludedPaths.contains(normalizedPath(url.path()));
+}
+
 RestRequestBuilder::RestRequestBuilder() = default;
 
 RestRequestBuilder::RestRequestBuilder(const QUrl &baseUrl, QNetworkAccessManager *manager) :
@@ -33,9 +60,9 @@ RestRequestBuilder &RestRequestBuilder::setNetworkAccessManager(QNetworkAccessMa
     return *this;
 }
 
-RestRequestBuilder &RestRequestBuilder::setExtender(RestRequestBuilderExtender* extender)
+RestRequestBuilder &RestRequestBuilder::setExtenders(const QList<RestRequestBuilderExtender *> &extenders)
 {
-    m_extender = extender;
+    m_extenders = extenders;
     return *this;
 }
 
@@ -225,8 +252,11 @@ QUrl RestRequestBuilder::buildUrl() const
     if (!m_fragment.isNull())
         url.setFragment(m_fragment);
 
-    if (m_extender)
-        m_extender->extendUrl(url);
+    for(const RestRequestBuilderExtender *extender : m_extenders)
+    {
+        if(extender && !extender->isExcluded(url))
+            extender->extendUrl(url);
+    }
 
     RESTLOG_TRACE()<<"built URL as"<<url.toString(QUrl::PrettyDecoded | QUrl::RemoveUserInfo);
 
@@ -239,8 +269,11 @@ QNetworkRequest RestRequestBuilder::buildRequest() const
     QByteArray verb = m_verb;
     QByteArray body;
     prepareRequest(request, &body);
-    if (m_extender)
-        m_extender->extendRequest(request, verb, &body);
+    for(const RestRequestBuilderExtender *extender : m_extenders)
+    {
+        if(extender && !extender->isExcluded(request.url()))
+            extender->extendRequest(request, verb, &body);
+    }
 
     return request;
 }
@@ -252,8 +285,11 @@ QNetworkReply *RestRequestBuilder::send() const
     QByteArray body;
     prepareRequest(request, &body);
 
-    if (m_extender)
-        m_extender->extendRequest(request, verb, &body);
+    for(const RestRequestBuilderExtender *extender : m_extenders)
+    {
+        if(extender && !extender->isExcluded(request.url()))
+            extender->extendRequest(request, verb, &body);
+    }
 
     return RestHelper::sendRequest(m_manager, request, verb, body);
 }

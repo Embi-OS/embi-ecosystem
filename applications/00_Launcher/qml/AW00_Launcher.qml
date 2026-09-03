@@ -39,6 +39,14 @@ BasicWindow {
     ThemeAttached.colorVariant: imageColorsHelper.dominantComplementary
     ThemeAttached.colorBackground: imageColorsHelper.closestToBlack
 
+    ThemeAttached.colorTrace: "#777777"
+    ThemeAttached.colorDebug: Theme.grey
+    ThemeAttached.colorInfo: Theme.blue
+    ThemeAttached.colorWarning: Theme.yellow
+    ThemeAttached.colorError: Theme.orange
+    ThemeAttached.colorFatal: Theme.red
+    ThemeAttached.colorSuccess: Theme.green
+
     ThemeAttached.colorPrimaryDarkest: ColorUtils.blend(Style.colorPrimaryDarker, Style.black, 0.2)
     ThemeAttached.colorPrimaryDarker: ColorUtils.blend(Style.colorPrimaryDark, Style.black, 0.2)
     ThemeAttached.colorPrimaryDark: ColorUtils.blend(Style.colorPrimary, Style.black, 0.2)

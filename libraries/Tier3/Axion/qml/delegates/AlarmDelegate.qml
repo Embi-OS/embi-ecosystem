@@ -17,7 +17,10 @@ BasicItemDelegate {
 
     property int checkState: Qt.Unchecked
 
-    readonly property date validDate: DateTimeUtils.nextValidDateTimeForTime(root.hour,root.minute,0,0)
+    readonly property date scheduledDateTime: new Date(root.date.getFullYear(), root.date.getMonth(), root.date.getDate(), root.hour, root.minute, 0)
+    readonly property date validDate: DateTimeUtils.isDateAfter(root.scheduledDateTime, DateTimeUtils.systemDateTime)
+                                      ? root.scheduledDateTime
+                                      : DateTimeUtils.nextValidDateTimeForTime(root.hour, root.minute, 0, 0)
 
     locale: Qt.locale()
 

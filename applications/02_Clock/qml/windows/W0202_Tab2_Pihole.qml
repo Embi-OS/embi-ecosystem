@@ -8,8 +8,8 @@ import L02_Clock
 BasicPane {
     id: root
 
-    property string ip_address: "192.168.1.21"
-    property string password: "raspberry"
+    property string ip_address: "pihole"
+    property string password: ""
     property string sid: ""
 
     readonly property bool loading: statsMapper.loading || dnsMapper.loading || piholeClient.rootClass.loading
@@ -27,7 +27,7 @@ BasicPane {
     property Component formModel: FormObjectModel {
         FormTextFieldDelegate {
             label: qsTr("Adresse IPv4")
-            validator: Ipv4Validator {}
+            validator: UrlValidator{}
             targetProperty: "ip_address"
         }
         FormTextFieldPasswordDelegate {
@@ -127,7 +127,7 @@ BasicPane {
     }
 
     function authenticate() {
-        var reply = piholeClient.rootClass.post("api/auth", ({"password": "raspberry"}))
+        var reply = piholeClient.rootClass.post("api/auth", ({"password": root.password}))
         reply.succeeded.connect(root.onReplySucceeded)
         reply.failed.connect(root.onReplyFailed)
     }

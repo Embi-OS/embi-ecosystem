@@ -29,6 +29,8 @@ bool QLoopProcessor::launch()
     if(!start())
     {
         setRunning(false);
+        if(m_autoDelete)
+            deleteLater();
         return false;
     }
 
@@ -73,7 +75,7 @@ void QLoopProcessor::iterate()
     }
 
     double elapsed = m_elapsedSinceLastRelease.nsecsElapsed()/1000000.0;
-    if(m_asynchronous && (m_timeout>=0 || elapsed>m_timeout))
+    if(m_asynchronous && m_timeout>=0 && elapsed>=m_timeout)
     {
         release();
     }
@@ -185,4 +187,3 @@ QLoopProcessor* QLoopProcessor::onEnd(std::function<void()> callback)
 
     return this;
 }
-

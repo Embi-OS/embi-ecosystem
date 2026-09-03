@@ -1,12 +1,12 @@
 import QtQuick
 import Eco.Tier1.Models
-import Eco.Tier1.ProxyModel
 import Eco.Tier3.Axion
 import Eco.Tier3.Solid
 
-PaneTreeView {
+PaneFormView {
     id: root
 
+    directEdit: true
     readonly property LocaleFilterModel localeModel: LocaleFilterModel {
         filters: [
             "C",
@@ -21,17 +21,7 @@ PaneTreeView {
 
     title: qsTr("Réglage de la langue")
 
-    model: proxyModel
-
-    ProxyModel {
-        id: proxyModel
-        delayed: true
-        sourceModel: treeModel
-        filterRoleName: "visible"
-        filterValue: true
-    }
-
-    FormObjectModel {
+    formModel: FormObjectModel {
         id: treeModel
         editable: root.editable
 

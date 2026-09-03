@@ -1,6 +1,9 @@
 #include "qutils.h"
 #include "qutils_log.h"
 
+#include <QClipboard>
+#include <QGuiApplication>
+
 #ifdef Q_OS_LINUX
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -46,6 +49,23 @@ bool QUtils::Process::exec(const QString &program, const QStringList &arguments,
     return true;
 }
 #endif
+
+bool QUtils::Filesystem::copyToClipboard(const QString& text)
+{
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    if(!clipboard)
+        return false;
+    clipboard->setText(text);
+    return true;
+}
+
+QString QUtils::Filesystem::pasteFromClipboard()
+{
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    if(!clipboard)
+        return QString();
+    return clipboard->text();
+}
 
 bool QUtils::Filesystem::copy(const QString& sourcePath, const QString& destPath, bool force)
 {

@@ -133,6 +133,7 @@ Item {
             buttonReject: root.buttonReject
             buttonAccept: root.buttonAccept
             buttonApply: root.buttonApply
+            buttonHelp: root.buttonHelp
 
             onAboutToHide: root.onAboutToHide()
             onAboutToShow: root.onAboutToShow()
@@ -157,8 +158,10 @@ Item {
             title: root.title
             message: root.message
             infos: root.infos
+            traces: root.traces
 
             buttonAccept: root.buttonAccept
+            buttonHelp: root.buttonHelp
 
             textFormat: root.settings?.textFormat ?? TextEdit.AutoText
             textFont: root.settings?.textFont ?? Style.textTheme.code1

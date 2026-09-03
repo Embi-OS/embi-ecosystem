@@ -8,7 +8,6 @@ PaneTreeView {
     id: root
 
     signal editButtonClicked()
-    signal authButtonClicked()
 
     title: qsTr("Réglages de la connexion à l'API globale")
 
@@ -41,26 +40,7 @@ PaneTreeView {
         DialogManager.showForm(settings);
     }
 
-    onAuthButtonClicked: {
-        var component = Qt.createComponent("Eco.Tier3.Postman", "Form_SettingsRestAuthentication");
-        var model = component.createObject(root) as FormObjectModel;
-        var settings = {
-            "title": qsTr("Paramètres d'authentification Rest"),
-            "formModel": model,
-            "onClosed": function() {
-                model.destroy();
-                component.destroy();
-            },
-            "onFormValidated": function(formValues) {
-                const authIdentifier = formValues.identifier
-                const authPassword = formValues.password
-                RestManager.authenticate(authIdentifier, authPassword)
-            }
-        }
-
-        DialogManager.showForm(settings);
-    }
-
+    readonly property StandardObjectModel treeModel: treeModel
     StandardObjectModel {
         id: treeModel
         InfoTreeDelegate {text: "API interne"; info: RestManager.localApiEnabled }
@@ -72,13 +52,6 @@ PaneTreeView {
             label: qsTr("Editer")
             icon: MaterialIcons.databaseEdit
             onClicked: root.editButtonClicked()
-        }
-        SeparatorTreeDelegate {}
-        FormButtonDelegate {
-            visible: root.editable
-            label: qsTr("Authentifier")
-            icon: MaterialIcons.lock
-            onClicked: root.authButtonClicked()
         }
     }
 }

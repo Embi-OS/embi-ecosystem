@@ -8,6 +8,7 @@ RowLayout {
     required property MediaPlayer mediaPlayer
     readonly property int totalDuration: mediaPlayer.duration
     readonly property int currentPosition: mediaPlayer.position
+    readonly property bool hasDuration: totalDuration>0
     property alias isMediaSliderPressed: mediaSlider.pressed
 
     property double buttonSize: 32
@@ -34,8 +35,8 @@ RowLayout {
         enabled: root.mediaPlayer.seekable
         size: root.buttonSize/4
         to: 1.0
-        value: root.currentPosition / root.totalDuration
-        hint: root.getTime(value * root.totalDuration, root.totalDuration>=3600000)
+        value: root.hasDuration ? root.currentPosition / root.totalDuration : 0
+        hint: root.getTime(root.hasDuration ? value * root.totalDuration : 0, root.totalDuration>=3600000)
 
         onMoved: root.mediaPlayer.setPosition(value * root.totalDuration)
     }

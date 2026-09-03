@@ -3,10 +3,13 @@
 #include "axion_helpertypes.h"
 #include "dialogs/snackbarloader.h"
 #include "dialogs/snackbarmanager.h"
-#include "dialogs/dialogloader.h"
 #include "ubootsettings.h"
 
-#define SWUPDATELOG_WARNING QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC,"UBOOT").warning
+#include <QFileInfo>
+#include <QProcess>
+#include <QTimer>
+
+#define SWUPDATELOG_WARNING QMessageLogger(QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC,"SWUPDATE").warning
 
 #if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
 #include <progress_ipc.h>
@@ -47,8 +50,18 @@ QDebug operator<<(QDebug dbg, const SwupdateProgressMessage &msg)
 
 Swupdate::Swupdate(QObject* parent):
     QObject(parent),
-    m_progressFd(-1)
+    m_progressFd(-1),
+    m_reconnectTimer(this)
 {
+    m_reconnectTimer.setInterval(500);
+    m_reconnectTimer.setSingleShot(true);
+    connect(&m_reconnectTimer, &QTimer::timeout, this, &Swupdate::open);
+
+}
+
+Swupdate::~Swupdate()
+{
+    closeProgressChannel(true);
 
 }
 
@@ -117,23 +130,26 @@ void Swupdate::test()
 void Swupdate::open()
 {
 #if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
+    if(m_progressFd>=0 && m_socketNotifier)
+        return;
+
+    closeProgressChannel(true);
+
     int fd = progress_ipc_connect(false);
-    setProgressFd(fd);
 
     if (fd < 0) {
-        SnackbarManager::Get()->showCritical(tr("Impossible de se connecter à SWUpdate"))->setClosable(true);
+        if(!m_progressConnectionUnavailable)
+            SnackbarManager::Get()->showCritical(tr("Impossible de se connecter à SWUpdate"))->setClosable(true);
+        m_progressConnectionUnavailable = true;
         SWUPDATELOG_WARNING()<<"Swupdate: Failed to connect to SWUpdate progress IPC";
-        QTimer::singleShot(500, this, &Swupdate::open);
+        scheduleOpen();
         return;
     }
-    else {
-        m_socketNotifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
-        connect(m_socketNotifier, &QSocketNotifier::activated, this, &Swupdate::onProgressMessage);
 
-        connect(m_socketNotifier, &QObject::destroyed, this, [fd]() {
-            close(fd);
-        });
-    }
+    m_progressConnectionUnavailable = false;
+    setProgressChannelFd(fd);
+    m_socketNotifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
+    connect(m_socketNotifier, &QSocketNotifier::activated, this, &Swupdate::onProgressMessage);
 #else
     SWUPDATELOG_WARNING()<<"Swupdate has not been found on this system";
 #endif
@@ -142,7 +158,54 @@ void Swupdate::open()
 bool Swupdate::update(const QString& file)
 {
 #if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
-    return QProcess::startDetached("swupdate-client", {"-q", "-p", file});
+    const QFileInfo updateFile(file);
+    if(!updateFile.isFile() || !updateFile.isReadable()) {
+        const QString message = tr("Fichier de mise à jour inaccessible");
+        setStatus(message);
+        SnackbarManager::Get()->showCritical(message)->setClosable(true);
+        SWUPDATELOG_WARNING()<<message<<file;
+        return false;
+    }
+
+    if(m_updateProcess) {
+        const QString message = tr("Une mise à jour est déjà en cours");
+        SnackbarManager::Get()->showCritical(message)->setClosable(true);
+        return false;
+    }
+
+    QProcess* process = new QProcess(this);
+    m_updateProcess = process;
+
+    connect(process, &QProcess::errorOccurred, this, [this, process](QProcess::ProcessError error) {
+        if(error != QProcess::FailedToStart || m_updateProcess != process)
+            return;
+
+        const QString message = tr("Impossible de démarrer swupdate-client");
+        setStatus(message);
+        SnackbarManager::Get()->showCritical(message)->setClosable(true);
+        SWUPDATELOG_WARNING()<<message<<process->errorString();
+        m_updateProcess = nullptr;
+        process->deleteLater();
+    });
+
+    connect(process, &QProcess::finished, this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+        if(m_updateProcess != process)
+            return;
+
+        m_updateProcess = nullptr;
+        if(exitStatus != QProcess::NormalExit || exitCode != 0) {
+            QString message = QString::fromUtf8(process->readAllStandardError()).trimmed();
+            if(message.isEmpty())
+                message = tr("swupdate-client a échoué");
+            setStatus(message);
+            SnackbarManager::Get()->showCritical(message)->setClosable(true);
+            SWUPDATELOG_WARNING()<<message;
+        }
+        process->deleteLater();
+    });
+
+    process->start("swupdate-client", {"-q", "-p", updateFile.absoluteFilePath()});
+    return true;
 #else
     Q_UNUSED(file)
     return false;
@@ -152,20 +215,48 @@ bool Swupdate::update(const QString& file)
 bool Swupdate::restart()
 {
 #if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
-    if (m_socketNotifier) {
-        m_socketNotifier->deleteLater();
-        m_socketNotifier = nullptr;
+    if(m_restartProcess) {
+        const QString message = tr("Le redémarrage de SWUpdate est déjà en cours");
+        SnackbarManager::Get()->showCritical(message)->setClosable(true);
+        return false;
     }
 
-    QProcess *proc = new QProcess(this);
-    connect(proc, &QProcess::finished, this, [this, proc](int exitCode, QProcess::ExitStatus) {
-        bool ok = (exitCode >= 0);
-        if(!ok)
-            SWUPDATELOG_WARNING()<<"Failed to restart swupdate.service";
-        proc->deleteLater();
-        open();
-    }, Qt::QueuedConnection);
-    proc->start("systemctl", {"restart", "--now", "swupdate.service"});
+    QProcess* process = new QProcess(this);
+    m_restartProcess = process;
+
+    connect(process, &QProcess::errorOccurred, this, [this, process](QProcess::ProcessError error) {
+        if(error != QProcess::FailedToStart || m_restartProcess != process)
+            return;
+
+        const QString message = tr("Impossible de démarrer systemctl");
+        setStatus(message);
+        SnackbarManager::Get()->showCritical(message)->setClosable(true);
+        SWUPDATELOG_WARNING()<<message<<process->errorString();
+        m_restartProcess = nullptr;
+        process->deleteLater();
+    });
+
+    connect(process, &QProcess::finished, this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+        if(m_restartProcess != process)
+            return;
+
+        m_restartProcess = nullptr;
+        if(exitStatus != QProcess::NormalExit || exitCode != 0) {
+            QString message = QString::fromUtf8(process->readAllStandardError()).trimmed();
+            if(message.isEmpty())
+                message = tr("Le redémarrage de SWUpdate a échoué");
+            setStatus(message);
+            SnackbarManager::Get()->showCritical(message)->setClosable(true);
+            SWUPDATELOG_WARNING()<<message;
+        }
+        else {
+            closeProgressChannel(true);
+            open();
+        }
+        process->deleteLater();
+    });
+
+    process->start("systemctl", {"restart", "swupdate.service"});
     return true;
 #else
     return false;
@@ -185,8 +276,13 @@ void Swupdate::onProgressMessage()
     int rc = progress_ipc_receive(&fd, &raw);
     if (rc <= 0) {
         SWUPDATELOG_WARNING()<<"Swupdate: Error receiving progress message";
-        setProgressFd(fd);
-        QTimer::singleShot(500, this, &Swupdate::open);
+        if(m_socketNotifier) {
+            m_socketNotifier->setEnabled(false);
+            m_socketNotifier->deleteLater();
+            m_socketNotifier = nullptr;
+        }
+        setProgressChannelFd(fd);
+        scheduleOpen();
         return;
     }
 
@@ -226,9 +322,7 @@ void Swupdate::onProgressMessage()
         }
         else
         {
-            setStatus(QString("%1, step %2/%3")
-                          .arg(SwupdateRecoveryStatuses::asString(msg.status))
-                          .arg(msg.currentStep).arg(msg.nbSteps));
+            setStatus(QString("%1, step %2/%3").arg(SwupdateRecoveryStatuses::asString(msg.status)).arg(msg.currentStep).arg(msg.nbSteps));
         }
         break;
     case SwupdateRecoveryStatuses::Run:
@@ -240,22 +334,16 @@ void Swupdate::onProgressMessage()
         }
         else
         {
-            setStatus(QString("%1, step %2/%3")
-                          .arg(SwupdateRecoveryStatuses::asString(msg.status))
-                          .arg(msg.currentStep).arg(msg.nbSteps));
+            setStatus(QString("%1, step %2/%3").arg(SwupdateRecoveryStatuses::asString(msg.status)).arg(msg.currentStep).arg(msg.nbSteps));
         }
         break;
     case SwupdateRecoveryStatuses::Download:
         setProgress(msg.downloadPercent*100.0);
-        setStatus(QString("%1, %2  %3%")
-                      .arg(SwupdateRecoveryStatuses::asString(msg.status), ::bytes(msg.downloadBytes))
-                      .arg(msg.downloadPercent));
+        setStatus(QString("%1, %2  %3%").arg(SwupdateRecoveryStatuses::asString(msg.status), ::bytes(msg.downloadBytes)).arg(msg.downloadPercent));
         break;
     case SwupdateRecoveryStatuses::Progress:
         setProgress(msg.currentStepPercent*100.0);
-        setStatus(QString("%1, step %2/%3  %4%")
-                      .arg(SwupdateRecoveryStatuses::asString(msg.status))
-                      .arg(msg.currentStep).arg(msg.nbSteps).arg(msg.currentStepPercent));
+        setStatus(QString("%1, step %2/%3  %4%").arg(SwupdateRecoveryStatuses::asString(msg.status)).arg(msg.currentStep).arg(msg.nbSteps).arg(msg.currentStepPercent));
         break;
     default:
         if(msg.status==SwupdateRecoveryStatuses::Done)
@@ -277,4 +365,36 @@ void Swupdate::onProgressMessage()
         resetVersion();
         break;
     }
+}
+
+void Swupdate::closeProgressChannel(bool closeFd)
+{
+    if(m_socketNotifier) {
+        m_socketNotifier->setEnabled(false);
+        m_socketNotifier->deleteLater();
+        m_socketNotifier = nullptr;
+    }
+
+#if defined(SWUPDATE_FOUND) && defined(Q_OS_LINUX)
+    if(closeFd && m_progressFd>=0)
+        close(m_progressFd);
+#else
+    Q_UNUSED(closeFd)
+#endif
+
+    setProgressChannelFd(-1);
+}
+
+void Swupdate::scheduleOpen()
+{
+    if(!m_reconnectTimer.isActive())
+        m_reconnectTimer.start();
+}
+
+void Swupdate::setProgressChannelFd(int fd)
+{
+    const bool wasAvailable = available();
+    setProgressFd(fd);
+    if(wasAvailable != available())
+        emit availableChanged();
 }
