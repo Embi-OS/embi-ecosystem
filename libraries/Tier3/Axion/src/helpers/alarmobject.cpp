@@ -203,11 +203,11 @@ void AlarmObject::startTimer(qint64 delay)
 void AlarmObject::onTimerTimeout()
 {
     m_timer->stop();
-    invalidateRemainingTimeChange();
 
-    if(m_enabled && m_msToNextRingTime > 0)
+    const qint64 remainingTime = QDateTime::currentDateTime().msecsTo(m_nextRingDateTime);
+    if(m_enabled && m_nextRingDateTime.isValid() && remainingTime > 0)
     {
-        startTimer(m_msToNextRingTime);
+        startTimer(remainingTime);
         if(m_timer->remainingTime() > 1000)
             m_remainingTimeChangeCaller->start();
         return;

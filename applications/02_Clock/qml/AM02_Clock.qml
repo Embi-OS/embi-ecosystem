@@ -43,7 +43,7 @@ Item {
         MediaItemModel.playlist.path: Filesystem.musicPath
         MediaItemModel.playlist.selectWhen: playerSettings.selected
         audioOutput: AudioOutput {
-            volume: 0.2
+            volume: ClockAlarmAudio.defaultVolume/100.0
         }
     }
 
