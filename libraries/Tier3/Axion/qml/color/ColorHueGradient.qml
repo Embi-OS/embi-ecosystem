@@ -1,6 +1,8 @@
 import QtQuick
 
 Gradient {
+    id: root
+
     GradientStop {
         position: 0
         color: "#ff0000"

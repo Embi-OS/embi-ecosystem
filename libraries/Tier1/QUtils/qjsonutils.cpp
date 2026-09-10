@@ -40,14 +40,15 @@ QByteArray QUtils::Json::variantToJson(const QVariant& variant, bool compact, in
 #endif
 }
 
-void QUtils::Json::variantToJsonStream(const QVariant& variant, QIODevice* device, bool compact, int doublePrecision)
+bool QUtils::Json::variantToJsonStream(const QVariant& variant, QIODevice* device, bool compact, int doublePrecision)
 {
 #ifdef JSON_VARIANT_WRITING
-    QJsonVariantWriter::fromVariant(variant, device, compact, doublePrecision);
+    return QJsonVariantWriter::fromVariant(variant, device, compact, doublePrecision);
 #else
-    if (!device)
-        return;
-    device->write(QJsonDocument::fromVariant(variant).toJson(compact?QJsonDocument::Compact:QJsonDocument::Indented));
+    if (!device || (device->isOpen() ? !device->isWritable() : !device->open(QIODevice::WriteOnly)))
+        return false;
+    const QByteArray data = QJsonDocument::fromVariant(variant).toJson(compact?QJsonDocument::Compact:QJsonDocument::Indented);
+    return device->write(data) == data.size();
 #endif
 }
 
@@ -93,13 +94,15 @@ QByteArray QUtils::Cbor::variantToCbor(const QVariant& variant, int opt)
 #endif
 }
 
-void QUtils::Cbor::variantToCborStream(const QVariant& variant, QIODevice* device, int opt)
+bool QUtils::Cbor::variantToCborStream(const QVariant& variant, QIODevice* device, int opt)
 {
 #ifdef CBOR_VARIANT_WRITING
     return QCborVariantWriter::fromVariant(variant, device, opt);
 #else
-    QCborStreamWriter writer(device);
-    QCborValue::fromVariant(variant).toCbor(writer, (QCborValue::EncodingOptions)opt);
+    if (!device || (device->isOpen() ? !device->isWritable() : !device->open(QIODevice::WriteOnly)))
+        return false;
+    const QByteArray data = QCborValue::fromVariant(variant).toCbor((QCborValue::EncodingOptions)opt);
+    return device->write(data) == data.size();
 #endif
 }
 

@@ -2,7 +2,9 @@
 #define QUTF8_H
 
 #include <QIODevice>
+#include <QByteArrayView>
 #include <QString>
+#include <QUtf8StringView>
 #include <algorithm>
 
 namespace QUtf8 {
@@ -123,9 +125,12 @@ static inline QByteArray escapedString(QStringView s)
     return ba;
 }
 
-static inline QString unescapedString(const QByteArray &ba)
+static inline QString unescapedString(QByteArrayView ba)
 {
-    QByteArray decoded;
+    if (ba.isEmpty())
+        return QString();
+
+    QString decoded;
     decoded.reserve(ba.size());
     const char *src = ba.constData();
     const char *end = src + ba.size();
@@ -151,66 +156,76 @@ static inline QString unescapedString(const QByteArray &ba)
         return true;
     };
 
+    // Convert each literal UTF-8 run directly into the reserved UTF-16 output.
+    auto appendUtf8Run = [&]() {
+        const char *start = src++;
+        while (src < end && *src != '\\')
+            ++src;
+        decoded.append(QUtf8StringView(start, src - start));
+    };
+
     while (src < end) {
-        if (*src == '\\' && src + 1 < end) {
+        if (*src == '\\' && end - src > 1) {
             ++src;
             switch (*src) {
             case 'b':
-                decoded.append('\b');
+                decoded.append(QLatin1Char('\b'));
                 break;
             case 'f':
-                decoded.append('\f');
+                decoded.append(QLatin1Char('\f'));
                 break;
             case 'n':
-                decoded.append('\n');
+                decoded.append(QLatin1Char('\n'));
                 break;
             case 'r':
-                decoded.append('\r');
+                decoded.append(QLatin1Char('\r'));
                 break;
             case 't':
-                decoded.append('\t');
+                decoded.append(QLatin1Char('\t'));
                 break;
             case '"':
-                decoded.append('\"');
+                decoded.append(QLatin1Char('\"'));
                 break;
             case '\\':
-                decoded.append('\\');
+                decoded.append(QLatin1Char('\\'));
                 break;
             case 'u':
-                if (src + 4 < end) {
+                if (end - src > 4) {
                     char16_t first = 0;
                     if (readHex4(src + 1, first)) {
-                        if (first >= 0xD800 && first <= 0xDBFF && src + 10 < end && src[5] == '\\' && src[6] == 'u') {
+                        if (first >= 0xD800 && first <= 0xDBFF && end - src > 10 && src[5] == '\\' && src[6] == 'u') {
                             char16_t second = 0;
                             if (readHex4(src + 7, second) && second >= 0xDC00 && second <= 0xDFFF) {
-                                const char32_t cp = 0x10000u + ((char32_t(first - 0xD800) << 10) | char32_t(second - 0xDC00));
-                                decoded.append(QString::fromUcs4(&cp, 1).toUtf8());
+                                decoded.append(QChar(first));
+                                decoded.append(QChar(second));
                                 src += 10;
                                 break;
                             }
                         }
 
-                        decoded.append(QString::fromUtf16(&first, 1).toUtf8());
+                        if (first >= 0xD800 && first <= 0xDFFF)
+                            decoded.append(QChar::ReplacementCharacter);
+                        else
+                            decoded.append(QChar(first));
                         src += 4;
                         break;
                     }
                 }
-                decoded.append('\\');
-                decoded.append('u');
+                decoded.append(QLatin1Char('\\'));
+                decoded.append(QLatin1Char('u'));
                 break;
             default:
-                decoded.append(*src);
-                break;
+                appendUtf8Run();
+                continue;
             }
         } else {
-            decoded.append(*src);
+            appendUtf8Run();
+            continue;
         }
         ++src;
     }
 
-    decoded.squeeze();
-
-    return QString::fromUtf8(decoded);
+    return decoded;
 }
 } // namespace QUtf8
 

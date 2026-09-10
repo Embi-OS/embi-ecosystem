@@ -62,8 +62,15 @@ T.Control {
                               textField.acceptableInput ? Style.colorPrimaryLight : Style.colorWarning
             }
 
-            onAccepted: root.colorAccepted(ColorUtils.fromName(text))
-            onEditingFinished: root.colorAccepted(ColorUtils.fromName(text))
+            function acceptColor(): void {
+                if (!acceptableInput)
+                    return;
+
+                const hex = text.startsWith("#") ? text : "#" + text;
+                root.colorAccepted(ColorUtils.fromName(hex));
+            }
+
+            onEditingFinished: acceptColor()
         }
     }
 }

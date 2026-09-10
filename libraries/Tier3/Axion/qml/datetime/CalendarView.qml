@@ -56,6 +56,8 @@ ListView {
         monthGrid.year: year
 
         locale: root.locale
+        from: root.from
+        to: root.to
         selectedDate: root.selectedDate
 
         onDayClicked: (date) => root.dayClicked(date)

@@ -11,31 +11,26 @@ BasicItemDelegate {
 
     signal groupEnabledClicked()
 
-    backgroundImplicitWidth: 120
-    backgroundImplicitHeight: 120
+    backgroundImplicitWidth: 200
+    backgroundImplicitHeight: 100
+
+    icon.width: 82
+    icon.height: 82
+    icon.color: Style.colorBlack
+    icon.source: MaterialIcons.alarm
 
     contentItem: ColumnLayout {
         spacing: 5
 
-        RowLayout {
-            spacing: 0
-            Layout.fillWidth: true
-
-            Item {
-                Layout.fillWidth: true
-                implicitHeight: 5
-            }
-
-            ClickableIcon {
-                icon: root.groupEnabled ? MaterialIcons.alarm : MaterialIcons.alarmOff
-                onClicked: root.groupEnabledClicked()
-            }
+        Item {
+            Layout.fillHeight: true
+            implicitWidth: 5
         }
 
         BasicLabel {
             Layout.fillHeight: true
             Layout.fillWidth: true
-            font: Style.textTheme.subtitle1
+            font: Style.textTheme.title2
             color: root.foregroundColor
             text: root.name
             elide: Text.ElideRight
@@ -79,6 +74,39 @@ BasicItemDelegate {
                 Layout.fillWidth: true
                 implicitHeight: 5
             }
+        }
+    }
+
+    background: Rectangle {
+        implicitWidth: root.backgroundImplicitWidth
+        implicitHeight: root.backgroundImplicitHeight
+
+        radius: root.radius
+        color: root.backgroundColor
+        border.width: root.borderWidth
+        border.color: root.borderColor
+
+        SvgColorImage {
+            anchors.top: parent.top
+            anchors.topMargin: root.inset
+            anchors.right: parent.right
+            anchors.rightMargin: root.inset
+            iconWidth: root.icon.width
+            iconHeight: root.icon.height
+            icon: root.groupEnabled ? MaterialIcons.alarm : MaterialIcons.alarmOff
+            color: root.icon.color
+            opacity: 0.3
+        }
+
+        BasicVeil {
+            z: 100
+            anchors.fill: parent
+            radius: root.radius
+            enabled: root.clickable
+
+            relativeBackgroundColor: root.relativeBackgroundColor
+            focussed: root.down || root.visualFocus || root.hovered
+            pressed: root.pressed
         }
     }
 }

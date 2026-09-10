@@ -5,6 +5,8 @@ import Eco.Tier3.Axion
 GridView {
     id: root
 
+    property int minimumMonth: 0
+    property int maximumMonth: 11
     property int month: new Date().getMonth()
 
     signal accepted(int month)
@@ -32,8 +34,11 @@ GridView {
 
             text: DateTimeUtils.monthName(itemDelegate.index+1)
 
+            enabled: itemDelegate.index >= root.minimumMonth && itemDelegate.index <= root.maximumMonth
             highlighted: itemDelegate.index===root.month
             onClicked: {
+                if(!enabled)
+                    return
                 root.month = itemDelegate.index
                 root.accepted(root.month)
             }

@@ -5,6 +5,41 @@
 #include <QCborMap>
 #include <QIODevice>
 #include <limits>
+#include <cstring>
+
+// QCborStreamWriter's append functions do not report device write failures.
+// Latch short writes here and suppress all subsequent writes to the target.
+class QCborVariantWriteDevice final : public QIODevice
+{
+public:
+    explicit QCborVariantWriteDevice(QIODevice *target): m_target(target) {}
+
+    bool start()
+    {
+        m_failed = !m_target || (m_target->isOpen() ? !m_target->isWritable()
+                                                   : !m_target->open(WriteOnly));
+        if (!isOpen())
+            open(WriteOnly | Unbuffered);
+        return !m_failed;
+    }
+    bool hasError() const { return m_failed; }
+    bool isSequential() const override { return true; }
+
+protected:
+    qint64 readData(char *, qint64) override { return -1; }
+    qint64 writeData(const char *data, qint64 size) override
+    {
+        if (m_failed)
+            return -1;
+        const qint64 written = m_target->write(data, size);
+        m_failed = written != size;
+        return written;
+    }
+
+private:
+    QIODevice *m_target;
+    bool m_failed = true;
+};
 
 static void variantToCbor(const QVariant &value, QCborStreamWriter &writer, int opt);
 
@@ -54,15 +89,16 @@ static inline void variantValueToCbor(const QVariant &value, QCborStreamWriter &
     case QMetaType::UInt:
         writer.append(value.toLongLong());
         break;
+    case QMetaType::ULong:
     case QMetaType::ULongLong:
-        if (value.toULongLong() <= static_cast<uint64_t>((std::numeric_limits<qint64>::max)())) {
-            writer.append(value.toLongLong());
-            break;
-        }
-        Q_FALLTHROUGH();
+        writer.append(value.toULongLong());
+        break;
     case QMetaType::Float:
     case QMetaType::Double:
-        writer.append(value.toDouble());
+        if (opt == QCborValue::NoTransformation)
+            writer.append(value.toDouble());
+        else
+            QCborValue(value.toDouble()).toCbor(writer, QCborValue::EncodingOptions(opt));
         break;
     default:
         QCborValue::fromVariant(value).toCbor(writer, (QCborValue::EncodingOptions)opt);
@@ -71,21 +107,22 @@ static inline void variantValueToCbor(const QVariant &value, QCborStreamWriter &
 }
 void variantToCbor(const QVariant &value, QCborStreamWriter &writer, int opt)
 {
+    // The exact metatype makes constData safe and avoids temporary shared containers.
     switch (value.metaType().id()) {
     case QMetaType::QStringList: {
-        variantListToCbor(value.toStringList(), writer, opt);
+        variantListToCbor(*static_cast<const QStringList *>(value.constData()), writer, opt);
         break;
     }
     case QMetaType::QVariantList: {
-        variantListToCbor(value.toList(), writer, opt);
+        variantListToCbor(*static_cast<const QVariantList *>(value.constData()), writer, opt);
         break;
     }
     case QMetaType::QVariantMap: {
-        variantObjectToCbor(value.toMap(), writer, opt);
+        variantObjectToCbor(*static_cast<const QVariantMap *>(value.constData()), writer, opt);
         break;
     }
     case QMetaType::QVariantHash: {
-        variantObjectToCbor(value.toHash(), writer, opt);
+        variantObjectToCbor(*static_cast<const QVariantHash *>(value.constData()), writer, opt);
         break;
     }
     default: {
@@ -96,7 +133,8 @@ void variantToCbor(const QVariant &value, QCborStreamWriter &writer, int opt)
 }
 
 QCborVariantWriter::QCborVariantWriter(QIODevice *device, int options):
-    m_device(new QCborStreamWriter(device)),
+    m_output(std::make_unique<QCborVariantWriteDevice>(device)),
+    m_device(new QCborStreamWriter(m_output.get())),
     m_writeError(true),
     m_options(options)
 {
@@ -121,8 +159,17 @@ QCborStreamWriter* QCborVariantWriter::device() const
     return m_device;
 }
 
+bool QCborVariantWriter::hasError() const
+{
+    return m_writeError || (m_output && m_output->hasError());
+}
+
 void QCborVariantWriter::start()
 {
+    if (m_output) {
+        m_writeError = !m_output->start();
+        return;
+    }
     m_writeError = false;
     QIODevice *device = m_device ? m_device->device() : nullptr;
     if (!device) {
@@ -130,43 +177,43 @@ void QCborVariantWriter::start()
     } else if (device->isOpen()) {
         m_writeError = !device->isWritable();
     } else {
-        m_writeError = !device->open(QIODevice::WriteOnly | QIODevice::Unbuffered);
+        m_writeError = !device->open(QIODevice::WriteOnly);
     }
 }
 void QCborVariantWriter::startArray()
 {
-    if (m_writeError)
+    if (hasError())
         return;
     m_device->startArray();
 }
 void QCborVariantWriter::startArray(quint64 count)
 {
-    if (m_writeError)
+    if (hasError())
         return;
     m_device->startArray(count);
 }
 void QCborVariantWriter::endArray()
 {
-    if (m_writeError)
+    if (hasError())
         return;
     if (!m_device->endArray())
         m_writeError = true;
 }
 void QCborVariantWriter::startMap()
 {
-    if (m_writeError)
+    if (hasError())
         return;
     m_device->startMap();
 }
 void QCborVariantWriter::startMap(quint64 count)
 {
-    if (m_writeError)
+    if (hasError())
         return;
     m_device->startMap(count);
 }
 void QCborVariantWriter::endMap()
 {
-    if (m_writeError)
+    if (hasError())
         return;
     if (!m_device->endMap())
         m_writeError = true;
@@ -190,25 +237,25 @@ void QCborVariantWriter::writeKeyValue(QUtf8StringView key, const QVariant& valu
 
 void QCborVariantWriter::writeString(QLatin1StringView s)
 {
-    if (m_writeError)
+    if (hasError())
         return;
     m_device->append(s);
 }
 void QCborVariantWriter::writeString(QStringView s)
 {
-    if (m_writeError)
+    if (hasError())
         return;
     m_device->append(s);
 }
 void QCborVariantWriter::writeString(QUtf8StringView s)
 {
-    if (m_writeError)
+    if (hasError())
         return;
     m_device->appendTextString(s.data(), s.size());
 }
 void QCborVariantWriter::writeRaw(const char *data, qint64 len)
 {
-    if (!data || m_writeError)
+    if (!data || hasError())
         return;
     QIODevice *device = m_device->device();
     if (!device || device->write(data, len) != len)
@@ -216,15 +263,12 @@ void QCborVariantWriter::writeRaw(const char *data, qint64 len)
 }
 void QCborVariantWriter::writeRaw(const char *data)
 {
-    if (!data || m_writeError)
-        return;
-    QIODevice *device = m_device->device();
-    if (!device || device->write(data) < 0)
-        m_writeError = true;
+    if (data)
+        writeRaw(data, qint64(std::strlen(data)));
 }
 void QCborVariantWriter::writeRaw(const QByteArray &data)
 {
-    if (m_writeError)
+    if (hasError())
         return;
     QIODevice *device = m_device->device();
     if (!device || device->write(data) != data.size())
@@ -232,7 +276,7 @@ void QCborVariantWriter::writeRaw(const QByteArray &data)
 }
 void QCborVariantWriter::writeVariant(const QVariant &v)
 {
-    if (m_writeError)
+    if (hasError())
         return;
     ::variantToCbor(v, *m_device, m_options);
 }
@@ -240,20 +284,17 @@ void QCborVariantWriter::writeVariant(const QVariant &v)
 QByteArray QCborVariantWriter::fromVariant(const QVariant& variant, int options)
 {
     QByteArray cbor;
-    QCborVariantWriter writer(&cbor, options);
-
-    writer.start();
-    writer.writeVariant(variant);
-
-    cbor.squeeze();
+    QCborStreamWriter writer(&cbor);
+    variantToCbor(variant, writer, options);
 
     return cbor;
 }
 
-void QCborVariantWriter::fromVariant(const QVariant& variant, QIODevice* device, int options)
+bool QCborVariantWriter::fromVariant(const QVariant& variant, QIODevice* device, int options)
 {
     QCborVariantWriter writer(device, options);
 
     writer.start();
     writer.writeVariant(variant);
+    return !writer.hasError();
 }

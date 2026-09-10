@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Eco.Tier3.Axion
 
@@ -71,13 +72,13 @@ BasicItemDelegate {
             Layout.minimumHeight: 20
             Layout.preferredWidth: 200
             delegate: BasicLabel {
-                required property int index
+                required property int day
                 required property string narrowName
 
                 font: Style.textTheme.subtitle1
                 text: narrowName
                 opacity: enabled ? 1.0 : 0.5
-                color: MathUtils.bitTest(root.weekdays, index) ? Style.colorAccent : Style.colorWhite
+                color: MathUtils.bitTest(root.weekdays, (day + 6) % 7) ? Style.colorAccent : Style.colorWhite
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }

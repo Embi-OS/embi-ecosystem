@@ -53,7 +53,7 @@ T.AbstractButton {
     padding: 24
 
     spacing: 8
-    property int radius: 10
+    property int radius: 18
 
     icon.width: 96
     icon.height: 96

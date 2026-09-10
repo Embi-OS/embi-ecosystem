@@ -44,6 +44,14 @@ private:
     inline bool skipWhitespace();
     inline QString parseString();
     inline QVariant parseNumber();
+    bool completeValue();
+    struct Container
+    {
+        char closing;
+        bool expectingKey;
+    };
+    QList<Container> m_containers;
+
     void setError(QJsonParseError::ParseError error, qint64 offset = -1);
 
     QJsonParseError m_error;

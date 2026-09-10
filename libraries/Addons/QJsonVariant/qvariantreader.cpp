@@ -15,8 +15,10 @@ QVariant QVariantReader::read()
 QVariantList QVariantReader::readList()
 {
     QVariantList list;
+    // The declared CBOR length may come from a truncated or untrusted input.
+    constexpr quint64 MaxInitialListCapacity = 1024;
     if (isLengthKnown())
-        list.reserve(length());
+        list.reserve(qMin(length(), MaxInitialListCapacity));
 
     enterContainer();
     while (!hasError() && hasNext()) {

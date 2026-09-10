@@ -10,12 +10,13 @@ T.ToolButton {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    topInset: Style.toolButtonInset
-    bottomInset: Style.toolButtonInset
-    leftInset: Style.toolButtonInset
-    rightInset: Style.toolButtonInset
+    property double inset: Style.toolButtonInset
+    topInset: inset
+    bottomInset: inset
+    leftInset: inset
+    rightInset: inset
 
-    padding: Style.toolButtonPadding + Style.toolButtonInset
+    padding: Style.toolButtonPadding + inset
     spacing: Style.toolButtonSpacing
 
     opacity: enabled ? 1.0 : 0.5

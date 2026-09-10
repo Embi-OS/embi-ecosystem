@@ -12,6 +12,9 @@ BasicDialog {
     property alias dayOfWeekVisible: calendar.dayOfWeekVisible
     property alias weekNumberVisible: calendar.weekNumberVisible
 
+    readonly property bool isValid: !isNaN(root.fromDate.getTime()) && !isNaN(root.toDate.getTime())
+        && root.fromDate <= root.toDate
+
     property string buttonReject: qsTr("Annuler")
     property string buttonAccept: qsTr("Valider")
 
@@ -28,7 +31,8 @@ BasicDialog {
 
     function thisWeek() {
         const today = DateTimeUtils.currentDate()
-        const from = DateTimeUtils.date(today.getFullYear(), today.getMonth()+1, today.getDate() - (today.getDay()-1))
+        const offset = (today.getDay() + 7 - root.locale.firstDayOfWeek % 7) % 7
+        const from = DateTimeUtils.dateTimeAddDays(today, -offset)
         const to = DateTimeUtils.dateTimeAddDays(from, 6)
         root.fromDate = from
         root.toDate = to
@@ -38,7 +42,8 @@ BasicDialog {
     function thisMonth() {
         const today = DateTimeUtils.currentDate()
         const from = DateTimeUtils.date(today.getFullYear(), today.getMonth()+1, 1)
-        const to = DateTimeUtils.dateTimeAddDays(DateTimeUtils.date(today.getFullYear(), today.getMonth()+2, 1), -1)
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+        const to = DateTimeUtils.date(today.getFullYear(), today.getMonth() + 1, lastDay)
         root.fromDate = from
         root.toDate = to
         root.selectedDate = today
@@ -57,10 +62,13 @@ BasicDialog {
     headerVerticalAlignment: Qt.AlignVCenter
     drawHeaderSeparator: true
 
-    onAccepted: root.dateRangeSelected(root.fromDate, root.toDate)
+    onAccepted: {
+        if(root.isValid)
+            root.dateRangeSelected(root.fromDate, root.toDate)
+    }
 
     buttonsContainer: [
-        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; text: root.buttonAccept; highlighted: true},
+        ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; enabled: root.isValid; text: root.buttonAccept; highlighted: true},
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.RejectRole; text: root.buttonReject},
         ButtonDialog { DialogButtonBox.buttonRole: DialogButtonBox.ActionRole; text: qsTr("Aujourd'hui"); onClicked: root.today()}
     ]

@@ -34,7 +34,19 @@ RowLayout {
         if(maxDay<newDay)
             newDay = maxDay;
 
-        root.selectedDate = new Date(newYear, newMonth, newDay);
+        let selected = new Date(newYear, newMonth, newDay);
+        const minimum = new Date(root.from.getFullYear(), root.from.getMonth(), root.from.getDate());
+        const maximum = new Date(root.to.getFullYear(), root.to.getMonth(), root.to.getDate());
+        if(selected < minimum)
+            selected = minimum;
+        if(selected > maximum)
+            selected = maximum;
+        if(!DateTimeUtils.isDateValid(selected, root.from, root.to)) {
+            _pendingEvaluate = false;
+            return;
+        }
+
+        root.selectedDate = selected;
 
         dayTumbler.positionViewAtIndex(root.selectedDate.getDate()-1, ListView.Center)
         monthTumbler.positionViewAtIndex(root.selectedDate.getMonth(), ListView.Center)

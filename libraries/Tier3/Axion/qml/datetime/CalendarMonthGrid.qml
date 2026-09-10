@@ -7,6 +7,8 @@ GridLayout {
 
     signal dayClicked(date date)
 
+    property date from: DateTimeUtils.invalidDate()
+    property date to: DateTimeUtils.invalidDate()
     property date selectedDate: new Date()
     property date fromDate: selectedDate
     property date toDate: selectedDate
@@ -83,11 +85,15 @@ GridLayout {
             lastInRange: root.rangeMode && DateTimeUtils.isDateEqual(date, root.toDate)
             inRange: root.rangeMode && DateTimeUtils.isDateBetween(date, root.fromDate, root.toDate) || firstInRange || lastInRange
 
+            enabled: DateTimeUtils.isDateValid(date, root.from, root.to)
             opacity: month===monthGrid.month ? 1.0 : 0.5
             text: day
             highlighted: today
             outlined: root.rangeMode ? (firstInRange && lastInRange) : DateTimeUtils.isDateEqual(date, root.selectedDate)
-            onClicked: root.dayClicked(date)
+            onClicked: {
+                if(enabled)
+                    root.dayClicked(date)
+            }
         }
 
         contentItem: GridLayout {

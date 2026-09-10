@@ -9,9 +9,13 @@ RowLayout {
     property int visibleItemCount: 3
 
     property date selectedTime: new Date()
+    property date editedTime: selectedTime
+    onSelectedTimeChanged: editedTime = selectedTime
     readonly property int selectedHour: hourTumbler.currentIndex
     readonly property int selectedMinute: minuteTumbler.currentIndex
     readonly property int selectedSecond: secondTumbler.currentIndex
+
+    readonly property bool moving: hourTumbler.moving || minuteTumbler.moving || secondTumbler.moving
 
     signal timeChanged(date time)
 
@@ -23,8 +27,8 @@ RowLayout {
         _updatingSelectedTime = true;
 
         const seconds = root.showSeconds ? secondTumbler.currentIndex : 0;
-        root.selectedTime = new Date(0,0,0,hourTumbler.currentIndex, minuteTumbler.currentIndex, seconds);
-        root.timeChanged(root.selectedTime);
+        root.editedTime = new Date(0,0,0,hourTumbler.currentIndex, minuteTumbler.currentIndex, seconds);
+        root.timeChanged(root.editedTime);
 
         _updatingSelectedTime = false;
     }
@@ -38,7 +42,7 @@ RowLayout {
         wrap: root.wrap
         visibleItemCount: root.visibleItemCount
         model: 24
-        currentIndex: root.selectedTime.getHours()
+        currentIndex: root.editedTime.getHours()
         delegate: LabelTumbler {
             required property int index
             text: FormatUtils.intToString(index,2)
@@ -60,7 +64,7 @@ RowLayout {
         wrap: root.wrap
         visibleItemCount: root.visibleItemCount
         model: 60
-        currentIndex: root.selectedTime.getMinutes()
+        currentIndex: root.editedTime.getMinutes()
         delegate: LabelTumbler {
             required property int index
             text: FormatUtils.intToString(index,2)
@@ -83,7 +87,7 @@ RowLayout {
         wrap: root.wrap
         visibleItemCount: root.visibleItemCount
         model: 60
-        currentIndex: root.selectedTime.getSeconds()
+        currentIndex: root.editedTime.getSeconds()
         delegate: LabelTumbler {
             required property int index
             text: FormatUtils.intToString(index,2)

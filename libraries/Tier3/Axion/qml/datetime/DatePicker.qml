@@ -133,9 +133,13 @@ Item {
         CalendarMonthPickerView {
             //month: root.month
             Binding on month { value: root.month; delayed: true }
+            minimumMonth: root.year < root.from.getFullYear() ? 12
+                : root.year === root.from.getFullYear() ? root.from.getMonth() : 0
+            maximumMonth: root.year > root.to.getFullYear() ? -1
+                : root.year === root.to.getFullYear() ? root.to.getMonth() : 11
 
             onAccepted: (month) => {
-                if(month>=root.from.getMonth() && month<=root.to.getMonth())
+                if(calendar.isMonthYearValid(month, root.year))
                     root.month = month
                 loader.sourceComponent = undefined
             }

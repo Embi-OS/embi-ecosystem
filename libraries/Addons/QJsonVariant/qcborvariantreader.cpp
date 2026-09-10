@@ -162,7 +162,7 @@ QVariant QCborVariantReader::fromCbor(const QByteArray& cbor, QCborParserError* 
         reader.setError(QCborError{ QCborError::GarbageAtEnd });
     if(error)
         *error = reader.error();
-    return variant;
+    return reader.hasError() ? QVariant() : variant;
 }
 
 QVariant QCborVariantReader::fromCbor(QIODevice* device, QCborParserError* error)
@@ -173,5 +173,5 @@ QVariant QCborVariantReader::fromCbor(QIODevice* device, QCborParserError* error
         reader.setError(QCborError{ QCborError::GarbageAtEnd });
     if(error)
         *error = reader.error();
-    return variant;
+    return reader.hasError() ? QVariant() : variant;
 }

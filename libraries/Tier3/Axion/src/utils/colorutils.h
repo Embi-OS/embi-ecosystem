@@ -37,6 +37,7 @@ public:
     Q_INVOKABLE static QColor fromHsvF(float h, float s, float v, float a = 1.0);
     Q_INVOKABLE static QColor toHsv(const QColor &color);
     Q_INVOKABLE static QColor toRgb(const QColor &color);
+    Q_INVOKABLE static QColor colorTemperatureToColor(int kelvin);
 
     struct XYZColor {
         float x = 0;

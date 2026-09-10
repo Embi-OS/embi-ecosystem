@@ -4,6 +4,9 @@
 #include <QVariant>
 #include <QByteArray>
 #include <QCborStreamWriter>
+#include <memory>
+
+class QCborVariantWriteDevice;
 
 class QCborVariantWriter
 {
@@ -14,6 +17,7 @@ public:
     Q_DISABLE_COPY(QCborVariantWriter)
 
     QCborStreamWriter* device() const;
+    bool hasError() const;
 
     void start();
     void startArray();
@@ -36,9 +40,10 @@ public:
     void writeVariant(const QVariant &v);
 
     static QByteArray fromVariant(const QVariant& variant, int options = 0);
-    static void fromVariant(const QVariant& variant, QIODevice* device, int options = 0);
+    static bool fromVariant(const QVariant& variant, QIODevice* device, int options = 0);
 
 private:
+    std::unique_ptr<QCborVariantWriteDevice> m_output;
     QCborStreamWriter *m_device;
     bool m_writeError;
 

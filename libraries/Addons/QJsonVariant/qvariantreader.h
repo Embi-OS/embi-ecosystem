@@ -18,7 +18,13 @@ public:
     QVariantReader() = default;
     virtual ~QVariantReader() = default;
 
-    int currentProgress() const { return (currentOffset()/(double)totalSize()) * 10000.0; }
+    int currentProgress() const
+    {
+        const qint64 size = totalSize();
+        if (size <= 0)
+            return 0;
+        return int(qBound(0.0, (currentOffset() / double(size)) * 10000.0, 10000.0));
+    }
     virtual qint64 currentOffset() const = 0;
     virtual qint64 totalSize() const = 0;
 

@@ -29,7 +29,7 @@ namespace Json
 {
 
     QByteArray variantToJson(const QVariant& variant, bool compact = true, int doublePrecision = QLocale::FloatingPointShortest);
-    void variantToJsonStream(const QVariant& variant, QIODevice* device, bool compact = true, int doublePrecision = QLocale::FloatingPointShortest);
+    bool variantToJsonStream(const QVariant& variant, QIODevice* device, bool compact = true, int doublePrecision = QLocale::FloatingPointShortest);
 
     QVariant jsonToVariant(const QByteArray& json, QJsonParseError* error = nullptr);
     QVariant jsonStreamToVariant(QIODevice* device, QJsonParseError* error = nullptr);
@@ -40,7 +40,7 @@ namespace Cbor
 {
 
     QByteArray variantToCbor(const QVariant& variant, int opt = 0);
-    void variantToCborStream(const QVariant& variant, QIODevice* device, int opt = 0);
+    bool variantToCborStream(const QVariant& variant, QIODevice* device, int opt = 0);
 
     QVariant cborToVariant(const QByteArray& cbor, QCborParserError* error = nullptr);
     QVariant cborStreamToVariant(QIODevice* device, QCborParserError* error = nullptr);

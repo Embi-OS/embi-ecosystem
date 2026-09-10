@@ -20,7 +20,6 @@ public:
     Q_INVOKABLE static bool isEntityGroup(const QVariantMap& attributes);
 
     Q_INVOKABLE static QColor rgbToColor(const QVariant& rgb);
-    Q_INVOKABLE static QColor colorTemperatureToColor(int kelvin);
     Q_INVOKABLE static QColor lightColor(const QVariantMap& attributes);
     Q_INVOKABLE static int lightBrightness(const QVariantMap& attributes);
     Q_INVOKABLE static int lightBrightnessLevel(const QVariantMap& attributes);

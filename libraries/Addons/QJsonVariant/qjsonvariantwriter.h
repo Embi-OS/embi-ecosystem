@@ -14,6 +14,7 @@ public:
     ~QJsonVariantWriter();
     Q_DISABLE_COPY(QJsonVariantWriter)
 
+    bool hasError() const { return m_writeError; }
     void start();
     void startArray();
     void endArray();
@@ -35,7 +36,7 @@ public:
     void writeVariant(const QVariant &v);
 
     static QByteArray fromVariant(const QVariant& variant, bool compact = true, int doublePrecision = QLocale::FloatingPointShortest);
-    static void fromVariant(const QVariant& variant, QIODevice* device, bool compact = true, int doublePrecision = QLocale::FloatingPointShortest);
+    static bool fromVariant(const QVariant& variant, QIODevice* device, bool compact = true, int doublePrecision = QLocale::FloatingPointShortest);
 
     static QByteArray escapedString(QStringView s);
     static QByteArray fromVariantDebug(const QVariant& variant, bool compact = true);

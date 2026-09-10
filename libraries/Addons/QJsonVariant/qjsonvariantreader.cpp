@@ -45,15 +45,49 @@ QJsonVariantReader::~QJsonVariantReader()
 
 bool QJsonVariantReader::hasNext() const
 {
-    return isValid() && ptr < end;
+    return m_error.error == QJsonParseError::NoError && isValid() && ptr < end;
 }
 bool QJsonVariantReader::next()
 {
-    while (ptr < end && skipWhitespace()) {
-        if (*ptr != NameSeparator &&
-            *ptr != ValueSeparator)
-            break;
-        ++ptr;
+    skipWhitespace();
+    return !hasError();
+}
+
+bool QJsonVariantReader::completeValue()
+{
+    if (!next())
+        return false;
+    if (m_containers.isEmpty()) {
+        if (ptr < end)
+            setError(QJsonParseError::GarbageAtEnd);
+        return !hasError();
+    }
+
+    Container &container = m_containers.last();
+    if (ptr == end) {
+        setError(container.closing == EndArray ? QJsonParseError::UnterminatedArray : QJsonParseError::UnterminatedObject);
+        return false;
+    }
+    if (container.expectingKey) {
+        if (*ptr != NameSeparator) {
+            setError(QJsonParseError::MissingNameSeparator);
+            return false;
+        }
+        container.expectingKey = false;
+    } else {
+        if (*ptr == container.closing)
+            return true;
+        if (*ptr != ValueSeparator) {
+            setError(QJsonParseError::MissingValueSeparator);
+            return false;
+        }
+        container.expectingKey = container.closing == EndObject;
+    }
+    ++ptr;
+    skipWhitespace();
+    if (ptr == end || *ptr == EndArray || *ptr == EndObject || *ptr == ValueSeparator || *ptr == NameSeparator) {
+        setError(QJsonParseError::IllegalValue);
+        return false;
     }
     return true;
 }
@@ -73,6 +107,17 @@ bool QJsonVariantReader::enterContainer()
         setError(QJsonParseError::IllegalValue);
         return false;
     }
+    if (hasError() || (!m_containers.isEmpty() && m_containers.last().expectingKey)) {
+        setError(QJsonParseError::IllegalValue);
+        return false;
+    }
+    constexpr qsizetype MaxNestingDepth = 1024;
+    if (m_containers.size() >= MaxNestingDepth) {
+        setError(QJsonParseError::DeepNesting);
+        return false;
+    }
+    const bool object = *ptr == BeginObject;
+    m_containers.append(Container{char(object ? EndObject : EndArray), object});
     ++ptr; // skip '{' or '['
     return next();
 }
@@ -83,12 +128,13 @@ bool QJsonVariantReader::leaveContainer()
         return false;
     }
 
-    if(*ptr!=EndArray && *ptr!=EndObject) {
+    if (hasError() || m_containers.isEmpty() || *ptr != m_containers.last().closing) {
         setError(QJsonParseError::IllegalValue);
         return false;
     }
+    m_containers.removeLast();
     ++ptr; // skip '}' or ']'
-    return next();
+    return completeValue();
 }
 
 QVariantReader::Type QJsonVariantReader::type() const
@@ -126,6 +172,10 @@ QString QJsonVariantReader::readString()
 
 QVariant QJsonVariantReader::readValue()
 {
+    if (hasError() || (!m_containers.isEmpty() && m_containers.last().expectingKey)) {
+        setError(QJsonParseError::IllegalValue);
+        return QVariant();
+    }
     if (ptr >= end) {
         setError(QJsonParseError::IllegalValue);
         return QVariant();
@@ -141,7 +191,7 @@ QVariant QJsonVariantReader::readValue()
         if (*ptr++ == 'u' &&
             *ptr++ == 'l' &&
             *ptr++ == 'l') {
-            next();
+            completeValue();
             return QVariant::fromValue(nullptr);
         }
         setError(QJsonParseError::IllegalValue);
@@ -155,7 +205,7 @@ QVariant QJsonVariantReader::readValue()
         if (*ptr++ == 'r' &&
             *ptr++ == 'u' &&
             *ptr++ == 'e') {
-            next();
+            completeValue();
             return QVariant(true);
         }
         setError(QJsonParseError::IllegalValue);
@@ -170,7 +220,7 @@ QVariant QJsonVariantReader::readValue()
             *ptr++ == 'l' &&
             *ptr++ == 's' &&
             *ptr++ == 'e') {
-            next();
+            completeValue();
             return QVariant(false);
         }
         setError(QJsonParseError::IllegalValue);
@@ -233,9 +283,33 @@ QString QJsonVariantReader::parseString()
     bool isUtf8 = true;
     const char* start = ptr;
     while (ptr < end && *ptr != '"') {
+        if (static_cast<uchar>(*ptr) < 0x20) {
+            setError(QJsonParseError::IllegalValue);
+            return QString();
+        }
         if (*ptr == '\\') {
-            ++ptr;
             isUtf8 = false;
+            if (++ptr == end) {
+                setError(QJsonParseError::UnterminatedString);
+                return QString();
+            }
+            if (*ptr == 'u') {
+                if (end - ptr < 5) {
+                    setError(QJsonParseError::IllegalEscapeSequence);
+                    return QString();
+                }
+                for (int i = 1; i <= 4; ++i) {
+                    const char c = ptr[i];
+                    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+                        setError(QJsonParseError::IllegalEscapeSequence);
+                        return QString();
+                    }
+                }
+                ptr += 4;
+            } else if (!QByteArrayView("\"\\/bfnrt").contains(*ptr)) {
+                setError(QJsonParseError::IllegalEscapeSequence);
+                return QString();
+            }
         }
         ++ptr;
     }
@@ -246,13 +320,16 @@ QString QJsonVariantReader::parseString()
         return QString();
     }
 
-    int len = ptr - start;
-    next();
+    qsizetype len = ptr - start;
+    if (!QByteArrayView(start, len - 1).isValidUtf8()) {
+        setError(QJsonParseError::IllegalUTF8String);
+        return QString();
+    }
+    completeValue();
     if(isUtf8) {
         return QString::fromUtf8(start, len-1); // exclude surrounding quotes
     }
-    QByteArray sub(start, len-1); // exclude surrounding quotes
-    return QUtf8::unescapedString(sub);
+    return QUtf8::unescapedString(QByteArrayView(start, len-1)); // exclude surrounding quotes
 }
 
 QVariant QJsonVariantReader::parseNumber()
@@ -308,7 +385,7 @@ QVariant QJsonVariantReader::parseNumber()
     }
 
     const QByteArray number = QByteArray::fromRawData(start, ptr - start);
-    next();
+    completeValue();
 
     if (isInt) {
         bool ok;
@@ -349,7 +426,7 @@ QVariant QJsonVariantReader::fromJson(const QByteArray& json, QJsonParseError* e
     }
     if(error)
         *error = reader.error();
-    return variant;
+    return reader.hasError() ? QVariant() : variant;
 }
 
 QVariant QJsonVariantReader::fromJson(QIODevice* device, QJsonParseError* error)
@@ -363,5 +440,5 @@ QVariant QJsonVariantReader::fromJson(QIODevice* device, QJsonParseError* error)
     }
     if(error)
         *error = reader.error();
-    return variant;
+    return reader.hasError() ? QVariant() : variant;
 }

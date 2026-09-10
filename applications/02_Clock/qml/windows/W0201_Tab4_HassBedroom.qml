@@ -143,6 +143,18 @@ BasicPane {
                     value: "light.chambre_chevet"
                 }
                 onClicked: HassManager.setEntityEnabled(entity_id, !isOn)
+                onBrightnessRequested: (brightness) => HassManager.callService("light", "turn_on", {
+                    entity_id: entity_id,
+                    brightness_pct: brightness
+                })
+                onColorTemperatureRequested: (kelvin) => HassManager.callService("light", "turn_on", {
+                    entity_id: entity_id,
+                    color_temp_kelvin: kelvin
+                })
+                onColorRequested: (hue, saturation) => HassManager.callService("light", "turn_on", {
+                    entity_id: entity_id,
+                    hs_color: [hue, saturation]
+                })
             }
             HassSceneDelegate {
                 entity_id: dodoSceneMapper.entity_id

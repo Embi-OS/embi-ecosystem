@@ -20,6 +20,10 @@ Item {
     property alias weekNumberVisible: calendarObject.weekNumberVisible
     property alias rangeMode: calendarObject.rangeMode
 
+    function isMonthYearValid(month: int, year: int): bool {
+        return calendarObject.isMonthYearValid(root.from, root.to, month, year)
+    }
+
     function previousMonth() {
         calendarObject.previousMonth()
     }
@@ -42,6 +46,8 @@ Item {
         monthGrid.year: root.year
 
         locale: root.locale
+        from: root.from
+        to: root.to
         selectedDate: root.selectedDate
         fromDate: root.fromDate
         toDate: root.toDate

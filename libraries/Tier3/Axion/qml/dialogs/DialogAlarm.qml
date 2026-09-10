@@ -32,8 +32,9 @@ BasicDialog {
     property bool showRepeat: true
     property bool showName: true
 
+    readonly property bool effectiveRepeat: root.showRepeat && root.repeat
     readonly property date dateSelected: new Date(root.date.getFullYear(),root.date.getMonth(),root.date.getDate(),root.hour,root.minute,0)
-    readonly property bool isValid: (root.repeat ? root.weekdays : DateTimeUtils.isDateAfter(dateSelected,DateTimeUtils.systemDateTime))
+    readonly property bool isValid: (root.effectiveRepeat ? root.weekdays : DateTimeUtils.isDateAfter(dateSelected,DateTimeUtils.systemDateTime)) && !timePicker.moving
     property bool dateAuto: false
 
     Component.onCompleted: root.evaluateDate(root.date)
@@ -42,11 +43,11 @@ BasicDialog {
         const alarmMap = {
             "hour": root.hour,
             "minute": root.minute,
-            "date": root.repeat ? "" : root.date,
+            "date": root.effectiveRepeat ? "" : root.date,
             "enabled": true,
             "name": root.showName ? root.name : "",
-            "repeat": root.showRepeat ? root.repeat : false,
-            "weekdays": root.repeat ? root.weekdays : 0,
+            "repeat": root.effectiveRepeat,
+            "weekdays": root.effectiveRepeat ? root.weekdays : 0,
             "details": root.details
         }
         root.alarmValidated(alarmMap)
@@ -140,7 +141,7 @@ BasicDialog {
 
                 TextButton {
                     Layout.alignment: Qt.AlignVCenter
-                    visible: !alarmRepeat.checked
+                    visible: !root.effectiveRepeat
                     text: DateTimeUtils.formatRelativeDate(root.date, Locale.ShortFormat)
                     checkable: true
                     round: true
@@ -159,19 +160,19 @@ BasicDialog {
 
             DayOfWeekRow {
                 id: dayOfWeek
-                visible: alarmRepeat.checked && alarmRepeat.visible
+                visible: root.effectiveRepeat
                 Layout.fillWidth: true
                 locale: root.locale
                 topPadding: 0
 
                 delegate: CalendarDateButton {
                     required property string shortName
-                    required property int index
+                    required property int day
 
                     text: shortName
-                    highlighted: MathUtils.bitTest(root.weekdays,index)
+                    highlighted: MathUtils.bitTest(root.weekdays, (day + 6) % 7)
                     outlined: highlighted
-                    onClicked: root.weekdays = MathUtils.bitToggle(root.weekdays,index)
+                    onClicked: root.weekdays = MathUtils.bitToggle(root.weekdays, (day + 6) % 7)
                 }
             }
 

@@ -1,6 +1,5 @@
 #include "hass_helpertypes.h"
-
-#include <cmath>
+#include "utils/colorutils.h"
 
 HassHelper::HassHelper(QObject* parent):
     QObject(parent)
@@ -30,30 +29,6 @@ QColor HassHelper::rgbToColor(const QVariant& rgb)
     return QColor(colors.at(0).toInt(), colors.at(1).toInt(), colors.at(2).toInt());
 }
 
-QColor HassHelper::colorTemperatureToColor(int kelvin)
-{
-    const qreal temperature = qBound(1000, kelvin, 40000) / 100.0;
-    qreal red = 255.0;
-    qreal green = 255.0;
-    qreal blue = 255.0;
-
-    if(temperature <= 66.0) {
-        green = 99.4708025861 * std::log(temperature) - 161.1195681661;
-        if(temperature <= 19.0)
-            blue = 0.0;
-        else
-            blue = 138.5177312231 * std::log(temperature - 10.0) - 305.0447927307;
-    }
-    else {
-        red = 329.698727446 * std::pow(temperature - 60.0, -0.1332047592);
-        green = 288.1221695283 * std::pow(temperature - 60.0, -0.0755148492);
-    }
-
-    return QColor(qBound(0, qRound(red), 255),
-                  qBound(0, qRound(green), 255),
-                  qBound(0, qRound(blue), 255));
-}
-
 QColor HassHelper::lightColor(const QVariantMap& attributes)
 {
     const QString colorMode = attributes.value("color_mode").toString();
@@ -66,7 +41,7 @@ QColor HassHelper::lightColor(const QVariantMap& attributes)
                 kelvin = qRound(1000000.0 / mired);
         }
 
-        return kelvin > 0 ? colorTemperatureToColor(kelvin) : QColor(0, 0, 0, 0);
+        return kelvin > 0 ? ColorUtils::colorTemperatureToColor(kelvin) : QColor(0, 0, 0, 0);
     }
 
     const bool isColorMode = colorMode.isEmpty()

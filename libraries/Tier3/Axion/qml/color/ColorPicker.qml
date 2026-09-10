@@ -79,7 +79,7 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: root.alphaEnabled
         radius: root.radius
-        color: root.solidColor
+        color: ColorUtils.fromHsvF(root.hue, root.saturation, root.value, 1.0)
         value: root.alpha
         onMoved: root.alpha = value
     }
@@ -96,7 +96,7 @@ ColumnLayout {
 
     ColorHexField {
         Layout.fillWidth: true
-        visible: root.hueEnabled
+        visible: root.hexEnabled
         color: root.hueColor
         alphaEnabled: root.alphaEnabled
         radius: root.radius

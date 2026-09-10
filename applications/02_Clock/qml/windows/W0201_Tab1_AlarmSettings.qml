@@ -192,6 +192,8 @@ Item {
             model: root.alarmGroupModel
 
             delegate: AlarmGroupDelegate {
+                borderWidth: 2
+                radius: 18
                 height: (ListView.view as BasicListView).viewHeight
                 required property QtObject qtObject
                 required property int index
@@ -205,7 +207,7 @@ Item {
                 highlighted: root.selectedGroupUuid === (groupObject?.uuid ?? "")
 
                 onClicked: root.selectGroup(groupObject?.uuid ?? "")
-                onGroupEnabledClicked: Clock.setGroupEnabled(groupObject?.uuid ?? "", !groupEnabled)
+                onPressAndHold: Clock.setGroupEnabled(groupObject?.uuid ?? "", !groupEnabled)
             }
         }
 
@@ -224,6 +226,8 @@ Item {
         }
 
         delegate: AlarmDelegate {
+            borderWidth: 2
+            radius: 18
             width: (ListView.view as BasicListView).viewWidth
             required property QtObject qtObject
             required property int index

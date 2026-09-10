@@ -18,16 +18,16 @@ T.Slider {
     property int radius: 4
 
     handle: ColorPickerHandle {
-        x: root.leftPadding + root.visualPosition * root.availableWidth - width / 2
+        x: root.leftPadding + root.visualPosition * (root.availableWidth - width)
         y: root.topPadding + root.availableHeight / 2 - height / 2
     }
 
     background: Item {
-        x: root.leftPadding
+        x: root.leftPadding + root.implicitHandleWidth / 2
         y: root.topPadding + (root.availableHeight - height) / 2
         implicitWidth: 280
         implicitHeight: 32
-        width: root.availableWidth
+        width: Math.max(0, root.availableWidth - root.implicitHandleWidth)
         height: 32
 
         RoundedImage {
