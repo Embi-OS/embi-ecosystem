@@ -167,6 +167,13 @@ Item {
         }]
     }
 
+    ProxyModel {
+        id: groupProxyModel
+        sourceModel: root.alarmGroupModel
+        sortRoleName: "name"
+        sortOrder: Qt.AscendingOrder
+    }
+
     PaneListView {
         id: view
         anchors.fill: parent
@@ -176,7 +183,7 @@ Item {
         model: proxyModel
 
         header: PaneListView {
-            visible: !root.alarmGroupModel.isEmpty
+            visible: !groupProxyModel.isEmpty
             topPadding: view.headerPadding
             leftPadding: view.headerPadding
             rightPadding: view.headerPadding
@@ -189,7 +196,7 @@ Item {
             viewMove: null
             view.ScrollBar.vertical: null
             view.implicitHeight: 120
-            model: root.alarmGroupModel
+            model: groupProxyModel
 
             delegate: AlarmGroupDelegate {
                 borderWidth: 2
