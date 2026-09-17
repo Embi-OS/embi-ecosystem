@@ -1,10 +1,11 @@
 #include "gameoflifemodel.h"
 #include <QBuffer>
-#include <QDebug>
+#include <QLoggingCategory>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QRandomGenerator>
 #include <QTextStream>
+#include <QScopedValueRollback>
 
 #define GAME_OF_LIFE_MODEL_THREADED
 
@@ -16,6 +17,8 @@
 #else
 #undef GAME_OF_LIFE_MODEL_THREADED
 #endif
+
+Q_LOGGING_CATEGORY(lifeModelLog, "life.model", QtWarningMsg)
 
 namespace
 {
@@ -53,10 +56,18 @@ inline QVector<RowRange> rowRanges(int height)
 
 GameOfLifeModel::GameOfLifeModel(QObject *parent):
     QAbstractTableModel(parent),
+    m_stepTimer(this),
     m_completed(false),
     m_stride(0)
 {
-
+    m_stepTimer.setTimerType(Qt::PreciseTimer);
+    connect(&m_stepTimer, &QTimer::timeout, this, &GameOfLifeModel::advanceSimulation);
+    connect(this, &GameOfLifeModel::runningChanged, this, &GameOfLifeModel::updateStepTimer);
+    connect(this, &GameOfLifeModel::stepsPerSecondChanged, this, [this] {
+        if (setStepsPerSecond(qBound(1, m_stepsPerSecond, 240)))
+            return;
+        updateStepTimer();
+    });
 }
 
 void GameOfLifeModel::classBegin()
@@ -66,11 +77,9 @@ void GameOfLifeModel::classBegin()
 
 void GameOfLifeModel::componentComplete()
 {
-    connect(this, &GameOfLifeModel::heightChanged, this, &GameOfLifeModel::resetBoard);
-    connect(this, &GameOfLifeModel::widthChanged, this, &GameOfLifeModel::resetBoard);
-
-    m_completed = true;
-    resetBoard();
+    if (m_completed)
+        return;
+    resizeBoard(m_width, m_height);
 }
 
 int GameOfLifeModel::rowCount(const QModelIndex &parent) const
@@ -172,6 +181,9 @@ void GameOfLifeModel::nextStep()
     if (!m_completed || m_width <= 0 || m_height <= 0)
         return;
 
+    if (m_generation == 0)
+        m_initialState = m_currentState;
+
     QElapsedTimer timer;
     timer.start();
 
@@ -251,11 +263,12 @@ void GameOfLifeModel::nextStep()
     m_currentState.swap(m_nextState);
     m_aliveCells.swap(nextAliveCells);
 
+    setGeneration(m_generation + 1);
     setAlive(m_aliveCells.size());
-    setTotal(m_currentState.size());
+    setTotal(m_width * m_height);
     setDead(m_total - m_alive);
 
-    qDebug()<<"nextStep"<<timer.nsecsElapsed()/1000000.0;
+    qCDebug(lifeModelLog)<<"nextStep"<<timer.nsecsElapsed()/1000000.0;
 
     emitFullBoardChanged();
 }
@@ -289,8 +302,9 @@ void GameOfLifeModel::clear()
     m_nextState.fill(0);
     m_aliveCells.clear();
 
+    resetTimeline();
     setAlive(m_aliveCells.size());
-    setTotal(m_currentState.size());
+    setTotal(m_width * m_height);
     setDead(m_total - m_alive);
 
 
@@ -319,11 +333,12 @@ void GameOfLifeModel::randomize()
 
     QFutureSynchronizer<QVector<int>> synchronizer;
     for (const RowRange &range : ranges) {
-        synchronizer.addFuture(QtConcurrent::run([nextState, stride, width, range]() {
+        const quint32 seed = QRandomGenerator::global()->generate();
+        synchronizer.addFuture(QtConcurrent::run([nextState, stride, width, range, seed]() {
             QVector<int> aliveCells;
             aliveCells.reserve(((range.lastRow - range.firstRow) * width) / 2);
 
-            QRandomGenerator generator(range.index+1);
+            QRandomGenerator generator(seed);
 
             for (int row = range.firstRow; row < range.lastRow; ++row) {
                 const qsizetype rowOffset = qsizetype(row + 1) * stride + 1;
@@ -360,39 +375,74 @@ void GameOfLifeModel::randomize()
     m_currentState.swap(m_nextState);
     m_aliveCells.swap(nextAliveCells);
 
+    resetTimeline();
     setAlive(m_aliveCells.size());
-    setTotal(m_currentState.size());
+    setTotal(m_width * m_height);
     setDead(m_total - m_alive);
 
-    qDebug()<<"randomize"<<timer.nsecsElapsed()/1000000.0;
+    qCDebug(lifeModelLog)<<"randomize"<<timer.nsecsElapsed()/1000000.0;
 
     emitFullBoardChanged();
 }
 
-void GameOfLifeModel::resetBoard()
+bool GameOfLifeModel::setWidth(int width)
 {
-    if (!m_completed)
-        return;
+    return resizeBoard(width, m_height);
+}
 
-    QElapsedTimer timer;
-    timer.start();
+bool GameOfLifeModel::setHeight(int height)
+{
+    return resizeBoard(m_width, height);
+}
+
+bool GameOfLifeModel::resizeBoard(int width, int height)
+{
+    // Bound both dimensions and area before arithmetic or allocation.
+    constexpr int maxDimension = 4096;
+    // Allow a full 4K grid at one cell per pixel, including intermediate
+    // dimensions while width and height bindings update independently.
+    constexpr qint64 maxCells = qint64(maxDimension) * maxDimension;
+    if (m_resizing || width < 0 || height < 0 || width > maxDimension || height > maxDimension
+        || qint64(width) * height > maxCells)
+        return false;
+    const bool widthChanged = width != m_width;
+    const bool heightChanged = height != m_height;
+    if (m_completed && !widthChanged && !heightChanged)
+        return false;
+
+    QScopedValueRollback<bool> resizing(m_resizing, true);
+    const int stride = width + 2;
+    QVector<quint8> currentState(qsizetype(height + 2) * stride, 0);
+    QVector<quint8> nextState(currentState.size(), 0);
+    QVector<int> aliveCells;
+    for (int cell : std::as_const(m_aliveCells)) {
+        const int row = cell / m_width;
+        const int column = cell % m_width;
+        if (row < height && column < width) {
+            currentState[qsizetype(row + 1) * stride + column + 1] = 1;
+            aliveCells.append(row * width + column);
+        }
+    }
 
     beginResetModel();
-
-    m_stride = m_width + 2;
-    const qsizetype bufferSize = qsizetype(m_height + 2) * m_stride;
-    m_currentState.fill(0, bufferSize);
-    m_nextState.fill(0, bufferSize);
-    m_aliveCells.clear();
-
+    m_width = width;
+    m_height = height;
+    m_stride = stride;
+    m_currentState.swap(currentState);
+    m_nextState.swap(nextState);
+    m_aliveCells.swap(aliveCells);
+    m_completed = true;
+    resetTimeline();
     setAlive(m_aliveCells.size());
-    setTotal(m_currentState.size());
+    setTotal(m_width * m_height);
     setDead(m_total - m_alive);
-
     endResetModel();
+    if (widthChanged)
+        emit this->widthChanged(m_width);
+    if (heightChanged)
+        emit this->heightChanged(m_height);
     emit boardChanged();
-
-    qDebug()<<"resetBoard"<<timer.nsecsElapsed()/1000000.0;
+    return true;
 }
 
 bool GameOfLifeModel::loadDevice(QIODevice *device)
@@ -450,11 +500,12 @@ bool GameOfLifeModel::loadDevice(QIODevice *device)
         }
     }
 
+    resetTimeline();
     setAlive(m_aliveCells.size());
-    setTotal(m_currentState.size());
+    setTotal(m_width * m_height);
     setDead(m_total - m_alive);
 
-    qDebug()<<"loadDevice"<<timer.nsecsElapsed()/1000000.0;
+    qCDebug(lifeModelLog)<<"loadDevice"<<timer.nsecsElapsed()/1000000.0;
 
     emitFullBoardChanged();
 
@@ -484,7 +535,7 @@ bool GameOfLifeModel::applyCellValue(int row, int column, bool alive)
     }
 
     setAlive(m_aliveCells.size());
-    setTotal(m_currentState.size());
+    setTotal(m_width * m_height);
     setDead(m_total - m_alive);
 
     emit dataChanged(this->index(row, column), this->index(row, column), {Qt::DisplayRole});
@@ -504,10 +555,68 @@ void GameOfLifeModel::emitFullBoardChanged()
     emit dataChanged(index(0, 0), index(m_height - 1, m_width - 1), {Qt::DisplayRole});
     emit boardChanged();
 
-    qDebug()<<"emitFullBoardChanged"<<timer.nsecsElapsed()/1000000.0;
+    qCDebug(lifeModelLog)<<"emitFullBoardChanged"<<timer.nsecsElapsed()/1000000.0;
 }
 
 qsizetype GameOfLifeModel::cellIndex(int row, int column) const
 {
     return qsizetype(row + 1) * m_stride + (column + 1);
+}
+
+void GameOfLifeModel::updateStepTimer()
+{
+    m_stepTimer.stop();
+    m_stepCredit = 0;
+    m_stepClock.start();
+    m_rateClock.start();
+    m_rateGeneration = m_generation;
+    setActualStepsPerSecond(0);
+    if (m_running)
+        m_stepTimer.start(qMax(1, 1000 / m_stepsPerSecond));
+}
+
+void GameOfLifeModel::advanceSimulation()
+{
+    // Bound catch-up work after stalls; never accumulate an unbounded backlog.
+    m_stepCredit = qMin(qreal(8), m_stepCredit + m_stepClock.nsecsElapsed() * m_stepsPerSecond / 1.0e9);
+    m_stepClock.restart();
+    QElapsedTimer budget;
+    budget.start();
+    while (m_running && m_stepCredit >= 1 && budget.elapsed() < 8) {
+        m_stepCredit -= 1;
+        nextStep();
+    }
+    const qint64 elapsed = m_rateClock.elapsed();
+    if (elapsed >= 500) {
+        setActualStepsPerSecond((m_generation - m_rateGeneration) * 1000.0 / elapsed);
+        m_rateGeneration = m_generation;
+        m_rateClock.restart();
+    }
+}
+
+void GameOfLifeModel::resetTimeline()
+{
+    m_initialState.clear();
+    setGeneration(0);
+    updateStepTimer();
+}
+
+void GameOfLifeModel::restart()
+{
+    if (!m_completed || m_generation == 0 || m_initialState.size() != m_currentState.size())
+        return;
+    setRunning(false);
+    m_currentState = m_initialState;
+    m_nextState.fill(0);
+    m_aliveCells.clear();
+    for (int row = 0; row < m_height; ++row) {
+        for (int column = 0; column < m_width; ++column) {
+            if (m_currentState[cellIndex(row, column)])
+                m_aliveCells.append(row * m_width + column);
+        }
+    }
+    resetTimeline();
+    setAlive(m_aliveCells.size());
+    setDead(m_total - m_alive);
+    emitFullBoardChanged();
 }

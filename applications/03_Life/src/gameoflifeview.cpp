@@ -2,7 +2,7 @@
 
 #include "gameoflifemodel.h"
 
-#include <QDebug>
+#include <QLoggingCategory>
 #include <QElapsedTimer>
 #include <QMouseEvent>
 #include <QSGFlatColorMaterial>
@@ -11,10 +11,23 @@
 #include <QSGNode>
 #include <QSGSimpleRectNode>
 
+Q_LOGGING_CATEGORY(lifeViewLog, "life.view", QtWarningMsg)
+
 namespace
 {
 constexpr int verticesPerCell = 6;
 constexpr int maxCellsPerGeometryNode = 10000;
+
+struct LifeNode : QSGNode
+{
+    QSizeF itemSize;
+    int rows = -1;
+    int columns = -1;
+    qreal cellSize = -1;
+    qreal spacing = -1;
+    QColor backgroundColor;
+    QColor gridColor;
+};
 
 struct GridMetrics
 {
@@ -98,6 +111,7 @@ GameOfLifeView::GameOfLifeView(QQuickItem *parent):
     m_lastPaintedColumn(-1)
 {
     setFlag(ItemHasContents);
+    setActiveFocusOnTab(true);
     setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
 
     connect(this, &GameOfLifeView::cellSizeChanged, this, &QQuickItem::update);
@@ -133,9 +147,9 @@ QSGNode *GameOfLifeView::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
     QElapsedTimer timer;
     timer.start();
 
-    QSGNode *rootNode = oldNode;
+    auto *rootNode = static_cast<LifeNode *>(oldNode);
     if (!rootNode) {
-        rootNode = new QSGNode;
+        rootNode = new LifeNode;
         rootNode->appendChildNode(new QSGSimpleRectNode(QRectF(), m_backgroundColor));
         rootNode->appendChildNode(new QSGSimpleRectNode(QRectF(), m_gridColor));
         rootNode->appendChildNode(new QSGNode);
@@ -150,10 +164,16 @@ QSGNode *GameOfLifeView::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
     const bool drawGrid = m_cellSpacing > 0.0;
     const bool drawBackgroundCells = drawGrid && m_backgroundColor != m_gridColor;
 
+    const bool updateBackground = rootNode->itemSize != size()
+        || rootNode->rows != m_rowCount || rootNode->columns != m_columnCount
+        || rootNode->cellSize != m_cellSize || rootNode->spacing != m_cellSpacing
+        || rootNode->backgroundColor != m_backgroundColor || rootNode->gridColor != m_gridColor;
+
     backgroundNode->setRect(boundingRect());
     backgroundNode->setColor(m_backgroundColor);
 
     if (m_rowCount <= 0 || m_columnCount <= 0 || m_cellSize <= 0.0) {
+        rootNode->rows = -1;
         gridNode->setRect(QRectF());
         ensureGeometryNodeCount(backgroundCellsRoot, 0);
         ensureGeometryNodeCount(aliveCellsRoot, 0);
@@ -166,10 +186,11 @@ QSGNode *GameOfLifeView::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
                                          : 0;
     const int aliveChunkCount = (m_aliveCellSnapshot.size() + maxCellsPerGeometryNode - 1) / maxCellsPerGeometryNode;
 
-    ensureGeometryNodeCount(backgroundCellsRoot, backgroundChunkCount);
+    if (updateBackground)
+        ensureGeometryNodeCount(backgroundCellsRoot, backgroundChunkCount);
     ensureGeometryNodeCount(aliveCellsRoot, aliveChunkCount);
 
-    for (QSGNode *child = backgroundCellsRoot->firstChild(); child; child = child->nextSibling()) {
+    for (QSGNode *child = updateBackground ? backgroundCellsRoot->firstChild() : nullptr; child; child = child->nextSibling()) {
         auto *geometryNode = static_cast<QSGGeometryNode *>(child);
         auto *material = static_cast<QSGFlatColorMaterial *>(geometryNode->material());
         material->setColor(m_backgroundColor);
@@ -179,12 +200,14 @@ QSGNode *GameOfLifeView::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
     for (QSGNode *child = aliveCellsRoot->firstChild(); child; child = child->nextSibling()) {
         auto *geometryNode = static_cast<QSGGeometryNode *>(child);
         auto *material = static_cast<QSGFlatColorMaterial *>(geometryNode->material());
-        material->setColor(m_cellColor);
-        geometryNode->markDirty(QSGNode::DirtyMaterial);
+        if (material->color() != m_cellColor) {
+            material->setColor(m_cellColor);
+            geometryNode->markDirty(QSGNode::DirtyMaterial);
+        }
     }
 
     int remainingBackgroundCells = totalCellCount;
-    for (QSGNode *child = backgroundCellsRoot->firstChild(); child; child = child->nextSibling()) {
+    for (QSGNode *child = updateBackground ? backgroundCellsRoot->firstChild() : nullptr; child; child = child->nextSibling()) {
         auto *geometryNode = static_cast<QSGGeometryNode *>(child);
         auto *geometry = geometryNode->geometry();
         const int chunkCellCount = qMin(remainingBackgroundCells, maxCellsPerGeometryNode);
@@ -219,7 +242,7 @@ QSGNode *GameOfLifeView::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
     gridNode->setColor(m_gridColor);
     gridNode->setRect(drawGrid ? QRectF(metrics.gridOriginX, metrics.gridOriginY, metrics.gridAreaWidth, metrics.gridAreaHeight) : QRectF());
 
-    if (drawBackgroundCells) {
+    if (updateBackground && drawBackgroundCells) {
         for (int row = 0; row < m_rowCount; ++row) {
             const float y0 = originY + float(row) * step;
             const float y1 = y0 + cellSize;
@@ -270,7 +293,15 @@ QSGNode *GameOfLifeView::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         }
     }
 
-    qDebug()<<"updatePaintNode"<<timer.nsecsElapsed()/1000000.0<<m_rowCount<<m_columnCount;
+    rootNode->itemSize = size();
+    rootNode->rows = m_rowCount;
+    rootNode->columns = m_columnCount;
+    rootNode->cellSize = m_cellSize;
+    rootNode->spacing = m_cellSpacing;
+    rootNode->backgroundColor = m_backgroundColor;
+    rootNode->gridColor = m_gridColor;
+
+    qCDebug(lifeViewLog)<<"updatePaintNode"<<timer.nsecsElapsed()/1000000.0<<m_rowCount<<m_columnCount;
 
     return rootNode;
 }
@@ -288,6 +319,8 @@ void GameOfLifeView::mousePressEvent(QMouseEvent *event)
         return;
     }
 
+    forceActiveFocus(Qt::MouseFocusReason);
+    m_model->setRunning(false);
     m_isPainting = true;
     m_paintAlive = event->button() == Qt::LeftButton;
     setKeepMouseGrab(true);
@@ -376,6 +409,8 @@ void GameOfLifeView::paintStroke(int row, int column)
 {
     if (!m_model)
         return;
+
+    emit cellPainted(row, column);
 
     if (m_lastPaintedRow < 0 || m_lastPaintedColumn < 0) {
         m_model->setValue(row, column, m_paintAlive);

@@ -5,6 +5,27 @@
 #include "restclient.h"
 
 #include <QWebSocketHandshakeOptions>
+#include <QRegularExpression>
+
+namespace {
+
+bool isHandshakeAuthenticationError(const QString& errorString)
+{
+    // QWebSocket has no public HTTP response status. Match only explicit Qt
+    // handshake diagnostics, using Qt's translation context as well.
+    if(errorString == QString("QWebSocket::processHandshake: Host requires authentication")
+        || errorString == QString("QWebSocketPrivate::processHandshake: Unsupported WWW-Authenticate challenge encountered.")
+        || errorString == QString("QWebSocketPrivate::processHandshake: Unsupported WWW-Authenticate challenges encountered.")) {
+        return true;
+    }
+
+    const QString statusPattern = QRegularExpression::escape(QString("QWebSocketPrivate::processHandshake: Unhandled http status code: %1 (%2)."))
+                                      .replace(QRegularExpression::escape(QStringLiteral("%1")), QStringLiteral("(?:401|403)"))
+                                      .replace(QRegularExpression::escape(QStringLiteral("%2")), QStringLiteral(".*"));
+    return QRegularExpression(QRegularExpression::anchoredPattern(statusPattern)).match(errorString).hasMatch();
+}
+
+}
 
 Q_GLOBAL_STATIC_WITH_ARGS(bool, g_restSocketGloballyEnabled, (true))
 void RestSocket::setGloballyEnabled(bool globallyEnabled)
@@ -111,6 +132,9 @@ void RestSocket::resetReconnectDelay()
 
 void RestSocket::cancelReconnect()
 {
+    if(m_reconnectTimer->isActive()) {
+        RESTLOG_DEBUG()<<"REST socket pending reconnect cancelled"<<this<<"remainingMs"<<m_reconnectTimer->remainingTime();
+    }
     m_reconnectReason.clear();
     m_reconnectTimer->stop();
 }
@@ -122,8 +146,11 @@ bool RestSocket::isIntentionalClose() const
 
 void RestSocket::scheduleReconnect(const QString& reason, bool resetDelay)
 {
-    if(!m_reconnect || !shouldBeOpen())
+    if(!m_reconnect || m_authenticationRejected || !shouldBeOpen() || m_manualClose) {
+        RESTLOG_DEBUG()<<"REST socket reconnect skipped"<<this<<"reconnect"<<m_reconnect
+                       <<"authenticationRejected"<<m_authenticationRejected<<"shouldBeOpen"<<shouldBeOpen()<<"manualClose"<<m_manualClose;
         return;
+    }
 
     if(resetDelay || m_currentReconnectDelayMs <= 0)
         resetReconnectDelay();
@@ -133,10 +160,12 @@ void RestSocket::scheduleReconnect(const QString& reason, bool resetDelay)
     m_reconnectReason = reason;
     m_reconnectNeeded = true;
 
-    if(m_reconnectTimer->isActive())
+    if(m_reconnectTimer->isActive()) {
+        RESTLOG_TRACE()<<"REST socket reconnect already scheduled"<<this<<"remainingMs"<<m_reconnectTimer->remainingTime();
         return;
+    }
 
-    RESTLOG_TRACE()<<"REST socket reconnect scheduled"<<m_url<<delayMs<<reason;
+    RESTLOG_DEBUG()<<"REST socket reconnect scheduled"<<m_url<<"delayMs"<<delayMs<<"maxDelayMs"<<maxDelayMs<<reason;
     m_reconnectTimer->start(delayMs);
     emit this->reconnectScheduled(delayMs, reason);
 
@@ -211,13 +240,23 @@ void RestSocket::handleError(QAbstractSocket::SocketError error)
     m_openWatchdog->stop();
     m_lastSocketError = error;
 
+    const QString errorString = m_socket->errorString();
+    if(!m_connected && error == QAbstractSocket::ConnectionRefusedError
+        && isHandshakeAuthenticationError(errorString)) {
+        // Do not retry rejected credentials. Recreate the socket to start a
+        // new authentication session.
+        setAuthenticationRejected(true);
+        m_rebindAfterClose = false;
+        cancelReconnect();
+    }
+
     if(error == QAbstractSocket::RemoteHostClosedError) {
         RESTLOG_DEBUG()<<"REST socket remote host closed"<<m_url;
         return;
     }
 
     setPhase(RestSocketPhases::Faulted);
-    setError(QString("%1\n%2 (%3)").arg(m_url, m_socket->errorString()).arg(error));
+    setError(QString("%1\n%2 (%3)").arg(m_url, errorString).arg(error));
     setStatus(RestSocketStates::Error);
 
     emit this->error();
@@ -228,6 +267,14 @@ void RestSocket::handleError(QAbstractSocket::SocketError error)
     default:
         if (m_socket->state() == QAbstractSocket::UnconnectedState)
             scheduleReconnect(m_error);
+        else if(m_socket->state() == QAbstractSocket::ConnectingState) {
+            // Some handshake errors leave QWebSocket in ConnectingState.
+            // Let Qt finish its error handler before aborting that attempt.
+            QMetaObject::invokeMethod(this, [this]() {
+                if(m_status == RestSocketStates::Error && m_socket->state() == QAbstractSocket::ConnectingState)
+                    m_socket->abort();
+            }, Qt::QueuedConnection);
+        }
         break;
     }
 }
@@ -302,14 +349,17 @@ void RestSocket::handleDisconnected()
     const QWebSocketProtocol::CloseCode closeCode = m_socket->closeCode();
     const QString closeReason = m_socket->closeReason();
     const bool intentionalClose = isIntentionalClose();
-    const bool shouldReconnect = m_rebindAfterClose || (m_reconnectOnCleanClose && !intentionalClose);
     const bool cleanCloseCode = closeCode == QWebSocketProtocol::CloseCodeNormal
                                 || closeCode == QWebSocketProtocol::CloseCodeGoingAway;
-    const bool cleanClose = cleanCloseCode
+    const bool cleanClose = m_connected && cleanCloseCode
                             && (m_lastSocketError == QAbstractSocket::UnknownSocketError
                                 || m_lastSocketError == QAbstractSocket::RemoteHostClosedError)
                             && m_error.isEmpty();
+    const bool shouldReconnect = !intentionalClose && m_reconnect && !m_authenticationRejected
+                                 && (!cleanClose || m_reconnectOnCleanClose);
     const bool transientDisconnect = cleanClose && shouldReconnect;
+    RESTLOG_DEBUG()<<"REST socket close policy"<<this<<"closeCode"<<int(closeCode)
+                   <<"intentional"<<intentionalClose<<"clean"<<cleanClose<<"reconnect"<<shouldReconnect;
     const QString reason = m_error.isEmpty()
                                ? (cleanClose
                                       ? (!closeReason.isEmpty()
@@ -336,7 +386,8 @@ void RestSocket::handleDisconnected()
     setConnected(false);
     emit this->disconnected();
 
-    if(m_rebindAfterClose) {
+    if(m_rebindAfterClose && !m_authenticationRejected) {
+        RESTLOG_DEBUG()<<"REST socket reopening after requested close"<<this;
         m_rebindAfterClose = false;
         m_manualClose = false;
         m_lastSocketError = QAbstractSocket::UnknownSocketError;
@@ -366,21 +417,28 @@ void RestSocket::handleOpenTimeout()
         return;
 
     const QString reason = QString("Socket connection timeout after %1 ms").arg(m_openTimeoutMs);
+    RESTLOG_WARNING()<<"REST socket handshake timeout"<<this<<"timeoutMs"<<m_openTimeoutMs<<"reconnecting"<<m_reconnectNeeded;
 
     setPhase(RestSocketPhases::Faulted);
     setError(reason);
     setStatus(RestSocketStates::Error);
     emit this->error();
 
-    reconnectNow(reason);
+    // abort() terminates a stalled handshake immediately. handleDisconnected()
+    // schedules the next attempt through the normal reconnect policy.
+    m_socket->abort();
 }
 
 void RestSocket::handleReconnectTimeout()
 {
     m_reconnectTimer->stop();
 
-    if(!shouldBeOpen())
+    if(!m_reconnect || m_authenticationRejected || !shouldBeOpen() || m_manualClose) {
+        RESTLOG_DEBUG()<<"REST socket scheduled reconnect abandoned"<<this<<"reconnect"<<m_reconnect
+                       <<"authenticationRejected"<<m_authenticationRejected<<"shouldBeOpen"<<shouldBeOpen()<<"manualClose"<<m_manualClose;
+        setPhase(RestSocketPhases::Inactive);
         return;
+    }
 
     RESTLOG_DEBUG()<<"REST socket reconnect"<<m_url<<m_reconnectReason;
     open();
@@ -425,8 +483,14 @@ bool RestSocket::waitForBind(int timeout)
     if(m_status==RestSocketStates::Open)
         return true;
 
+    if(!shouldBeOpen() || m_authenticationRejected
+        || m_status==RestSocketStates::Error || m_status==RestSocketStates::Closed)
+        return false;
+
     QEventLoop loop;
     connect(this, &RestSocket::connected, &loop, &QEventLoop::quit, Qt::QueuedConnection);
+    connect(this, &RestSocket::error, &loop, &QEventLoop::quit, Qt::QueuedConnection);
+    connect(this, &RestSocket::disconnected, &loop, &QEventLoop::quit, Qt::QueuedConnection);
     if(timeout>=0)
         QTimer::singleShot(timeout, &loop, &QEventLoop::quit);
     loop.exec(QEventLoop::AllEvents);
@@ -441,10 +505,11 @@ void RestSocket::unbind()
 
 void RestSocket::reconnectNow(const QString& reason)
 {
+    RESTLOG_DEBUG()<<"REST socket immediate reconnect requested"<<this<<"state"<<m_socket->state();
     m_openWatchdog->stop();
     cancelReconnect();
 
-    if(!shouldBeOpen())
+    if(!shouldBeOpen() || m_authenticationRejected)
         return;
 
     if(!reason.isEmpty())
@@ -452,7 +517,7 @@ void RestSocket::reconnectNow(const QString& reason)
 
     if (m_socket->state() == QAbstractSocket::UnconnectedState) {
         resetReconnectDelay();
-        handleReconnectTimeout();
+        open();
         return;
     }
 
@@ -536,7 +601,7 @@ void RestSocket::open()
 {
     cancelReconnect();
 
-    if(!shouldBeOpen())
+    if(!shouldBeOpen() || m_authenticationRejected)
         return;
     m_lastSocketError = QAbstractSocket::UnknownSocketError;
 
@@ -595,6 +660,9 @@ void RestSocket::open()
     setNegotiatedProtocol({});
     m_manualClose = false;
     m_rebindAfterClose = false;
+
+    resetError();
+    setPhase(RestSocketPhases::Connecting);
 
     if(m_openTimeoutMs > 0)
         m_openWatchdog->start(m_openTimeoutMs);

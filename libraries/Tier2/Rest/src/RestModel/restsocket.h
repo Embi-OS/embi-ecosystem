@@ -52,6 +52,7 @@ class RestSocket: public QObject,
     Q_READONLY_VAR_PROPERTY(RestSocketPhases::Enum, phase, Phase, RestSocketPhases::Inactive)
     Q_READONLY_VAR_PROPERTY(bool, connected, Connected, false)
     Q_READONLY_REF_PROPERTY(QString, error, Error, {})
+    Q_READONLY_VAR_PROPERTY(bool, authenticationRejected, AuthenticationRejected, false)
     Q_READONLY_REF_PROPERTY(QString, negotiatedProtocol, NegotiatedProtocol, {})
 
 public:

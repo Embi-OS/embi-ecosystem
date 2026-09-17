@@ -10,6 +10,7 @@ FormObject {
     defaultValue: ""
 
     property int folderTreeType: FolderTreeTypes.Dir
+    property list<string> additionalPaths: []
 
     warning: !acceptableInput
     placeholder: "Path/to/file"
@@ -28,6 +29,7 @@ FormObject {
         path: root.currentValue
         placeholder: root.placeholder
         folderTreeType: root.folderTreeType
+        additionalPaths: root.additionalPaths
 
         onTextEdited: (text) => root.validateValue(text)
         onPathAccepted: (path) => root.changeValue(path)

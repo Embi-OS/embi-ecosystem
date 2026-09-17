@@ -32,6 +32,11 @@ RestSocketWatcher::RestSocketWatcher(RestSocket *parent):
     connect(m_socket, &RestSocket::connected, this, &RestSocketWatcher::onSocketConnected);
     connect(m_socket, &RestSocket::disconnected, this, &RestSocketWatcher::onSocketDisconnected);
     connect(m_socket, &RestSocket::statusChanged, this, &RestSocketWatcher::onSocketStatusChanged);
+    connect(m_socket, &RestSocket::phaseChanged, this, &RestSocketWatcher::handleSocketDisconnected, Qt::QueuedConnection);
+    connect(m_socket, &RestSocket::reconnectChanged, this, &RestSocketWatcher::handleSocketDisconnected, Qt::QueuedConnection);
+    connect(m_socket, &RestSocket::error, this, [this]() {
+        setDisconnected(m_socket->getError());
+    });
 
     if(m_socket->getStatus()==RestSocketStates::Open)
         queueSendPing();
@@ -79,8 +84,10 @@ void RestSocketWatcher::setDisconnected(const QString& reason)
 {
     resetPingState();
 
-    if(setConnected(false))
+    if(setConnected(false)) {
+        RESTLOG_DEBUG()<<"REST socket watcher connection lost"<<m_socket<<"phase"<<m_socket->getPhase();
         emit this->connectionLost(reason);
+    }
 }
 
 void RestSocketWatcher::onSocketConnected()
@@ -108,8 +115,14 @@ void RestSocketWatcher::handleSocketDisconnected()
     if(m_socket->getStatus() == RestSocketStates::Open)
         return;
 
-    if(m_socket->getPhase() == RestSocketPhases::Connecting || m_socket->getPhase() == RestSocketPhases::Reconnecting) {
-        RESTLOG_DEBUG()<<"Socket reconnect in progress"<<m_socket->getUrl();
+    const RestSocketPhases::Enum phase = m_socket->getPhase();
+    const bool connectionPending = phase == RestSocketPhases::Connecting
+                                   || (phase == RestSocketPhases::Reconnecting && m_socket->getReconnect());
+    // A clean server rotation keeps the logical connection alive while waiting
+    // for the retry and its handshake. Errors and cancellation end that grace.
+    if(connectionPending && m_socket->getError().isEmpty()
+        && RestSocket::globallyEnabled() && m_socket->getEnabled() && m_socket->getBindWhen()) {
+        RESTLOG_TRACE()<<"REST socket watcher awaiting reconnect"<<m_socket<<"phase"<<phase<<"connected"<<m_connected;
         return;
     }
 
@@ -148,8 +161,12 @@ void RestSocketWatcher::onPingTimeout()
     RESTLOG_CRITICAL()<<"Socket ping error after"<<m_pingTimeoutCount<<"retries";
     setDisconnected(reason);
 
-    if(m_reconnectOnPingTimeout)
+    if(m_reconnectOnPingTimeout) {
+        RESTLOG_DEBUG()<<"REST socket watcher requesting reconnect after ping failure"<<m_socket;
         m_socket->reconnectNow(reason);
-    else
+    }
+    else {
+        RESTLOG_DEBUG()<<"REST socket watcher continuing pings without reconnect"<<m_socket;
         queueSendPing();
+    }
 }

@@ -24,6 +24,9 @@ class GameOfLifeView : public QQuickItem
 public:
     explicit GameOfLifeView(QQuickItem *parent = nullptr);
 
+signals:
+    void cellPainted(int row, int column);
+
 protected:
     void updatePolish() override;
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
